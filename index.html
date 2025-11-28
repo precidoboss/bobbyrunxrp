@@ -132,6 +132,9 @@
                 <button data-tab="progress" class="tab-button py-3 px-4 text-sm font-medium border-b-2 border-transparent text-gray-300 hover:text-white hover:border-blue-400 transition duration-150">
                     Allocation & Progress
                 </button>
+                <button data-tab="token-guide" class="tab-button py-3 px-4 text-sm font-medium border-b-2 border-transparent text-gray-300 hover:text-white hover:border-blue-400 transition duration-150">
+                    Token Guide
+                </button>
             </div>
         </div>
     </nav>
@@ -180,8 +183,8 @@
                             Purchase $VCNEWS
                         </button>
 
-                        <p id="purchase-message" class="text-sm mt-4 text-center text-red-400">
-                            *Please connect your wallet to enable purchases.
+                        <p id="purchase-message" class="text-sm mt-4 text-center text-red-400 hidden">
+                            Please connect your wallet to enable purchases.
                         </p>
                     </div>
                 </div>
@@ -215,13 +218,13 @@
                         </div>
                     </div>
                     
-                    <!-- Funding Allocation Card -->
+                    <!-- Funding Allocation Card (Updated based on new percentages) -->
                     <div class="bg-gray-800 p-6 rounded-2xl shadow-xl border border-gray-700">
-                        <h3 class="header-font text-2xl font-bold text-white mb-4 border-b pb-2 border-gray-700">Fund Allocation</h3>
+                        <h3 class="header-font text-2xl font-bold text-white mb-4 border-b pb-2 border-gray-700">Collected Fund Allocation</h3>
                         <ul class="space-y-2 text-sm">
                             <li class="flex justify-between">
-                                <span class="text-gray-400">70% Liquidity Provision:</span>
-                                <span class="font-semibold text-blue-400">CRONOS DEX</span>
+                                <span class="text-gray-400">20% Liquidity Provision:</span>
+                                <span class="font-semibold text-blue-400">DEX Pool</span>
                             </li>
                             <li class="flex justify-between">
                                 <span class="text-gray-400">25% Community & Dev:</span>
@@ -230,6 +233,9 @@
                             <li class="flex justify-between">
                                 <span class="text-gray-400">5% Team:</span>
                                 <span class="font-semibold text-white">Future Development</span>
+                            </li>
+                            <li class="pt-2 border-t border-gray-700 mt-2">
+                                <span class="text-gray-400 text-xs italic">Note: The remaining 50% of collected CRO funds will be clearly detailed post-presale.</span>
                             </li>
                         </ul>
                     </div>
@@ -245,9 +251,9 @@
                 
                 <h3 class="header-font text-2xl font-bold text-white mt-8 mb-4">Why Cronos?</h3>
                 <ul class="list-disc list-inside text-gray-400 space-y-2 pl-4">
-                    <li>**EVM Compatibility:** Seamless integration with existing Ethereum tools and wallets.</li>
-                    <li>**Low Fees & High Speed:** Ensures cost-effective and rapid transaction processing for users.</li>
-                    <li>**Growing Ecosystem:** Positioning VCNEWS within a rapidly expanding DeFi environment.</li>
+                    <li>EVM Compatibility: Seamless integration with existing Ethereum tools and wallets.</li>
+                    <li>Low Fees & High Speed: Ensures cost-effective and rapid transaction processing for users.</li>
+                    <li>Growing Ecosystem: Positioning VCNEWS within a rapidly expanding DeFi environment.</li>
                 </ul>
 
                 <h3 class="header-font text-2xl font-bold text-white mt-8 mb-4">Presale Details</h3>
@@ -287,7 +293,7 @@
             </div>
         </section>
         
-        <!-- Progress Tab Content -->
+        <!-- Progress Tab Content (Updated Allocation) -->
         <section id="progress" class="tab-content">
             <div class="bg-gray-800 p-8 rounded-2xl shadow-xl border border-gray-700">
                 <h2 class="header-font text-4xl font-bold text-blue-400 mb-8">Presale Progress and Fund Usage</h2>
@@ -308,25 +314,65 @@
                 </div>
 
                 <!-- Fund Allocation Chart/Details -->
-                <h3 class="header-font text-2xl font-bold text-white mb-6 border-b pb-2 border-gray-700">Post-Presale Fund Allocation</h3>
+                <h3 class="header-font text-2xl font-bold text-white mb-6 border-b pb-2 border-gray-700">Collected CRO Fund Allocation</h3>
                 <div class="grid md:grid-cols-3 gap-6 text-center">
-                    <!-- Liquidity -->
+                    <!-- Liquidity (Updated to 20%) -->
                     <div class="bg-gray-900 p-6 rounded-xl border-t-4 border-green-500">
-                        <span class="text-5xl font-extrabold text-green-500">70%</span>
+                        <span class="text-5xl font-extrabold text-green-500">20%</span>
                         <p class="text-lg font-semibold text-white mt-2">Initial Liquidity</p>
                         <p class="text-sm text-gray-400">Deposited into DEX pool to ensure market stability and immediate trading.</p>
                     </div>
-                    <!-- Community/Dev -->
+                    <!-- Community/Dev (Updated to 25%) -->
                     <div class="bg-gray-900 p-6 rounded-xl border-t-4 border-blue-500">
                         <span class="text-5xl font-extrabold text-blue-500">25%</span>
                         <p class="text-lg font-semibold text-white mt-2">Community & Development</p>
                         <p class="text-sm text-gray-400">Used for marketing, audits, feature development, and community rewards.</p>
                     </div>
-                    <!-- Team -->
+                    <!-- Team (Updated to 5%) -->
                     <div class="bg-gray-900 p-6 rounded-xl border-t-4 border-yellow-500">
                         <span class="text-5xl font-extrabold text-yellow-500">5%</span>
                         <p class="text-lg font-semibold text-white mt-2">Core Team</p>
                         <p class="text-sm text-gray-400">Allocated to the core team, subject to vesting schedules.</p>
+                    </div>
+                </div>
+                
+                <h3 class="header-font text-2xl font-bold text-white mt-10 mb-6 border-b pb-2 border-gray-700">Total Token Supply Allocation</h3>
+                <div class="text-sm text-gray-400 space-y-2">
+                    <p><span class="text-blue-400 font-semibold">50% Presale:</span> 500,000,000 $VCNEWS</p>
+                    <p><span class="text-blue-400 font-semibold">50% Remaining:</span> Allocated for Liquidity, Ecosystem Growth, Marketing, and future vesting contracts.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Token Guide Tab Content (NEW) -->
+        <section id="token-guide" class="tab-content">
+            <div class="bg-gray-800 p-8 rounded-2xl shadow-xl border border-gray-700">
+                <h2 class="header-font text-4xl font-bold text-white mb-6">How to See Your $VCNEWS Tokens</h2>
+                <p class="text-gray-400 mb-6">After a successful purchase, your $VCNEWS tokens are immediately transferred to your wallet. To see them displayed, you may need to manually add the token address to your wallet application (like MetaMask or TrustWallet).</p>
+
+                <div class="space-y-6">
+                    <div>
+                        <h3 class="header-font text-xl font-bold text-blue-400 mb-3">Token Details</h3>
+                        <div class="bg-gray-900 p-4 rounded-lg">
+                            <p class="text-sm text-gray-300">Token Address (Cronos Mainnet):</p>
+                            <code id="token-address-code" class="break-all text-sm font-mono text-yellow-400">0xcA6c8F853E0E3D05FC63B49A80C4C19c193abF45</code>
+                            <button onclick="copyAddress('token-address-code')" class="ml-4 text-xs text-blue-400 hover:text-blue-300 font-semibold">Copy</button>
+                            <p class="mt-2 text-sm text-gray-300">Token Symbol: <span class="font-bold text-white">$VCNEWS</span></p>
+                            <p class="text-sm text-gray-300">Decimals: <span class="font-bold text-white">18</span></p>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h3 class="header-font text-xl font-bold text-blue-400 mb-3">Steps for MetaMask / TrustWallet</h3>
+                        <ol class="list-decimal list-inside text-gray-400 space-y-3 pl-4">
+                            <li>Ensure your wallet is connected to the **Cronos Mainnet Beta** network.</li>
+                            <li>Open your wallet app and scroll to the bottom of your assets list.</li>
+                            <li>Click on **Import Tokens** or **Add Token**.</li>
+                            <li>Select the **Custom Token** tab.</li>
+                            <li>Paste the Token Address (copied above) into the "Token Address" field.</li>
+                            <li>The Symbol ($VCNEWS) and Decimals (18) should auto-fill. If not, enter them manually.</li>
+                            <li>Click **Add Custom Token** or **Import Tokens**. Your $VCNEWS balance will now be visible.</li>
+                        </ol>
                     </div>
                 </div>
             </div>
@@ -345,14 +391,14 @@
     <script>
         const { ethers } = window;
 
-        // --- Configuration ---
+        // --- Configuration (UPDATED ADDRESSES) ---
         const CRONOS_CHAIN_ID_HEX = '0x19'; // Hex for 25
         const CRONOS_CHAIN_ID_DEC = 25;
         const CRONOS_RPC = 'https://evm.cronos.org';
         
-        // **!!! REPLACE WITH DEPLOYED CONTRACT ADDRESSES !!!**
-        const PRESALE_CONTRACT_ADDRESS = "0x5FbDB2315678afecb367f032d93F642f64180aa3"; 
-        const VCNEWS_TOKEN_ADDRESS = "0xe7f1725E7734CEd6B16fD808a9D1dE8498479ae8"; 
+        // **!!! REPLACED WITH DEPLOYED CONTRACT ADDRESSES !!!**
+        const PRESALE_CONTRACT_ADDRESS = "0x97Ba801799f666099bDb0e1C475538ED6544F6a1"; 
+        const VCNEWS_TOKEN_ADDRESS = "0xcA6c8F853E0E3D05FC63B49A80C4C19c193abF45"; 
         // Example Funding Wallet (replace with your personal wallet)
         const FUNDING_WALLET = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"; 
 
@@ -408,6 +454,29 @@
             document.getElementById('message-modal').classList.remove('hidden');
             document.getElementById('message-modal').classList.add('flex');
         }
+        
+        /** Copies text content of an element to the clipboard. */
+        function copyAddress(elementId) {
+            const element = document.getElementById(elementId);
+            if (!element) return;
+            
+            // Create a temporary textarea element
+            const tempTextarea = document.createElement('textarea');
+            tempTextarea.value = element.textContent.trim();
+            document.body.appendChild(tempTextarea);
+            tempTextarea.select();
+            
+            try {
+                document.execCommand('copy');
+                showModal("Copied!", "Token address copied to clipboard.");
+            } catch (err) {
+                console.error('Copy failed: ', err);
+                showModal("Copy Failed", "Unable to copy address. Please copy it manually.");
+            }
+            
+            document.body.removeChild(tempTextarea);
+        }
+        window.copyAddress = copyAddress; // Make function globally accessible from HTML
 
         /** Updates the wallet connection status in the UI. */
         const updateUI = (address) => {
