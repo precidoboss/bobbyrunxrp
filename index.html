@@ -3,789 +3,648 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bobby Run</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    <title>$VCNEWS Presale on Cronos</title>
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <!-- Ethers.js CDN for Web3 interaction -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
     <style>
-        /* General body styling */
+        /* Custom styles for the news aesthetic and sleek design */
+        @import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@300;500;700&family=Playfair+Display:wght@700&display=swap');
+        
+        :root {
+            --color-primary: #0077b6; /* Professional Blue */
+            --color-dark: #1a1a1a;    /* Near-Black */
+            --color-light: #f4f4f4;   /* Off-White */
+            --color-accent: #ffb700;  /* Gold/Yellow for alerts/highlights */
+        }
+        
         body {
-            background-color: #0d0d1a;
-            font-family: 'Inter', sans-serif;
-            color: #d1d1e0;
+            font-family: 'Roboto Mono', monospace; /* Monospace for a code/news terminal feel */
+            background-color: var(--color-dark);
+            color: var(--color-light);
+            line-height: 1.6;
+        }
+
+        .header-font {
+            font-family: 'Playfair Display', serif; /* Serif for headlines/titles */
+        }
+
+        .progress-bar-container {
+            height: 12px;
+            background-color: #333;
+            border-radius: 6px;
             overflow: hidden;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.5);
         }
 
-        /* Gangster-themed typography and effects */
-        .gangster-font {
-            font-family: 'Bangers', cursive;
-            text-shadow: 0 0 5px #ff007f, 0 0 10px #ff007f, 0 0 15px #ff007f, 0 0 20px #ff007f;
-            color: #fff;
-        }
-
-        /* Container for the entire game */
-        .game-container {
-            width: 100vw;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            background-image: radial-gradient(circle, rgba(16, 16, 32, 0.9) 0%, rgba(10, 10, 20, 1) 100%);
-            position: relative;
-        }
-        
-        /* Main game canvas */
-        canvas {
-            display: block;
-            border-radius: 12px;
-            box-shadow: 0 0 20px rgba(0, 255, 255, 0.4), 0 0 40px rgba(0, 255, 255, 0.2);
-            background-color: #0b0b18;
-            max-width: 95%;
-            max-height: 80vh;
-        }
-
-        /* UI elements */
-        .game-ui {
-            background-color: rgba(25, 25, 45, 0.8);
-            border: 2px solid rgba(0, 255, 255, 0.5);
-            border-radius: 12px;
-            box-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
-            padding: 1rem;
-            margin: 1rem 0;
-        }
-
-        /* Pill animation for start screen */
-        .pill {
-            width: 120px;
-            height: 60px;
-            border-radius: 60px;
-            cursor: pointer;
-            transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
-            border: 4px solid white;
-            box-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
-            position: relative;
-        }
-        
-        .pill::before {
-            content: '';
-            position: absolute;
-            top: -10px;
-            left: -10px;
-            right: -10px;
-            bottom: -10px;
-            border-radius: 70px;
-            background: rgba(255, 255, 255, 0.1);
-            z-index: -1;
-            animation: pill-pulse 2s infinite ease-in-out;
-        }
-
-        #red-pill {
-            background-color: #ff007f;
-            border-color: #ff007f;
-            box-shadow: 0 0 20px #ff007f;
-        }
-        
-        #red-pill::before {
-            background: radial-gradient(circle, #ff007f 0%, rgba(255, 0, 127, 0) 70%);
-        }
-
-        #green-pill {
-            background-color: #00ffaa;
-            border-color: #00ffaa;
-            box-shadow: 0 0 20px #00ffaa;
-        }
-        
-        #green-pill::before {
-            background: radial-gradient(circle, #00ffaa 0%, rgba(0, 255, 170, 0) 70%);
-        }
-        
-        @keyframes pill-pulse {
-            0% { transform: scale(1); opacity: 0.5; }
-            50% { transform: scale(1.1); opacity: 1; }
-            100% { transform: scale(1); opacity: 0.5; }
-        }
-
-        .pill:hover {
-            transform: scale(1.1);
-            box-shadow: 0 0 30px rgba(255, 255, 255, 0.8);
-        }
-
-        /* Swap animation modal */
-        .swap-modal {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
+        .progress-fill {
             height: 100%;
-            background-color: rgba(0, 0, 0, 0.9);
-            display: none; /* Hidden by default */
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 100;
+            background: linear-gradient(90deg, var(--color-primary), #00b4d8);
+            transition: width 0.8s ease-in-out;
+            border-radius: 6px;
         }
 
-        .code-line {
-            color: #00ffaa;
-            font-family: monospace;
-            white-space: pre-wrap;
-            overflow: hidden;
-            border-right: .15em solid #00ffaa; /* The cursor */
-            animation: typing 2s steps(40, end), blink-caret .75s step-end infinite;
-            width: 0;
-            font-size: 1.2rem;
-            margin-bottom: 0.5rem;
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.4s ease-out;
         }
 
-        @keyframes typing {
-            from { width: 0 }
-            to { width: 100% }
+        .tab-content {
+            display: none;
         }
 
-        @keyframes blink-caret {
-            from, to { border-color: transparent }
-            50% { border-color: #00ffaa; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
-        /* Player jump animation */
-        @keyframes player-jump {
-            0% { transform: translateY(0); }
-            50% { transform: translateY(-30px); }
-            100% { transform: translateY(0); }
+        /* Modal styling */
+        .modal-backdrop {
+            background-color: rgba(0, 0, 0, 0.75);
+            z-index: 50;
         }
 
-        .player-jumping {
-            animation: player-jump 0.4s ease-out;
+        .news-button {
+            transition: all 0.2s;
+            box-shadow: 0 4px var(--color-primary);
         }
-
-        /* Lives and Header styling */
-        .game-header {
-            width: 100%;
-            max-width: 4xl;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 1rem;
-            margin-top: 1rem;
+        .news-button:hover {
+            box-shadow: 0 2px var(--color-primary);
+            transform: translateY(2px);
         }
-        
-        .cat-icon {
-            font-size: 2.5rem;
-            margin-right: 0.5rem;
-            animation: cat-pulse 1.5s infinite ease-in-out;
+        .news-button:active {
+            box-shadow: none;
+            transform: translateY(4px);
         }
-
-        @keyframes cat-pulse {
-            0% { transform: scale(1); opacity: 0.8; }
-            50% { transform: scale(1.1); opacity: 1; }
-            100% { transform: scale(1); opacity: 0.8; }
-        }
-        
-        .header-top-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            width: 100%;
-            margin-bottom: 0.5rem;
-        }
-        
-        .header-middle-row {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            width: 100%;
-            margin-bottom: 1rem;
-        }
-
-        .header-bottom-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            width: 100%;
-        }
-
-        .power-up-display {
-            background-color: rgba(0, 255, 170, 0.2);
-            border: 1px solid rgba(0, 255, 170, 0.5);
-            padding: 0.5rem 1rem;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.2rem;
-            box-shadow: 0 0 10px rgba(0, 255, 170, 0.5);
-            transition: opacity 0.5s;
-        }
-
-        .x-logo {
-            width: 24px;
-            height: 24px;
-            fill: #fff;
-        }
-
     </style>
 </head>
-<body>
+<body class="min-h-screen">
 
-    <div class="game-container">
-        
-        <!-- Start screen for choosing pills -->
-        <div id="start-screen" class="flex flex-col items-center justify-center space-y-8 h-full w-full absolute top-0 left-0 bg-opacity-90">
-            <h1 class="gangster-font text-6xl md:text-8xl text-center">Choose Bobby's Path</h1>
-            <p class="text-xl md:text-2xl text-white mt-4">Which pill will you take?</p>
-            <div class="flex flex-col md:flex-row space-y-8 md:space-y-0 md:space-x-12 mt-8">
-                <div id="red-pill" class="pill flex items-center justify-center transform hover:scale-110"></div>
-                <div id="green-pill" class="pill flex items-center justify-center transform hover:scale-110"></div>
-            </div>
-            <p class="text-xs md:text-sm text-gray-400 mt-4">
-                Red Pill: it gets you high | Green Pill: nobody knows
-            </p>
+    <!-- Modal for Messages and Errors (Non-Alert replacement) -->
+    <div id="message-modal" class="modal-backdrop fixed inset-0 hidden items-center justify-center p-4">
+        <div class="bg-white text-gray-800 p-6 rounded-xl shadow-2xl max-w-sm w-full border-t-4 border-blue-500">
+            <h3 id="modal-title" class="text-xl font-bold mb-3 header-font">Title</h3>
+            <p id="modal-content" class="text-sm"></p>
+            <button onclick="document.getElementById('message-modal').classList.add('hidden')" 
+                    class="mt-6 w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 rounded-lg transition duration-150">
+                Close
+            </button>
         </div>
-
-        <!-- Game display area -->
-        <div id="game-ui-container" class="hidden flex flex-col items-center w-full h-full p-4">
+    </div>
+    
+    <!-- Main Header -->
+    <header class="bg-gray-900 shadow-lg sticky top-0 z-40 border-b border-gray-700">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+            <h1 class="header-font text-3xl font-extrabold text-white">
+                <span class="text-white">VC</span><span class="text-blue-400">NEWS</span> <span class="text-sm font-light text-gray-400">Presale</span>
+            </h1>
             
-            <div class="game-header w-full max-w-4xl">
-                <div class="header-top-row">
-                    <div class="flex items-center text-sm md:text-base text-gray-400">
-                         <svg class="x-logo mr-1" viewBox="0 0 24 24" aria-hidden="true"><g><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.21-.65-.67 2.05-1.92-2.31c-2.37.52-4.57-.15-5.96-1.57C.865 18.2 2.724 16.7 4.1 16.03c-.2-.04-.4-.08-.6-.15-.84-.27-1.63-.6-2.3-1.07-.48-.33-.92-.72-1.3-1.16-.36-.44-.66-.93-.9-1.47l-.14-.3c-1.3-3.15-.36-6.1 2.3-7.55 1.1-.64 2.3-1.06 3.6-1.27.5-.08 1-.13 1.5-.16.27-.02.54-.04.8-.04 2.87 0 5.4 1.22 7.2 3.1 1.1-.2 2.1-.5 3.1-.9-.3-1.04-1-1.9-1.8-2.6-.9-.7-1.9-1.2-3-1.5zM7.4 17.5c-1.5 1.2-3.3 2-5.1 2.2-.4.1-.7.2-1.1.2-1.3 0-2.6-.6-3.7-1.7-1.6-1.6-2.3-3.9-1.8-6.2 0-.2.03-.4.07-.6.1-.2.2-.4.3-.6.5-1.1 1.2-2.1 2-2.9.8-.8 1.8-1.5 2.8-2.1 1.2-.6 2.5-1 3.9-1.2.3-.04.6-.07.9-.1 2.3-.2 4.6 0 6.6.7-.4 1.1-1.1 2-2 2.4-3.5 3.8-7.2 3.8-11.2C22 4.4 20.3 3.1 18.5 2.5c-.3-.1-.6-.1-.9-.1-.2-.1-.5-.1-.7-.1-.9 0-1.7.2-2.6.5-1 .3-1.9.8-2.8 1.4-1.2.9-2.3 2-3.2 3.2-1.2 1.5-2.1 3.2-2.6 5.1-.3 1.1-.4 2.3-.4 3.5 0 .6.1 1.2.2 1.8-.4 0-.8-.1-1.2-.2-1.8-.5-3.5-1.5-4.9-2.9-1.2-1.2-2.1-2.7-2.6-4.5-.3-1.1-.4-2.3-.4-3.5 0-.5.1-1.1.2-1.6.4-1.9 1.1-3.7 2.1-5.3 1.1-1.7 2.4-3.2 4-4.5 1.6-1.3 3.4-2.2 5.5-2.8 1.3-.4 2.6-.6 4-.6.2 0 .4 0 .6.02.4.02.7.04 1.1.08.3.02.6.05.9.08.5.06 1 .15 1.5.25.4.1.8.2 1.2.4.3.1.6.3.9.4.2.1.4.2.6.3-.5.3-1 .6-1.5 1-.9.7-1.8 1.5-2.7 2.4-1.1 1.2-2.1 2.6-2.9 4.1-.7 1.4-1.1 2.9-1.2 4.4-.1.7-.1 1.5-.1 2.2 0 1.2.2 2.4.5 3.5.4 1.2 1 2.3 1.8 3.3.8 1 1.8 1.9 2.9 2.5z"></path></g></svg>
-                        <a href="https://x.com/BOBBYONXRPL" target="_blank" class="text-blue-400 hover:underline">@BOBBYONXRPL</a>
-                    </div>
-                    <div class="flex items-center text-sm md:text-base text-gray-400">
-                        Created by: <a href="https://x.com/favigal1" target="_blank" class="text-blue-400 hover:underline ml-1">@favigal1</a>
+            <div id="wallet-status" class="flex items-center space-x-3">
+                <!-- Connect Button -->
+                <button id="connect-wallet-btn" 
+                        class="news-button bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg transition duration-150 text-sm">
+                    Connect Wallet (Cronos)
+                </button>
+                
+                <!-- Connected State -->
+                <div id="connected-state-div" class="hidden flex items-center bg-gray-700 p-2 rounded-lg">
+                    <span class="text-xs text-green-400 mr-2">● Connected</span>
+                    <span id="wallet-address-span" class="text-sm font-semibold text-gray-200">0x...</span>
+                    <button id="disconnect-btn" class="ml-3 text-red-400 hover:text-red-500 text-xs font-semibold">
+                        [X]
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <nav class="bg-gray-800 border-b border-gray-700">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex space-x-4">
+                <button data-tab="dashboard" class="tab-button py-3 px-4 text-sm font-medium border-b-2 border-transparent text-gray-300 hover:text-white hover:border-blue-400 transition duration-150">
+                    Dashboard
+                </button>
+                <button data-tab="about" class="tab-button py-3 px-4 text-sm font-medium border-b-2 border-transparent text-gray-300 hover:text-white hover:border-blue-400 transition duration-150">
+                    About Presale
+                </button>
+                <button data-tab="progress" class="tab-button py-3 px-4 text-sm font-medium border-b-2 border-transparent text-gray-300 hover:text-white hover:border-blue-400 transition duration-150">
+                    Allocation & Progress
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        
+        <!-- Dashboard Tab Content -->
+        <section id="dashboard" class="tab-content active">
+            <div class="grid lg:grid-cols-3 gap-8">
+                
+                <!-- Left Column: Buy Module -->
+                <div class="lg:col-span-2 bg-gray-800 p-8 rounded-2xl shadow-xl border border-gray-700">
+                    <h2 class="header-font text-4xl font-bold text-blue-400 mb-6">VCNEWS Presale Live</h2>
+                    <p class="text-gray-400 mb-8 text-lg">Purchase your $VCNEWS tokens at a fixed introductory price on the Cronos chain. All funds are secured and immediately allocated per project goals.</p>
+
+                    <div class="bg-gray-900 p-6 rounded-xl border border-gray-700">
+                        <div class="flex justify-between items-center mb-4">
+                            <span class="text-xl font-semibold text-white">Fixed Presale Price</span>
+                            <span class="text-2xl font-bold text-green-400">$0.00001 / $VCNEWS</span>
+                        </div>
+                        <div class="flex justify-between items-center mb-6">
+                            <span class="text-sm text-gray-400">1 CRO buys approx. 9000 $VCNEWS</span>
+                            <span class="text-sm text-gray-400">(CRO market price dependent)</span>
+                        </div>
+                        
+                        <!-- Input Fields -->
+                        <div class="space-y-4">
+                            <div>
+                                <label for="cro-input" class="block text-sm font-medium text-gray-300 mb-1">You pay (CRO)</label>
+                                <input type="number" id="cro-input" placeholder="Min. 100 CRO" 
+                                       class="w-full p-3 rounded-lg bg-gray-700 border border-gray-600 focus:ring-blue-500 focus:border-blue-500 text-white transition duration-150" 
+                                       min="10" value="100">
+                            </div>
+                            
+                            <div>
+                                <label for="vcnews-output" class="block text-sm font-medium text-gray-300 mb-1">You receive ($VCNEWS)</label>
+                                <input type="text" id="vcnews-output" value="900,000" readonly 
+                                       class="w-full p-3 rounded-lg bg-gray-700 border border-gray-600 text-blue-400 font-bold transition duration-150">
+                            </div>
+                        </div>
+
+                        <!-- Buy Button -->
+                        <button id="buy-tokens-btn" disabled 
+                                class="news-button mt-6 w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 rounded-xl text-lg disabled:opacity-50 disabled:cursor-not-allowed">
+                            Purchase $VCNEWS
+                        </button>
+
+                        <p id="purchase-message" class="text-sm mt-4 text-center text-red-400">
+                            *Please connect your wallet to enable purchases.
+                        </p>
                     </div>
                 </div>
-
-                <div class="header-middle-row">
-                    <h1 class="gangster-font text-4xl md:text-6xl text-cyan-300 text-center">BOBBY RUN</h1>
-                </div>
-
-                <div class="header-bottom-row">
-                    <div class="flex flex-col items-center text-xl md:text-2xl w-1/3">
-                        <span class="gangster-font text-3xl">XRP Points</span>
-                        <span id="score-display" class="gangster-font text-4xl text-yellow-300">0</span>
-                    </div>
-                    <div id="power-up-status" class="power-up-display opacity-0 w-1/3 text-center">
-                        <span id="power-up-text">SHIELD ACTIVE</span>
-                        <span id="power-up-timer" class="ml-2 font-bold">5s</span>
-                    </div>
-                    <div class="flex flex-col items-center w-1/3">
-                        <span class="gangster-font text-3xl">Lives</span>
-                        <div class="flex items-center">
-                            <span class="cat-icon" role="img" aria-label="Cat Icon">🐾</span>
-                            <span id="lives-display" class="gangster-font text-4xl text-yellow-300">9</span>
+                
+                <!-- Right Column: Stats -->
+                <div class="lg:col-span-1 space-y-6">
+                    <!-- Metrics Card -->
+                    <div class="bg-gray-800 p-6 rounded-2xl shadow-xl border border-gray-700">
+                        <h3 class="header-font text-2xl font-bold text-white mb-4 border-b pb-2 border-gray-700">Presale Metrics</h3>
+                        <div class="space-y-3 text-sm">
+                            <div class="flex justify-between">
+                                <span class="text-gray-400">Total Supply:</span>
+                                <span class="font-semibold text-white">1,000,000,000 $VCNEWS</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-400">Presale Allocation:</span>
+                                <span class="font-semibold text-blue-400">500,000,000 $VCNEWS (50%)</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-400">Current Tokens Sold:</span>
+                                <span id="tokens-sold" class="font-bold text-yellow-400">0 $VCNEWS</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-400">Remaining Tokens:</span>
+                                <span id="tokens-remaining" class="font-semibold text-white">500,000,000 $VCNEWS</span>
+                            </div>
+                            <div class="flex justify-between pt-2 border-t border-gray-700">
+                                <span class="text-gray-400">Your Purchased Tokens:</span>
+                                <span id="user-tokens" class="font-bold text-green-400">0 $VCNEWS</span>
+                            </div>
                         </div>
                     </div>
-                </div>
-            </div>
-
-            <canvas id="gameCanvas" class="mt-4 flex-grow"></canvas>
-            
-            <div class="mt-4 text-center">
-                <button id="restart-button" class="hidden gangster-font text-2xl py-3 px-8 rounded-full bg-red-600 text-white shadow-xl hover:bg-red-700 transition-transform transform hover:scale-105">Restart Game</button>
-            </div>
-        </div>
-
-        <!-- The animated modal for swapping XRP -->
-        <div id="swap-modal" class="swap-modal">
-            <div class="flex flex-col items-center justify-center p-8 bg-black border-2 border-green-500 rounded-lg shadow-neon-green" style="max-width: 800px; width: 90%;">
-                <h2 class="gangster-font text-4xl md:text-6xl text-green-400 mb-6 neon-text-green">SWAPPING XRP</h2>
-                <div id="code-output" class="text-left w-full h-auto max-h-96 overflow-y-auto p-4 bg-gray-900 border-2 border-green-500 rounded-md">
-                    <p id="line1" class="code-line"></p>
-                    <p id="line2" class="code-line"></p>
-                    <p id="line3" class="code-line"></p>
-                    <p id="line4" class="code-line"></p>
-                    <p id="line5" class="code-line"></p>
-                    <p id="line6" class="code-line"></p>
-                    <p id="line7" class="code-line"></p>
-                    <p id="line8" class="code-line"></p>
-                </div>
-                <div class="flex items-center justify-center mt-8 w-full">
-                    <img id="xrp-icon" src="https://i.imgur.com/5INUoNN.png" class="w-24 h-24 sm:w-32 sm:h-32 rounded-full mr-8" style="transform: scale(1); opacity: 1; transition: transform 1s, opacity 1s;">
-                    <span id="swap-arrow" class="gangster-font text-6xl text-green-500 mx-4 opacity-0" style="transition: opacity 1s;">-></span>
-                    <!-- SVG for the $BOBBY logo character will be here -->
-                    <div id="bobby-logo" class="w-24 h-24 sm:w-32 sm:h-32 hidden">
-                        <svg width="100%" height="100%" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <rect x="5" y="5" width="90" height="90" rx="15" fill="#facc15" stroke="#facc15" stroke-width="4"/>
-                            <text x="50" y="70" font-family="'Bangers', cursive" font-size="60" font-weight="bold" fill="#000" text-anchor="middle">$</text>
-                            <text x="50" y="40" font-family="'Bangers', cursive" font-size="25" font-weight="bold" fill="#000" text-anchor="middle">BOBBY</text>
-                        </svg>
+                    
+                    <!-- Funding Allocation Card -->
+                    <div class="bg-gray-800 p-6 rounded-2xl shadow-xl border border-gray-700">
+                        <h3 class="header-font text-2xl font-bold text-white mb-4 border-b pb-2 border-gray-700">Fund Allocation</h3>
+                        <ul class="space-y-2 text-sm">
+                            <li class="flex justify-between">
+                                <span class="text-gray-400">70% Liquidity Provision:</span>
+                                <span class="font-semibold text-blue-400">CRONOS DEX</span>
+                            </li>
+                            <li class="flex justify-between">
+                                <span class="text-gray-400">25% Community & Dev:</span>
+                                <span class="font-semibold text-white">Project Growth</span>
+                            </li>
+                            <li class="flex justify-between">
+                                <span class="text-gray-400">5% Team:</span>
+                                <span class="font-semibold text-white">Future Development</span>
+                            </li>
+                        </ul>
                     </div>
                 </div>
-                <button id="end-swap-button" class="hidden gangster-font text-2xl py-3 px-8 rounded-full bg-green-600 text-white shadow-xl hover:bg-green-700 transition-transform transform hover:scale-105 mt-8">Game Complete!</button>
             </div>
+        </section>
+
+        <!-- About Presale Tab Content -->
+        <section id="about" class="tab-content">
+            <div class="bg-gray-800 p-8 rounded-2xl shadow-xl border border-gray-700">
+                <h2 class="header-font text-4xl font-bold text-blue-400 mb-6">About VCNEWS on Cronos</h2>
+                <p class="text-gray-400 mb-6">The VCNEWS project ($VCNEWS, **@VCNEWS_ON_CRO**) is pioneering a decentralized news platform built on the robust Cronos ecosystem. Our mission is to provide verifiable, fast, and community-driven news, leveraging the speed and low cost of Cronos.</p>
+                
+                <h3 class="header-font text-2xl font-bold text-white mt-8 mb-4">Why Cronos?</h3>
+                <ul class="list-disc list-inside text-gray-400 space-y-2 pl-4">
+                    <li>**EVM Compatibility:** Seamless integration with existing Ethereum tools and wallets.</li>
+                    <li>**Low Fees & High Speed:** Ensures cost-effective and rapid transaction processing for users.</li>
+                    <li>**Growing Ecosystem:** Positioning VCNEWS within a rapidly expanding DeFi environment.</li>
+                </ul>
+
+                <h3 class="header-font text-2xl font-bold text-white mt-8 mb-4">Presale Details</h3>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-700">
+                        <thead class="bg-gray-700">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Metric</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Value</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-700">
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-white">Token</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-blue-400">$VCNEWS</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-400">ERC20 Standard</td>
+                            </tr>
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-white">Presale Supply</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-yellow-400">500,000,000</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-400">50% of Total Supply</td>
+                            </tr>
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-white">Fixed Price</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-green-400">$0.00001</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-400">Fixed rate against CRO in contract</td>
+                            </tr>
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-white">Official Site</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-white"><a href="https://cronews-mu.vercel.app/" target="_blank" class="text-blue-500 hover:underline">cronews-mu.vercel.app/</a></td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-400">The news platform</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Progress Tab Content -->
+        <section id="progress" class="tab-content">
+            <div class="bg-gray-800 p-8 rounded-2xl shadow-xl border border-gray-700">
+                <h2 class="header-font text-4xl font-bold text-blue-400 mb-8">Presale Progress and Fund Usage</h2>
+                
+                <!-- Progress Bar -->
+                <div class="mb-10">
+                    <div class="flex justify-between items-end mb-2">
+                        <span class="text-lg font-semibold text-white">Presale Completion</span>
+                        <span id="progress-percent-text" class="text-3xl font-extrabold text-blue-400">0.00%</span>
+                    </div>
+                    <div class="progress-bar-container">
+                        <div id="progress-fill" class="progress-fill" style="width: 0%;"></div>
+                    </div>
+                    <div class="flex justify-between text-sm mt-2 text-gray-400">
+                        <span>0 $VCNEWS Sold</span>
+                        <span id="progress-cap-text">500,000,000 $VCNEWS Cap</span>
+                    </div>
+                </div>
+
+                <!-- Fund Allocation Chart/Details -->
+                <h3 class="header-font text-2xl font-bold text-white mb-6 border-b pb-2 border-gray-700">Post-Presale Fund Allocation</h3>
+                <div class="grid md:grid-cols-3 gap-6 text-center">
+                    <!-- Liquidity -->
+                    <div class="bg-gray-900 p-6 rounded-xl border-t-4 border-green-500">
+                        <span class="text-5xl font-extrabold text-green-500">70%</span>
+                        <p class="text-lg font-semibold text-white mt-2">Initial Liquidity</p>
+                        <p class="text-sm text-gray-400">Deposited into DEX pool to ensure market stability and immediate trading.</p>
+                    </div>
+                    <!-- Community/Dev -->
+                    <div class="bg-gray-900 p-6 rounded-xl border-t-4 border-blue-500">
+                        <span class="text-5xl font-extrabold text-blue-500">25%</span>
+                        <p class="text-lg font-semibold text-white mt-2">Community & Development</p>
+                        <p class="text-sm text-gray-400">Used for marketing, audits, feature development, and community rewards.</p>
+                    </div>
+                    <!-- Team -->
+                    <div class="bg-gray-900 p-6 rounded-xl border-t-4 border-yellow-500">
+                        <span class="text-5xl font-extrabold text-yellow-500">5%</span>
+                        <p class="text-lg font-semibold text-white mt-2">Core Team</p>
+                        <p class="text-sm text-gray-400">Allocated to the core team, subject to vesting schedules.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 border-t border-gray-700 mt-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 text-center text-gray-500 text-sm">
+            &copy; 2024 VCNEWS Presale. Built on Cronos. All rights reserved.
         </div>
+    </footer>
 
-    </div>
-
+    <!-- JavaScript for Web3, UI, and Logic -->
     <script>
-        window.onload = function() {
-            // --- Game Setup ---
-            const canvas = document.getElementById('gameCanvas');
-            const ctx = canvas.getContext('2d');
-            let animationFrameId = null;
+        const { ethers } = window;
 
-            const startScreen = document.getElementById('start-screen');
-            const gameUiContainer = document.getElementById('game-ui-container');
-            const redPill = document.getElementById('red-pill');
-            const greenPill = document.getElementById('green-pill');
-            const scoreDisplay = document.getElementById('score-display');
-            const highScoreDisplay = document.getElementById('high-score-display');
-            const livesDisplay = document.getElementById('lives-display');
-            const restartButton = document.getElementById('restart-button');
-            const powerUpStatus = document.getElementById('power-up-status');
-            const powerUpTimerDisplay = document.getElementById('power-up-timer');
-            
-            const swapModal = document.getElementById('swap-modal');
-            const endSwapButton = document.getElementById('end-swap-button');
-            const xrpIcon = document.getElementById('xrp-icon');
-            const swapArrow = document.getElementById('swap-arrow');
-            const bobbyLogo = document.getElementById('bobby-logo');
-            
-            let gameStarted = false;
-            let score = 0;
-            let lives = 9;
-            let highScore = localStorage.getItem('gangster_high_score') || 0;
-            let obstacleType = '';
-            let wordObstacles = [];
-            let xrpItems = [];
-            let powerUps = [];
-            let isPlayerInvincible = false;
-            let powerUpTimer = null;
+        // --- Configuration ---
+        const CRONOS_CHAIN_ID_HEX = '0x19'; // Hex for 25
+        const CRONOS_CHAIN_ID_DEC = 25;
+        const CRONOS_RPC = 'https://evm.cronos.org';
+        
+        // **!!! REPLACE WITH DEPLOYED CONTRACT ADDRESSES !!!**
+        const PRESALE_CONTRACT_ADDRESS = "0x5FbDB2315678afecb367f032d93F642f64180aa3"; 
+        const VCNEWS_TOKEN_ADDRESS = "0xe7f1725E7734CEd6B16fD808a9D1dE8498479ae8"; 
+        // Example Funding Wallet (replace with your personal wallet)
+        const FUNDING_WALLET = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"; 
 
-            // --- Game Objects ---
-            const playerImg = new Image();
-            playerImg.src = 'https://i.imgur.com/MZB348N.png';
-            const xrpImg = new Image();
-            xrpImg.src = 'https://i.imgur.com/5INUoNN.png';
+        // 1 CRO = 9000 VCNEWS tokens (Ratio: 9000e18 tokens per 1e18 CRO)
+        const CRO_TO_TOKEN_RATIO = 9000;
+        const PRESALE_CAP = 500000000; // 500 million tokens
 
-            const player = {
-                x: 0,
-                y: 0,
-                width: 80,
-                height: 80,
-                dx: 0,
-                dy: 0,
-                gravity: 0.5,
-                jumpPower: -12,
-                isJumping: false,
-                isGrounded: false,
-            };
+        // --- Contract ABIs (Minimal for interaction) ---
+        const PRESALE_ABI = [
+            // Function to buy tokens
+            "function buyTokens(address beneficiary) payable",
+            // Function to get total tokens sold
+            "function totalTokensSold() view returns (uint256)",
+            // Function to get tokens purchased by address
+            "function purchasedTokens(address) view returns (uint256)",
+            // Fallback (receive)
+            "receive() external payable"
+        ];
+        
+        const TOKEN_ABI = [
+            "function balanceOf(address) view returns (uint256)"
+        ];
 
-            // --- Sound Effects with Tone.js ---
-            const synth = new Tone.Synth().toDestination();
-            const polySynth = new Tone.PolySynth(Tone.Synth).toDestination();
 
-            const playCollectSound = () => {
-                polySynth.triggerAttackRelease(["C4", "E4", "G4"], "8n");
-            };
-            const playPowerUpSound = () => {
-                polySynth.triggerAttackRelease(["C5", "E5", "G5"], "8n");
-            };
-            const playGameOverSound = () => {
-                synth.triggerAttackRelease("C3", "4n");
-                synth.triggerAttackRelease("B2", "4n", "+0.2");
-                synth.triggerAttackRelease("A2", "4n", "+0.4");
-            };
-            const playHitSound = () => {
-                synth.triggerAttackRelease("C2", "8n");
+        // --- State Variables ---
+        let provider, signer, presaleContract, tokenContract;
+        let walletAddress = null;
+        let isWalletConnected = false;
+
+        // --- DOM Elements ---
+        const connectWalletBtn = document.getElementById('connect-wallet-btn');
+        const disconnectBtn = document.getElementById('disconnect-btn');
+        const connectedStateDiv = document.getElementById('connected-state-div');
+        const walletAddressSpan = document.getElementById('wallet-address-span');
+        const croInput = document.getElementById('cro-input');
+        const vcnewsOutput = document.getElementById('vcnews-output');
+        const buyTokensBtn = document.getElementById('buy-tokens-btn');
+        const purchaseMessage = document.getElementById('purchase-message');
+
+        const tokensSoldSpan = document.getElementById('tokens-sold');
+        const tokensRemainingSpan = document.getElementById('tokens-remaining');
+        const userTokensSpan = document.getElementById('user-tokens');
+        const progressFill = document.getElementById('progress-fill');
+        const progressPercentText = document.getElementById('progress-percent-text');
+
+
+        // --- UI & Utility Functions ---
+
+        /** Shows a custom modal with a message. (Replaces alert()) */
+        function showModal(title, content) {
+            document.getElementById('modal-title').innerText = title;
+            document.getElementById('modal-content').innerText = content;
+            document.getElementById('message-modal').classList.remove('hidden');
+            document.getElementById('message-modal').classList.add('flex');
+        }
+
+        /** Updates the wallet connection status in the UI. */
+        const updateUI = (address) => {
+            isWalletConnected = !!address;
+            if (address) {
+                walletAddress = address;
+                walletAddressSpan.innerText = `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
+                connectWalletBtn.classList.add('hidden');
+                connectedStateDiv.classList.remove('hidden');
+                buyTokensBtn.disabled = false;
+                purchaseMessage.classList.add('hidden');
+                refreshData(); // Fetch real-time data on connect
+            } else {
+                walletAddress = null;
+                connectWalletBtn.classList.remove('hidden');
+                connectedStateDiv.classList.add('hidden');
+                buyTokensBtn.disabled = true;
+                purchaseMessage.classList.remove('hidden');
+                userTokensSpan.innerText = "0 $VCNEWS"; // Clear user data
             }
-
-            // --- Game Loop and Functions ---
-            function resetGame() {
-                score = 0;
-                lives = 9;
-                isPlayerInvincible = false;
-                player.x = canvas.width / 2 - player.width / 2;
-                player.y = canvas.height - player.height - 10;
-                player.dx = 0;
-                player.dy = 0;
-                wordObstacles = [];
-                xrpItems = [];
-                powerUps = [];
-                gameStarted = true;
-                restartButton.classList.add('hidden');
-                updateHighScore(0);
-                updateLivesDisplay();
-                powerUpStatus.style.opacity = '0';
-                if (powerUpTimer) clearInterval(powerUpTimer);
-            }
-            
-            function updateLivesDisplay() {
-                livesDisplay.textContent = lives;
-            }
-
-            function updateHighScore(newScore) {
-                if (newScore > highScore) {
-                    highScore = newScore;
-                    localStorage.setItem('gangster_high_score', highScore);
-                    highScoreDisplay.textContent = highScore;
-                }
-            }
-
-            function drawPlayer() {
-                if (playerImg.complete) {
-                    ctx.save();
-                    if (isPlayerInvincible) {
-                        ctx.globalAlpha = 0.5 + Math.sin(Date.now() / 100) * 0.2; // Blinking effect
-                    }
-                    ctx.drawImage(playerImg, player.x, player.y, player.width, player.height);
-                    ctx.restore();
-                }
-            }
-
-            function drawXrp(item) {
-                if (xrpImg.complete) {
-                    ctx.drawImage(xrpImg, item.x, item.y, item.width, item.height);
-                }
-            }
-            
-            function drawObstacle(obstacle) {
-                ctx.save();
-                ctx.fillStyle = obstacle.color;
-                ctx.shadowColor = obstacle.color;
-                ctx.shadowBlur = 10;
-                ctx.font = `${obstacle.size}px 'Bangers', cursive`;
-                ctx.textAlign = 'center';
-                ctx.fillText(obstacle.text, obstacle.x, obstacle.y);
-                ctx.restore();
-            }
-
-            function drawPowerUp(powerUp) {
-                ctx.save();
-                ctx.fillStyle = powerUp.color;
-                ctx.shadowColor = powerUp.color;
-                ctx.shadowBlur = 15;
-                ctx.font = `${powerUp.size}px 'Bangers', cursive`;
-                ctx.textAlign = 'center';
-                ctx.fillText(powerUp.text, powerUp.x, powerUp.y);
-                ctx.restore();
-            }
-
-            function update() {
-                if (!gameStarted) return;
-                
-                // Clear canvas
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                
-                // Player physics
-                player.x += player.dx;
-                player.y += player.dy;
-                player.dy += player.gravity;
-
-                // Ground collision
-                if (player.y + player.height > canvas.height) {
-                    player.y = canvas.height - player.height;
-                    player.dy = 0;
-                    player.isGrounded = true;
-                    player.isJumping = false;
-                } else {
-                    player.isGrounded = false;
-                }
-
-                // Wall collision
-                if (player.x < 0) player.x = 0;
-                if (player.x + player.width > canvas.width) player.x = canvas.width - player.width;
-                
-                drawPlayer();
-
-                // Generate and update XRP
-                if (Math.random() < 0.01) {
-                    const size = 30 + Math.random() * 20;
-                    xrpItems.push({
-                        x: Math.random() * (canvas.width - size),
-                        y: -size,
-                        width: size,
-                        height: size,
-                        dy: 2 + Math.random(),
-                        collected: false
-                    });
-                }
-
-                // Generate and update Obstacles
-                if (Math.random() < 0.02) {
-                    const redPillWords = ['HUSTLE', 'DEGEN', 'FOMO', 'LFG', 'ALPHA', 'PUMP'];
-                    const greenPillWords = ['SCAM', 'RUGPULL', 'FUD', 'HONEYPOT', 'AIRDROP SCAM', 'PAPERHAND'];
-                    const obstacleWords = obstacleType === 'red' ? redPillWords : greenPillWords;
-                    const word = obstacleWords[Math.floor(Math.random() * obstacleWords.length)];
-                    const size = 20 + Math.random() * 15;
-                    wordObstacles.push({
-                        x: Math.random() * canvas.width,
-                        y: -size,
-                        size: size,
-                        text: word,
-                        color: obstacleType === 'red' ? '#ff007f' : '#00ffaa',
-                        dx: (player.x - (Math.random() * canvas.width)) / 500, // Chasing effect
-                        dy: 1 + Math.random()
-                    });
-                }
-
-                // Generate and update Power-ups
-                if (Math.random() < 0.002) {
-                    const size = 40;
-                    powerUps.push({
-                        x: Math.random() * (canvas.width - size),
-                        y: -size,
-                        width: size,
-                        height: size,
-                        text: 'SHIELD',
-                        color: '#ffff00',
-                        dy: 1.5,
-                        active: false
-                    });
-                }
-                
-                // --- Collision and Rendering ---
-                // XRP
-                xrpItems.forEach((item, index) => {
-                    item.y += item.dy;
-                    if (item.y > canvas.height) {
-                        xrpItems.splice(index, 1);
-                        return;
-                    }
-                    drawXrp(item);
-
-                    if (
-                        player.x < item.x + item.width &&
-                        player.x + player.width > item.x &&
-                        player.y < item.y + item.height &&
-                        player.y + player.height > item.y
-                    ) {
-                        score += 1;
-                        scoreDisplay.textContent = score;
-                        playCollectSound();
-                        xrpItems.splice(index, 1);
-                        if (score >= 10) {
-                            endGame(true);
-                        }
-                    }
-                });
-
-                // Obstacles
-                wordObstacles.forEach((obstacle, index) => {
-                    obstacle.y += obstacle.dy;
-                    obstacle.x += obstacle.dx;
-                    if (obstacle.y > canvas.height) {
-                        wordObstacles.splice(index, 1);
-                        return;
-                    }
-                    drawObstacle(obstacle);
-
-                    if (
-                        player.x < obstacle.x + 10 &&
-                        player.x + player.width > obstacle.x - 10 &&
-                        player.y < obstacle.y &&
-                        player.y + player.height > obstacle.y - 20
-                    ) {
-                        if (!isPlayerInvincible) {
-                            lives--;
-                            updateLivesDisplay();
-                            playHitSound();
-                            if (lives <= 0) {
-                                endGame(false);
-                            } else {
-                                // Give a brief invincibility period after being hit
-                                isPlayerInvincible = true;
-                                setTimeout(() => { isPlayerInvincible = false; }, 2000);
-                            }
-                        }
-                        wordObstacles.splice(index, 1);
-                    }
-                });
-                
-                // Power-ups
-                powerUps.forEach((powerUp, index) => {
-                    powerUp.y += powerUp.dy;
-                    if (powerUp.y > canvas.height) {
-                        powerUps.splice(index, 1);
-                        return;
-                    }
-                    drawPowerUp(powerUp);
-
-                    if (
-                        player.x < powerUp.x + powerUp.width &&
-                        player.x + player.width > powerUp.x &&
-                        player.y < powerUp.y + powerUp.height &&
-                        player.y + player.height > powerUp.y
-                    ) {
-                        playPowerUpSound();
-                        isPlayerInvincible = true;
-                        if (powerUpTimer) clearInterval(powerUpTimer);
-                        let timeLeft = 5;
-                        powerUpStatus.style.opacity = '1';
-                        powerUpTimerDisplay.textContent = `${timeLeft}s`;
-                        powerUpTimer = setInterval(() => {
-                            timeLeft--;
-                            if (timeLeft > 0) {
-                                powerUpTimerDisplay.textContent = `${timeLeft}s`;
-                            } else {
-                                clearInterval(powerUpTimer);
-                                isPlayerInvincible = false;
-                                powerUpStatus.style.opacity = '0';
-                            }
-                        }, 1000);
-
-                        powerUps.splice(index, 1);
-                    }
-                });
-                
-                animationFrameId = requestAnimationFrame(update);
-            }
-
-            function endGame(win) {
-                cancelAnimationFrame(animationFrameId);
-                gameStarted = false;
-                if (win) {
-                    showSwapAnimation();
-                } else {
-                    playGameOverSound();
-                    restartButton.classList.remove('hidden');
-                    updateHighScore(score);
-                    ctx.font = "60px 'Bangers', cursive";
-                    ctx.fillStyle = "#ff007f";
-                    ctx.shadowColor = "#ff007f";
-                    ctx.shadowBlur = 20;
-                    ctx.textAlign = "center";
-                    ctx.fillText("GAME OVER", canvas.width / 2, canvas.height / 2);
-                    ctx.shadowBlur = 0;
-                }
-            }
-
-            // --- Swap Animation ---
-            function showSwapAnimation() {
-                swapModal.style.display = 'flex';
-                let currentScore = score;
-                const lines = [
-                    `$ bobby_contract_address = 'rKa786raM6QvKsqELa1gkNDEv3k2gWuwwc'`,
-                    `$ xrp_balance = ${currentScore}`,
-                    `$ slippage_tolerance = '0.5%'`,
-                    `$ gas_fees = '0.0001 XRP'`,
-                    `$ bobby_contract.swap(xrp_balance, 'BOBBY')`,
-                    `$ status = 'SUCCESS'`,
-                    `$ transaction_id = '0x123...456'`,
-                    `$ print("Swap complete! Enjoy your BOBBY.")`
-                ];
-                let lineIndex = 0;
-
-                function typeLine() {
-                    if (lineIndex < lines.length) {
-                        const lineElement = document.getElementById(`line${lineIndex + 1}`);
-                        lineElement.textContent = lines[lineIndex];
-                        lineElement.style.width = '100%';
-                        lineIndex++;
-                        setTimeout(typeLine, 2000); // Wait 2 seconds for each line
-                    } else {
-                        setTimeout(() => {
-                            xrpIcon.style.transform = 'scale(0.1)';
-                            xrpIcon.style.opacity = '0';
-                            swapArrow.style.opacity = '1';
-                            bobbyLogo.style.display = 'block';
-                            bobbyLogo.style.opacity = '0';
-                            setTimeout(() => {
-                                bobbyLogo.style.opacity = '1';
-                                endSwapButton.classList.remove('hidden');
-                            }, 1000);
-                        }, 1000);
-                    }
-                }
-                typeLine();
-            }
-
-            endSwapButton.addEventListener('click', () => {
-                swapModal.style.display = 'none';
-                startScreen.style.display = 'flex';
-                // Reset game for a fresh start
-                score = 0;
-                scoreDisplay.textContent = 0;
-                updateHighScore(0);
-            });
-
-            // --- Event Listeners ---
-            function handleKeyDown(e) {
-                if (!gameStarted) return;
-                if (e.key === 'ArrowLeft' || e.key === 'A' || e.key === 'a') {
-                    player.dx = -5;
-                } else if (e.key === 'ArrowRight' || e.key === 'D' || e.key === 'd') {
-                    player.dx = 5;
-                } else if ((e.key === ' ' || e.key === 'W' || e.key === 'w') && player.isGrounded) {
-                    player.dy = player.jumpPower;
-                    player.isJumping = true;
-                }
-            }
-
-            function handleKeyUp(e) {
-                if (!gameStarted) return;
-                if (e.key === 'ArrowLeft' || e.key === 'A' || e.key === 'a' || e.key === 'ArrowRight' || e.key === 'D' || e.key === 'd') {
-                    player.dx = 0;
-                }
-            }
-            
-            window.addEventListener('keydown', handleKeyDown);
-            window.addEventListener('keyup', handleKeyUp);
-
-            // Add touch event listeners for mobile controls
-            let touchStartX = 0;
-            let touchEndX = 0;
-
-            canvas.addEventListener('touchstart', (e) => {
-                if (!gameStarted) return;
-                const touch = e.touches[0];
-                touchStartX = touch.clientX;
-                player.dy = player.jumpPower; // Jump on tap
-                player.isJumping = true;
-                e.preventDefault(); // Prevent default browser behavior (like scrolling)
-            });
-
-            canvas.addEventListener('touchmove', (e) => {
-                if (!gameStarted) return;
-                const touch = e.touches[0];
-                touchEndX = touch.clientX;
-                const deltaX = touchEndX - touchStartX;
-                if (deltaX > 20) {
-                    player.dx = 5; // Move right
-                } else if (deltaX < -20) {
-                    player.dx = -5; // Move left
-                } else {
-                    player.dx = 0;
-                }
-                e.preventDefault();
-            });
-
-            canvas.addEventListener('touchend', () => {
-                if (!gameStarted) return;
-                player.dx = 0; // Stop horizontal movement
-            });
-
-
-            restartButton.addEventListener('click', () => {
-                resetGame();
-                animationFrameId = requestAnimationFrame(update);
-            });
-
-            // --- Pill choice logic ---
-            function startGame(type) {
-                obstacleType = type;
-                startScreen.style.display = 'none';
-                gameUiContainer.classList.remove('hidden');
-                
-                // Resize canvas to fit container
-                const container = document.getElementById('game-ui-container');
-                canvas.width = container.clientWidth;
-                canvas.height = container.clientHeight * 0.7; // Use 70% of container height for canvas
-                
-                resetGame();
-                animationFrameId = requestAnimationFrame(update);
-            }
-
-            redPill.addEventListener('click', () => startGame('red'));
-            greenPill.addEventListener('click', () => startGame('green'));
-
-            // Set initial high score display
-            highScoreDisplay.textContent = highScore;
         };
+
+        /** Calculates the VCNEWS amount based on CRO input */
+        function calculateVCNEWS() {
+            const croAmount = parseFloat(croInput.value);
+            if (isNaN(croAmount) || croAmount <= 0) {
+                vcnewsOutput.value = "0";
+                return;
+            }
+            // Simple calculation: CRO amount * fixed ratio
+            const vcnewsAmount = croAmount * CRO_TO_TOKEN_RATIO;
+            vcnewsOutput.value = vcnewsAmount.toLocaleString('en-US', { maximumFractionDigits: 0 });
+        }
+
+        /** Refreshes all on-chain data and updates progress bar */
+        async function refreshData() {
+            if (!presaleContract) return;
+
+            try {
+                // 1. Total Tokens Sold
+                const totalSoldWei = await presaleContract.totalTokensSold();
+                const totalSold = Number(ethers.formatUnits(totalSoldWei, 18));
+                
+                // 2. User Purchased Tokens (if connected)
+                let userPurchased = 0;
+                if (walletAddress) {
+                    const userTokensWei = await presaleContract.purchasedTokens(walletAddress);
+                    userPurchased = Number(ethers.formatUnits(userTokensWei, 18));
+                }
+
+                // 3. Update Metrics
+                const tokensRemaining = PRESALE_CAP - totalSold;
+                const progressPercent = (totalSold / PRESALE_CAP) * 100;
+                const cappedPercent = Math.min(progressPercent, 100);
+
+                tokensSoldSpan.innerText = `${totalSold.toLocaleString('en-US', { maximumFractionDigits: 0 })} $VCNEWS`;
+                tokensRemainingSpan.innerText = `${tokensRemaining.toLocaleString('en-US', { maximumFractionDigits: 0 })} $VCNEWS`;
+                userTokensSpan.innerText = `${userPurchased.toLocaleString('en-US', { maximumFractionDigits: 0 })} $VCNEWS`;
+                
+                // 4. Update Progress Bar
+                progressFill.style.width = `${cappedPercent}%`;
+                progressPercentText.innerText = `${cappedPercent.toFixed(2)}%`;
+
+                if (totalSold >= PRESALE_CAP) {
+                     showModal("Presale Complete", "Congratulations! The presale cap has been reached. Trading will commence soon.");
+                     buyTokensBtn.disabled = true;
+                }
+
+            } catch (error) {
+                console.error("Error refreshing data:", error);
+            }
+        }
+
+
+        // --- Web3 Logic ---
+
+        /** Connects to the injected wallet (MetaMask/TrustWallet) and switches to Cronos. */
+        async function injectedConnect() {
+            if (!window.ethereum) {
+                showModal("Wallet Not Found", "No injected wallet found. Please install MetaMask or TrustWallet extension.");
+                return;
+            }
+            try {
+                const ethProvider = window.ethereum;
+                
+                // --- 1. Switch to Cronos Chain ---
+                if (Number(ethProvider.chainId) !== CRONOS_CHAIN_ID_DEC) {
+                    try {
+                        await ethProvider.request({
+                            method: 'wallet_switchEthereumChain',
+                            params: [{ chainId: CRONOS_CHAIN_ID_HEX }]
+                        });
+                    } catch (e) {
+                        // This error code means the chain is not in the wallet, so add it
+                        if (e.code === 4902) {
+                            try {
+                                await ethProvider.request({
+                                    method: 'wallet_addEthereumChain',
+                                    params: [{
+                                        chainId: CRONOS_CHAIN_ID_HEX,
+                                        chainName: 'Cronos Mainnet Beta',
+                                        nativeCurrency: { name: 'Cronos', symbol: 'CRO', decimals: 18 },
+                                        rpcUrls: [CRONOS_RPC],
+                                        blockExplorerUrls: ['https://cronoscan.com']
+                                    }]
+                                });
+                            } catch (addError) {
+                                showModal("Chain Setup Failed", "Failed to add the Cronos network. Please do so manually.");
+                                return;
+                            }
+                        } else {
+                            showModal("Switch Failed", "Failed to switch to Cronos network: " + (e.message || e));
+                            return;
+                        }
+                    }
+                }
+                
+                // --- 2. Request Account Access ---
+                const accounts = await ethProvider.request({ method: 'eth_requestAccounts' });
+
+                // --- 3. Initialize Ethers.js and Contracts ---
+                provider = new ethers.BrowserProvider(ethProvider);
+                signer = await provider.getSigner();
+                walletAddress = accounts[0];
+
+                presaleContract = new ethers.Contract(PRESALE_CONTRACT_ADDRESS, PRESALE_ABI, signer);
+                tokenContract = new ethers.Contract(VCNEWS_TOKEN_ADDRESS, TOKEN_ABI, provider);
+
+                console.log("Connected address:", walletAddress);
+                updateUI(walletAddress);
+                
+                // Set up event listeners for account and chain changes
+                ethProvider.on('accountsChanged', (accounts) => updateUI(accounts.length ? accounts[0] : null));
+                ethProvider.on('chainChanged', () => window.location.reload());
+
+            } catch (err) {
+                console.error(err);
+                showModal("Connection Failed", "Wallet connection failed: " + (err.message || "Unknown error"));
+            }
+        }
+
+        /** Executes the token purchase transaction. */
+        async function handleBuyTokens() {
+            if (!isWalletConnected || !presaleContract) {
+                showModal("Error", "Wallet not connected or contracts not initialized.");
+                return;
+            }
+
+            const croAmount = parseFloat(croInput.value);
+            if (isNaN(croAmount) || croAmount <= 0) {
+                showModal("Invalid Amount", "Please enter a valid amount of CRO to purchase.");
+                return;
+            }
+            
+            const croWei = ethers.parseEther(croAmount.toString());
+            const expectedTokens = croAmount * CRO_TO_TOKEN_RATIO;
+            
+            buyTokensBtn.innerText = "Waiting for Transaction...";
+            buyTokensBtn.disabled = true;
+
+            try {
+                // Call the buyTokens function, passing the CRO value
+                const tx = await presaleContract.buyTokens(walletAddress, {
+                    value: croWei
+                });
+
+                showModal("Transaction Sent", `Transaction hash: ${tx.hash}. Waiting for confirmation...`);
+
+                const receipt = await tx.wait();
+                
+                if (receipt.status === 1) {
+                    showModal("Success!", `${expectedTokens.toLocaleString('en-US', { maximumFractionDigits: 0 })} $VCNEWS has been sent to your wallet!`);
+                    refreshData(); // Update UI after successful purchase
+                } else {
+                    showModal("Transaction Failed", "The transaction was reverted by the network.");
+                }
+
+            } catch (error) {
+                console.error("Purchase error:", error);
+                let message = error.message || "Transaction cancelled or failed.";
+                if (error.code === 4001) {
+                    message = "You rejected the transaction in your wallet.";
+                } else if (error.data && error.data.message) {
+                    message = error.data.message; // Detailed contract error
+                }
+                showModal("Transaction Error", message);
+            } finally {
+                buyTokensBtn.innerText = "Purchase $VCNEWS";
+                buyTokensBtn.disabled = false;
+            }
+        }
+
+        // --- Event Listeners and Initialization ---
+
+        // User's provided wallet connect code, adapted for Cronos
+        connectWalletBtn.addEventListener('click', injectedConnect);
+        
+        // Disconnect function (not a true disconnect, just clears the UI)
+        disconnectBtn.addEventListener('click', () => {
+            updateUI(null);
+            showModal("Disconnected", "Your wallet connection has been cleared from the session.");
+        });
+
+        // Purchase button
+        buyTokensBtn.addEventListener('click', handleBuyTokens);
+
+        // Input change listener to update output
+        croInput.addEventListener('input', calculateVCNEWS);
+
+        // Tab switching logic
+        document.querySelectorAll('.tab-button').forEach(button => {
+            button.addEventListener('click', (e) => {
+                const targetTab = e.target.dataset.tab;
+                
+                // Deactivate all
+                document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+                document.querySelectorAll('.tab-button').forEach(btn => {
+                    btn.classList.remove('border-blue-400', 'text-white');
+                    btn.classList.add('border-transparent', 'text-gray-300');
+                });
+
+                // Activate target
+                document.getElementById(targetTab).classList.add('active');
+                e.target.classList.add('border-blue-400', 'text-white');
+                e.target.classList.remove('border-transparent', 'text-gray-300');
+            });
+        });
+
+        // Initialize UI and set default active tab
+        document.querySelector('.tab-button[data-tab="dashboard"]').click();
+        
+        // Initial data calculation
+        calculateVCNEWS();
+
+        // Initial data refresh (will only run if contracts are initialized after connection)
+        refreshData(); 
+        
     </script>
 </body>
 </html>
