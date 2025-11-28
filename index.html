@@ -10,7 +10,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
     <style>
         /* Custom styles for the news aesthetic and sleek design */
-        @import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@300;500;700&family=Playfair+Display:wght@700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@300;500;700&family=Playfair+Display:wght=700&display=swap');
         
         :root {
             --color-primary: #0077b6; /* Professional Blue */
@@ -247,7 +247,8 @@
         <section id="about" class="tab-content">
             <div class="bg-gray-800 p-8 rounded-2xl shadow-xl border border-gray-700">
                 <h2 class="header-font text-4xl font-bold text-blue-400 mb-6">About VCNEWS on Cronos</h2>
-                <p class="text-gray-400 mb-6">The VCNEWS project ($VCNEWS, **@VCNEWS_ON_CRO**) is pioneering a decentralized news platform built on the robust Cronos ecosystem. Our mission is to provide verifiable, fast, and community-driven news, leveraging the speed and low cost of Cronos.</p>
+                <!-- Corrected formatting: Removed markdown asterisks/double-asterisks -->
+                <p class="text-gray-400 mb-6">The VCNEWS project ($VCNEWS, <span class="font-semibold text-blue-300">@VCNEWS_ON_CRO</span>) is pioneering a decentralized news platform built on the robust Cronos ecosystem. Our mission is to provide verifiable, fast, and community-driven news, leveraging the speed and low cost of Cronos.</p>
                 
                 <h3 class="header-font text-2xl font-bold text-white mt-8 mb-4">Why Cronos?</h3>
                 <ul class="list-disc list-inside text-gray-400 space-y-2 pl-4">
@@ -344,7 +345,7 @@
             </div>
         </section>
 
-        <!-- Token Guide Tab Content (NEW) -->
+        <!-- Token Guide Tab Content (CLEANED) -->
         <section id="token-guide" class="tab-content">
             <div class="bg-gray-800 p-8 rounded-2xl shadow-xl border border-gray-700">
                 <h2 class="header-font text-4xl font-bold text-white mb-6">How to See Your $VCNEWS Tokens</h2>
@@ -357,6 +358,7 @@
                             <p class="text-sm text-gray-300">Token Address (Cronos Mainnet):</p>
                             <code id="token-address-code" class="break-all text-sm font-mono text-yellow-400">0xcA6c8F853E0E3D05FC63B49A80C4C19c193abF45</code>
                             <button onclick="copyAddress('token-address-code')" class="ml-4 text-xs text-blue-400 hover:text-blue-300 font-semibold">Copy</button>
+                            <!-- Cleaned this section, no asterisks found or added -->
                             <p class="mt-2 text-sm text-gray-300">Token Symbol: <span class="font-bold text-white">$VCNEWS</span></p>
                             <p class="text-sm text-gray-300">Decimals: <span class="font-bold text-white">18</span></p>
                         </div>
@@ -391,16 +393,14 @@
     <script>
         const { ethers } = window;
 
-        // --- Configuration (UPDATED ADDRESSES) ---
+        // --- Configuration (ADDRESSES) ---
         const CRONOS_CHAIN_ID_HEX = '0x19'; // Hex for 25
         const CRONOS_CHAIN_ID_DEC = 25;
         const CRONOS_RPC = 'https://evm.cronos.org';
         
-        // **!!! REPLACED WITH DEPLOYED CONTRACT ADDRESSES !!!**
+        // DEPLOYED CONTRACT ADDRESSES
         const PRESALE_CONTRACT_ADDRESS = "0x97Ba801799f666099bDb0e1C475538ED6544F6a1"; 
         const VCNEWS_TOKEN_ADDRESS = "0xcA6c8F853E0E3D05FC63B49A80C4C19c193abF45"; 
-        // Example Funding Wallet (replace with your personal wallet)
-        const FUNDING_WALLET = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"; 
 
         // 1 CRO = 9000 VCNEWS tokens (Ratio: 9000e18 tokens per 1e18 CRO)
         const CRO_TO_TOKEN_RATIO = 9000;
@@ -657,11 +657,15 @@
             } catch (error) {
                 console.error("Purchase error:", error);
                 let message = error.message || "Transaction cancelled or failed.";
-                if (error.code === 4001) {
+
+                if (error.code === 'CALL_EXCEPTION') {
+                    message = `The transaction failed during simulation. This usually happens because an on-chain condition was not met (e.g., minimum purchase, cap reached, or sale is paused). The contract did not provide a specific error reason. Please check the amount and try again.`;
+                } else if (error.code === 4001) {
                     message = "You rejected the transaction in your wallet.";
                 } else if (error.data && error.data.message) {
                     message = error.data.message; // Detailed contract error
                 }
+                
                 showModal("Transaction Error", message);
             } finally {
                 buyTokensBtn.innerText = "Purchase $VCNEWS";
