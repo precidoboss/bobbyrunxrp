@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The Grotto Gambit | Dark Sanctum</title>
+    <title>The Grotto Gambit | Dark Sanctum [SECURITY PATCHED v2.1]</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -414,13 +414,29 @@
             border-color: var(--grotto-purple) !important;
             box-shadow: 0 0 20px var(--grotto-glow);
         }
+
+        .security-badge {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 10px;
+            font-weight: bold;
+            letter-spacing: 1px;
+            z-index: 1000;
+            box-shadow: 0 4px 20px rgba(16, 185, 129, 0.3);
+            animation: pulse 3s infinite;
+        }
     </style>
 </head>
 <body class="min-h-screen p-4">
-    <!-- Continue in part 2 -->
-</body>
-</html>
-<!-- PART 2: HTML STRUCTURE - Copy this after the <body> tag in part 1 -->
+    <!-- Security Patch Badge -->
+    <div class="security-badge cinzel">
+        🛡️ SECURITY PATCHED v2.1
+    </div>
 
     <!-- Mystical Particles -->
     <div class="mystical-particles" id="particles"></div>
@@ -432,8 +448,7 @@
              class="header-banner rounded-lg"
              onerror="this.style.display='none'">
     </div>
-
-    <nav class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center mb-8 py-6 border-b border-purple-900/30 relative z-10">
+<nav class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center mb-8 py-6 border-b border-purple-900/30 relative z-10">
         <div class="flex items-center gap-6">
             <img src="https://raw.githubusercontent.com/precidoboss/my-game-sprites/main/photo_2026-02-11_07-20-45.jpg" 
                  alt="Grotto Logo" 
@@ -443,7 +458,7 @@
                 <h1 class="cinzel text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-purple-600 tracking-wider">
                     THE GROTTO GAMBIT
                 </h1>
-                <p class="text-[11px] text-purple-500/60 uppercase tracking-[0.3em] mt-1">Dark Sanctum // Heresy Protocol</p>
+                <p class="text-[11px] text-purple-500/60 uppercase tracking-[0.3em] mt-1">Dark Sanctum // Heresy Protocol // Dual-Timeout Security</p>
             </div>
         </div>
 
@@ -616,12 +631,7 @@
                 </section>
             </div>
         </div>
-
-        <!-- Continue in part 3 -->
-    </main>
-<!-- PART 3: BLOOD RITE AND OTHER PAGES - Continue from part 2 -->
-
-        <!-- BLOOD RITE PAGE (NEW) -->
+<!-- BLOOD RITE PAGE -->
         <div id="page-bloodrite" class="page-section">
             <div class="grotto-glass p-8 rounded-xl max-w-6xl mx-auto">
                 <div class="flex justify-between items-center mb-8">
@@ -786,6 +796,19 @@
                 <h2 class="cinzel text-3xl text-purple-400 mb-8 tracking-wider">ANCIENT DOCTRINE</h2>
                 
                 <div class="space-y-8 text-purple-200/90 leading-relaxed">
+                    <!-- Security Notice -->
+                    <div class="grotto-glass border-2 border-green-500/30 p-6 rounded-xl bg-green-900/10">
+                        <h3 class="cinzel text-xl text-green-400 mb-4 flex items-center gap-2">
+                            🛡️ SECURITY ENHANCEMENT v2.1
+                        </h3>
+                        <div class="space-y-3 text-sm text-green-200/80">
+                            <p><strong>CRITICAL FIX:</strong> Dual-Timeout System implemented to prevent last-second challenge exploit.</p>
+                            <p><strong>What Changed:</strong> Hosts now get the FULL timeout period to reveal their move, regardless of when the challenger joins.</p>
+                            <p><strong>Example:</strong> If you create a 15-minute timeout game and someone challenges at 14:59, you still get a full 15 minutes from that challenge to reveal.</p>
+                            <p><strong>Your Protection:</strong> No more unfair forfeit claims. The contract now tracks both creation time and challenge time separately.</p>
+                        </div>
+                    </div>
+
                     <section>
                         <h3 class="cinzel text-xl text-purple-400 mb-4 flex items-center gap-2">
                             🎯 THE FORBIDDEN RITUAL
@@ -832,14 +855,14 @@
                                 <div class="cinzel text-2xl text-purple-500 w-12 flex-shrink-0 group-hover:scale-110 transition">2.</div>
                                 <div>
                                     <div class="font-semibold text-purple-300 mb-2 text-lg">Challenge the Void (Opponent)</div>
-                                    <p class="text-[15px] text-purple-200/70">Discover an open ritual in the sanctum. Choose your force and match the $HERESY offering to accept the challenge.</p>
+                                    <p class="text-[15px] text-purple-200/70">Discover an open ritual in the sanctum. Choose your force and match the $HERESY offering to accept the challenge. The host's reveal timer starts NOW.</p>
                                 </div>
                             </div>
                             <div class="flex gap-5 group">
                                 <div class="cinzel text-2xl text-purple-500 w-12 flex-shrink-0 group-hover:scale-110 transition">3.</div>
                                 <div>
                                     <div class="font-semibold text-purple-300 mb-2 text-lg">Reveal the Truth (Host)</div>
-                                    <p class="text-[15px] text-purple-200/70">Once challenged, unveil your hidden force. The ancient contract determines the victor based on eternal laws.</p>
+                                    <p class="text-[15px] text-purple-200/70">Once challenged, unveil your hidden force. The ancient contract determines the victor based on eternal laws. You have the FULL timeout from when you were challenged.</p>
                                 </div>
                             </div>
                             <div class="flex gap-5 group">
@@ -860,6 +883,10 @@
                             <li class="flex gap-3">
                                 <span class="text-purple-500 flex-shrink-0">→</span>
                                 <span>You must return to the same sanctum (browser/device) to reveal your force—the secret dwells within</span>
+                            </li>
+                            <li class="flex gap-3">
+                                <span class="text-green-500 flex-shrink-0">🛡️</span>
+                                <span><strong>SECURITY:</strong> Host gets FULL timeout to reveal from when challenged, not from when game was created</span>
                             </li>
                             <li class="flex gap-3">
                                 <span class="text-purple-500 flex-shrink-0">→</span>
@@ -918,14 +945,11 @@
     <div id="toast" class="fixed bottom-8 left-1/2 -translate-x-1/2 grotto-glass border-2 border-purple-500 px-8 py-4 text-purple-300 cinzel text-sm transform translate-y-32 transition-all duration-300 z-[200] rounded-lg shadow-2xl">
         SYSTEM MESSAGE
     </div>
-
-    <!-- Continue in part 4 with JavaScript -->
-<!-- PART 4: JAVASCRIPT - Main application logic -->
 <script>
     // The Grotto Chain Configuration
     const CHAIN_ID = "0x8E6F"; // 36463
     const RPC_URL = "https://subnets.avax.network/thegrotto/mainnet/rpc";
-    const CONTRACT_ADDR = "0x62cF10284C9b4a5B3b68B2cCBB1EBaec3f86320c";
+    const CONTRACT_ADDR = "0x6938022B15Dd63A92eBCf6a5CC4449baB9584670";
     const EXPLORER_URL = "https://subnets.avax.network/thegrotto";
     const CHAIN_NAME = "The Grotto";
     const CURRENCY_SYMBOL = "HERESY";
@@ -942,7 +966,7 @@
         "function forceForfeit(uint256 _gameId) external",
         "function refundUnchallenged(uint256 _gameId) external",
         "function gameCounter() public view returns (uint256)",
-        "function games(uint256) public view returns (address host, address challenger, bytes32 commitHash, uint8 hostMove, uint8 challengerMove, uint256 wager, uint256 timeout, uint256 timestamp, uint8 status)",
+        "function games(uint256) public view returns (address host, address challenger, bytes32 commitHash, uint8 hostMove, uint8 challengerMove, uint256 wager, uint256 timeout, uint256 createdAt, uint256 challengedAt, uint8 status)",
         "event GameCreated(uint256 indexed gameId, address indexed host, uint256 wager, uint256 timeout, bytes32 commitHash)",
         "event GameChallenged(uint256 indexed gameId, address indexed challenger)",
         "event GameResolved(uint256 indexed gameId, address winner, uint256 payout)"
@@ -1092,6 +1116,7 @@
             refreshLobby();
             loadNotifications();
             loadBloodRite();
+            loadProfile();
         } catch (err) { 
             console.error(err);
             showToast("Portal summoning failed"); 
@@ -1159,6 +1184,7 @@
             document.getElementById('user-address').innerText = username;
             refreshLobby();
             refreshChat();
+            loadProfile();
         } catch (err) {
             console.error("Username update error:", err);
             showToast("Update failed");
@@ -1233,7 +1259,9 @@
                     wager: wagerInput,
                     timeout: parseInt(timeoutValue),
                     status: 0,
-                    commit_hash: hash
+                    commit_hash: hash,
+                    created_at: new Date().toISOString(),
+                    challenged_at: null
                 }]);
 
             if (sbError) {
@@ -1256,13 +1284,9 @@
             createBtn.disabled = false;
         }
     }
-
-    // Continue with rest of JavaScript in your editor...
-    // This file is getting long. Let me split the remaining functions into a helper section.
 </script>
-<!-- PART 4B: JAVASCRIPT CONTINUATION - Add after part 4 -->
 <script>
-    // LOBBY AND GAME MANAGEMENT FUNCTIONS
+    // LOBBY AND GAME MANAGEMENT FUNCTIONS WITH DUAL-TIMEOUT FIX
 
     async function refreshLobby() {
         const lobby = document.getElementById('lobby-list');
@@ -1299,21 +1323,34 @@
                 div.className = "p-5 grotto-glass rounded-lg border-l-4 flex flex-col md:flex-row justify-between items-center gap-4 transition hover:bg-purple-900/10";
                 div.style.borderLeftColor = borderColor;
                 
+                // DUAL-TIMEOUT FIX: Calculate countdown based on game status
                 let countdownHTML = '';
                 if (status === 0 || status === 1) {
-                    const createdAt = new Date(game.created_at).getTime() / 1000;
+                    let deadline, timeSource;
                     const timeout = game.timeout || 900;
-                    const deadline = createdAt + timeout;
                     const now = Math.floor(Date.now() / 1000);
+                    
+                    if (status === 0) {
+                        // Open games: use created_at for refund deadline
+                        timeSource = new Date(game.created_at).getTime() / 1000;
+                        deadline = timeSource + timeout;
+                    } else {
+                        // Challenged games: use challenged_at for forfeit deadline
+                        timeSource = game.challenged_at ? new Date(game.challenged_at).getTime() / 1000 : new Date(game.created_at).getTime() / 1000;
+                        deadline = timeSource + timeout;
+                    }
+                    
                     const remaining = deadline - now;
                     
                     if (remaining > 0) {
                         const minutes = Math.floor(remaining / 60);
                         const seconds = remaining % 60;
                         const timeColor = remaining < 60 ? '#ef4444' : '#9333ea';
-                        countdownHTML = `<span class="text-[11px] ml-2 cinzel" style="color: ${timeColor}">⏱ ${minutes}m ${seconds}s</span>`;
+                        const timeLabel = status === 0 ? 'Refund' : 'Reveal';
+                        countdownHTML = `<span class="text-[11px] ml-2 cinzel" style="color: ${timeColor}">⏱ ${timeLabel}: ${minutes}m ${seconds}s</span>`;
                     } else {
-                        countdownHTML = `<span class="text-[11px] text-red-500 ml-2 animate-pulse cinzel">⏱ EXPIRED</span>`;
+                        const actionLabel = status === 0 ? 'REFUNDABLE' : 'FORFEIT READY';
+                        countdownHTML = `<span class="text-[11px] text-red-500 ml-2 animate-pulse cinzel">⏱ ${actionLabel}</span>`;
                     }
                 }
                 
@@ -1395,10 +1432,11 @@
                 return `<button onclick="handleResolve(${game.game_id}, '${game.commit_hash}')" class="btn-grotto text-[11px] px-7 py-3 rounded-lg animate-pulse cinzel">Reveal</button>`;
             }
             if (isChallenger) {
+                // DUAL-TIMEOUT FIX: Use challenged_at for forfeit deadline
                 const now = Math.floor(Date.now() / 1000);
-                const createdAt = new Date(game.created_at).getTime() / 1000;
+                const challengedAt = game.challenged_at ? new Date(game.challenged_at).getTime() / 1000 : new Date(game.created_at).getTime() / 1000;
                 const timeout = game.timeout || 900;
-                const deadline = createdAt + timeout;
+                const deadline = challengedAt + timeout;
                 
                 if (now >= deadline) {
                     return `<button onclick="handleForceForfeit(${game.game_id})" class="btn-grotto text-[11px] px-7 py-3 rounded-lg animate-pulse cinzel">Claim Victory</button>`;
@@ -1429,11 +1467,13 @@
             showToast("Sealing pact...");
             await tx.wait();
             
+            // DUAL-TIMEOUT FIX: Set challenged_at timestamp
             await _supabase.from('grotto_games')
                 .update({ 
                     status: 1, 
                     challenger: userAddress.toLowerCase(),
-                    challenger_move: parseInt(move)
+                    challenger_move: parseInt(move),
+                    challenged_at: new Date().toISOString()  // CRITICAL: Set challenge timestamp
                 })
                 .eq('game_id', id);
             
@@ -1576,7 +1616,8 @@
             showToast("Forfeit failed");
         }
     }
-
+</script>
+<script>
     // NOTIFICATION SYSTEM
     function addNotification(notif) {
         if (!userAddress) return;
@@ -1670,270 +1711,6 @@
             panel.classList.remove('active');
         }
     });
-
-    // Continue in part 4c...
-</script>
-<!-- PART 4C: FINAL JAVASCRIPT - Blood Rite, Profile, Leaderboard, Helpers -->
-<script>
-    // BLOOD RITE SYSTEM
-    function updateDailyTimer() {
-        const now = new Date();
-        const utcMidnight = new Date();
-        utcMidnight.setUTCHours(24, 0, 0, 0);
-        
-        const diff = utcMidnight - now;
-        const hours = Math.floor(diff / (1000 * 60 * 60));
-        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-        const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-        
-        const timerEl = document.getElementById('daily-timer');
-        if (timerEl) {
-            timerEl.textContent = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-        }
-    }
-
-    function getPlayerStats() {
-        if (!userAddress) return null;
-        
-        const today = new Date().toISOString().split('T')[0];
-        const stats = JSON.parse(localStorage.getItem(`grotto_stats_${userAddress}`) || '{}');
-        
-        if (stats.lastUpdate !== today) {
-            stats.dailyGames = 0;
-            stats.dailyWins = 0;
-            stats.dailyLosses = 0;
-            stats.dailyWagered = 0;
-            stats.dailyStreak = 0;
-            stats.lastUpdate = today;
-        }
-        
-        stats.totalWins = stats.totalWins || 0;
-        stats.totalLosses = stats.totalLosses || 0;
-        stats.totalGames = stats.totalGames || 0;
-        stats.totalWagered = stats.totalWagered || 0;
-        stats.longestStreak = stats.longestStreak || 0;
-        stats.currentStreak = stats.currentStreak || 0;
-        
-        return stats;
-    }
-
-    function updatePlayerStats(event, amount = 0) {
-        if (!userAddress) return;
-        
-        const stats = getPlayerStats();
-        
-        switch(event) {
-            case 'gameCreated':
-            case 'gameChallenged':
-                stats.dailyGames++;
-                stats.totalGames++;
-                stats.dailyWagered += amount;
-                stats.totalWagered += amount;
-                break;
-            case 'gameWon':
-                stats.dailyWins++;
-                stats.totalWins++;
-                stats.dailyStreak++;
-                stats.currentStreak++;
-                if (stats.currentStreak > stats.longestStreak) {
-                    stats.longestStreak = stats.currentStreak;
-                }
-                break;
-            case 'gameLost':
-                stats.dailyLosses++;
-                stats.totalLosses++;
-                stats.dailyStreak = 0;
-                stats.currentStreak = 0;
-                break;
-            case 'gameDraw':
-                stats.dailyStreak = 0;
-                stats.currentStreak = 0;
-                break;
-        }
-        
-        localStorage.setItem(`grotto_stats_${userAddress}`, JSON.stringify(stats));
-        checkAchievements();
-    }
-
-    function getBloodPoints() {
-        if (!userAddress) return 0;
-        return parseInt(localStorage.getItem(`grotto_bp_${userAddress}`) || '0');
-    }
-
-    function addBloodPoints(points) {
-        if (!userAddress) return;
-        const current = getBloodPoints();
-        localStorage.setItem(`grotto_bp_${userAddress}`, (current + points).toString());
-        updateBloodLevel();
-    }
-
-    function getClaimedAchievements() {
-        if (!userAddress) return [];
-        return JSON.parse(localStorage.getItem(`grotto_claimed_${userAddress}`) || '[]');
-    }
-
-    function markAchievementClaimed(achievementId) {
-        if (!userAddress) return;
-        const claimed = getClaimedAchievements();
-        if (!claimed.includes(achievementId)) {
-            claimed.push(achievementId);
-            localStorage.setItem(`grotto_claimed_${userAddress}`, JSON.stringify(claimed));
-        }
-    }
-
-    function checkAchievements() {
-        if (!userAddress) return;
-        const stats = getPlayerStats();
-        const claimed = getClaimedAchievements();
-        const today = new Date().toISOString().split('T')[0];
-        const dailyClaimed = JSON.parse(localStorage.getItem(`grotto_daily_claimed_${userAddress}_${today}`) || '[]');
-        
-        let newAchievements = 0;
-        
-        // Check daily achievements
-        dailyAchievements.forEach(ach => {
-            if (!dailyClaimed.includes(ach.id) && ach.check(stats)) {
-                newAchievements++;
-            }
-        });
-        
-        // Check milestone achievements
-        milestoneAchievements.forEach(ach => {
-            if (!claimed.includes(ach.id) && ach.check(stats)) {
-                newAchievements++;
-            }
-        });
-        
-        if (newAchievements > 0) {
-            showToast(`${newAchievements} new achievement${newAchievements > 1 ? 's' : ''} available!`);
-        }
-    }
-
-    function claimAchievement(achievementId, isDaily, points) {
-        if (!userAddress) return;
-        
-        const today = new Date().toISOString().split('T')[0];
-        
-        if (isDaily) {
-            const dailyClaimed = JSON.parse(localStorage.getItem(`grotto_daily_claimed_${userAddress}_${today}`) || '[]');
-            if (dailyClaimed.includes(achievementId)) {
-                showToast("Already claimed today");
-                return;
-            }
-            dailyClaimed.push(achievementId);
-            localStorage.setItem(`grotto_daily_claimed_${userAddress}_${today}`, JSON.stringify(dailyClaimed));
-        } else {
-            const claimed = getClaimedAchievements();
-            if (claimed.includes(achievementId)) {
-                showToast("Already claimed");
-                return;
-            }
-            markAchievementClaimed(achievementId);
-        }
-        
-        addBloodPoints(points);
-        showToast(`✓ Claimed ${points} Blood Points!`);
-        loadBloodRite();
-    }
-
-    function updateBloodLevel() {
-        const bp = getBloodPoints();
-        const level = Math.floor(bp / 100) + 1;
-        const currentLevelBP = bp % 100;
-        const nextLevelBP = 100;
-        const progress = (currentLevelBP / nextLevelBP) * 100;
-        
-        document.getElementById('blood-points-total').textContent = bp;
-        document.getElementById('blood-level').textContent = level;
-        document.getElementById('current-level').textContent = level;
-        document.getElementById('next-level-bp').textContent = nextLevelBP;
-        document.getElementById('current-bp').textContent = currentLevelBP;
-        document.getElementById('level-progress-bar').style.width = progress + '%';
-    }
-
-    function loadBloodRite() {
-        if (!userAddress) return;
-        
-        const stats = getPlayerStats();
-        const today = new Date().toISOString().split('T')[0];
-        const dailyClaimed = JSON.parse(localStorage.getItem(`grotto_daily_claimed_${userAddress}_${today}`) || '[]');
-        const claimed = getClaimedAchievements();
-        
-        // Update blood points display
-        updateBloodLevel();
-        
-        // Render daily achievements
-        const dailyContainer = document.getElementById('daily-achievements');
-        if (dailyContainer) {
-            dailyContainer.innerHTML = dailyAchievements.map(ach => {
-                const isCompleted = ach.check(stats);
-                const isClaimed = dailyClaimed.includes(ach.id);
-                const canClaim = isCompleted && !isClaimed;
-                
-                return `
-                    <div class="achievement-card ${isClaimed ? 'claimed' : isCompleted ? 'completed' : ''} p-5 rounded-lg">
-                        <div class="flex items-start gap-4">
-                            <div class="text-4xl">${ach.icon}</div>
-                            <div class="flex-1">
-                                <div class="flex justify-between items-start mb-2">
-                                    <div>
-                                        <h4 class="cinzel text-purple-300 font-bold">${ach.name}</h4>
-                                        <p class="text-sm text-purple-400/70">${ach.desc}</p>
-                                    </div>
-                                    <div class="text-right">
-                                        <div class="text-xs text-purple-400/70 uppercase cinzel">Reward</div>
-                                        <div class="cinzel text-lg text-red-400 font-bold">${ach.points} BP</div>
-                                    </div>
-                                </div>
-                                ${canClaim ? 
-                                    `<button onclick="claimAchievement('${ach.id}', true, ${ach.points})" class="btn-grotto w-full py-2 text-xs rounded-lg cinzel mt-2">Claim Reward</button>` :
-                                    isClaimed ? 
-                                        `<div class="text-xs text-gray-500 uppercase cinzel text-center mt-2">✓ Claimed</div>` :
-                                        `<div class="text-xs text-purple-600/50 uppercase cinzel text-center mt-2">In Progress</div>`
-                                }
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-        
-        // Render milestone achievements
-        const milestoneContainer = document.getElementById('milestone-achievements');
-        if (milestoneContainer) {
-            milestoneContainer.innerHTML = milestoneAchievements.map(ach => {
-                const isCompleted = ach.check(stats);
-                const isClaimed = claimed.includes(ach.id);
-                const canClaim = isCompleted && !isClaimed;
-                
-                return `
-                    <div class="achievement-card ${isClaimed ? 'claimed' : isCompleted ? 'completed' : ''} p-5 rounded-lg">
-                        <div class="flex items-start gap-4">
-                            <div class="text-4xl">${ach.icon}</div>
-                            <div class="flex-1">
-                                <div class="flex justify-between items-start mb-2">
-                                    <div>
-                                        <h4 class="cinzel text-purple-300 font-bold">${ach.name}</h4>
-                                        <p class="text-sm text-purple-400/70">${ach.desc}</p>
-                                    </div>
-                                    <div class="text-right">
-                                        <div class="text-xs text-purple-400/70 uppercase cinzel">Reward</div>
-                                        <div class="cinzel text-lg text-red-400 font-bold">${ach.points} BP</div>
-                                    </div>
-                                </div>
-                                ${canClaim ? 
-                                    `<button onclick="claimAchievement('${ach.id}', false, ${ach.points})" class="btn-grotto w-full py-2 text-xs rounded-lg cinzel mt-2">Claim Reward</button>` :
-                                    isClaimed ? 
-                                        `<div class="text-xs text-gray-500 uppercase cinzel text-center mt-2">✓ Claimed</div>` :
-                                        `<div class="text-xs text-purple-600/50 uppercase cinzel text-center mt-2">Locked</div>`
-                                }
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-    }
 
     // ACTIVITY FEED
     async function refreshActivityFeed() {
@@ -2050,6 +1827,323 @@
         }
     }
 
+    // IMPROVED PLAYER STATS TRACKING
+    function getPlayerStats() {
+        if (!userAddress) return null;
+        
+        const today = new Date().toISOString().split('T')[0];
+        const stats = JSON.parse(localStorage.getItem(`grotto_stats_${userAddress}`) || '{}');
+        
+        if (stats.lastUpdate !== today) {
+            stats.dailyGames = 0;
+            stats.dailyWins = 0;
+            stats.dailyLosses = 0;
+            stats.dailyWagered = 0;
+            stats.dailyStreak = 0;
+            stats.lastUpdate = today;
+        }
+        
+        stats.totalWins = stats.totalWins || 0;
+        stats.totalLosses = stats.totalLosses || 0;
+        stats.totalGames = stats.totalGames || 0;
+        stats.totalWagered = stats.totalWagered || 0;
+        stats.longestStreak = stats.longestStreak || 0;
+        stats.currentStreak = stats.currentStreak || 0;
+        stats.totalDraws = stats.totalDraws || 0;
+        stats.biggestPot = stats.biggestPot || 0;
+        
+        return stats;
+    }
+
+    function updatePlayerStats(event, amount = 0) {
+        if (!userAddress) return;
+        
+        const stats = getPlayerStats();
+        const today = new Date().toISOString().split('T')[0];
+        
+        // Ensure daily stats are current
+        if (stats.lastUpdate !== today) {
+            stats.dailyGames = 0;
+            stats.dailyWins = 0;
+            stats.dailyLosses = 0;
+            stats.dailyWagered = 0;
+            stats.dailyStreak = 0;
+            stats.lastUpdate = today;
+        }
+        
+        switch(event) {
+            case 'gameCreated':
+            case 'gameChallenged':
+                stats.dailyGames = (stats.dailyGames || 0) + 1;
+                stats.totalGames = (stats.totalGames || 0) + 1;
+                stats.dailyWagered = (stats.dailyWagered || 0) + amount;
+                stats.totalWagered = (stats.totalWagered || 0) + amount;
+                
+                // Track biggest pot
+                const potSize = amount * 2;
+                if (potSize > (stats.biggestPot || 0)) {
+                    stats.biggestPot = potSize;
+                }
+                break;
+            case 'gameWon':
+                stats.dailyWins = (stats.dailyWins || 0) + 1;
+                stats.totalWins = (stats.totalWins || 0) + 1;
+                stats.dailyStreak = (stats.dailyStreak || 0) + 1;
+                stats.currentStreak = (stats.currentStreak || 0) + 1;
+                if (stats.currentStreak > (stats.longestStreak || 0)) {
+                    stats.longestStreak = stats.currentStreak;
+                }
+                break;
+            case 'gameLost':
+                stats.dailyLosses = (stats.dailyLosses || 0) + 1;
+                stats.totalLosses = (stats.totalLosses || 0) + 1;
+                stats.dailyStreak = 0;
+                stats.currentStreak = 0;
+                break;
+            case 'gameDraw':
+                stats.totalDraws = (stats.totalDraws || 0) + 1;
+                stats.dailyStreak = 0;
+                stats.currentStreak = 0;
+                break;
+        }
+        
+        localStorage.setItem(`grotto_stats_${userAddress}`, JSON.stringify(stats));
+        checkAchievements();
+        
+        // Reload profile if on that page
+        if (document.getElementById('page-profile').classList.contains('active')) {
+            loadProfile();
+        }
+    }
+
+    // HELPER FUNCTIONS
+    function getTimeAgo(date) {
+        const seconds = Math.floor((new Date() - date) / 1000);
+        if (seconds < 60) return `${seconds}s ago`;
+        const minutes = Math.floor(seconds / 60);
+        if (minutes < 60) return `${minutes}m ago`;
+        const hours = Math.floor(minutes / 60);
+        if (hours < 24) return `${hours}h ago`;
+        const days = Math.floor(hours / 24);
+        return `${days}d ago`;
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    function getStatusText(s) { 
+        return ["Open", "Active", "Sealed", "Retracted", "Forfeited"][s]; 
+    }
+</script>
+<script>
+    // BLOOD RITE SYSTEM
+    function updateDailyTimer() {
+        const now = new Date();
+        const utcMidnight = new Date();
+        utcMidnight.setUTCHours(24, 0, 0, 0);
+        
+        const diff = utcMidnight - now;
+        const hours = Math.floor(diff / (1000 * 60 * 60));
+        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+        
+        const timerEl = document.getElementById('daily-timer');
+        if (timerEl) {
+            timerEl.textContent = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+    }
+
+    function getBloodPoints() {
+        if (!userAddress) return 0;
+        return parseInt(localStorage.getItem(`grotto_bp_${userAddress}`) || '0');
+    }
+
+    function addBloodPoints(points) {
+        if (!userAddress) return;
+        const current = getBloodPoints();
+        localStorage.setItem(`grotto_bp_${userAddress}`, (current + points).toString());
+        updateBloodLevel();
+    }
+
+    function getClaimedAchievements() {
+        if (!userAddress) return [];
+        return JSON.parse(localStorage.getItem(`grotto_claimed_${userAddress}`) || '[]');
+    }
+
+    function markAchievementClaimed(achievementId) {
+        if (!userAddress) return;
+        const claimed = getClaimedAchievements();
+        if (!claimed.includes(achievementId)) {
+            claimed.push(achievementId);
+            localStorage.setItem(`grotto_claimed_${userAddress}`, JSON.stringify(claimed));
+        }
+    }
+
+    function checkAchievements() {
+        if (!userAddress) return;
+        const stats = getPlayerStats();
+        const claimed = getClaimedAchievements();
+        const today = new Date().toISOString().split('T')[0];
+        const dailyClaimed = JSON.parse(localStorage.getItem(`grotto_daily_claimed_${userAddress}_${today}`) || '[]');
+        
+        let newAchievements = 0;
+        
+        // Check daily achievements
+        dailyAchievements.forEach(ach => {
+            if (!dailyClaimed.includes(ach.id) && ach.check(stats)) {
+                newAchievements++;
+            }
+        });
+        
+        // Check milestone achievements
+        milestoneAchievements.forEach(ach => {
+            if (!claimed.includes(ach.id) && ach.check(stats)) {
+                newAchievements++;
+            }
+        });
+        
+        if (newAchievements > 0) {
+            showToast(`${newAchievements} new achievement${newAchievements > 1 ? 's' : ''} available!`);
+        }
+    }
+
+    function claimAchievement(achievementId, isDaily, points) {
+        if (!userAddress) return;
+        
+        const today = new Date().toISOString().split('T')[0];
+        
+        if (isDaily) {
+            const dailyClaimed = JSON.parse(localStorage.getItem(`grotto_daily_claimed_${userAddress}_${today}`) || '[]');
+            if (dailyClaimed.includes(achievementId)) {
+                showToast("Already claimed today");
+                return;
+            }
+            dailyClaimed.push(achievementId);
+            localStorage.setItem(`grotto_daily_claimed_${userAddress}_${today}`, JSON.stringify(dailyClaimed));
+        } else {
+            const claimed = getClaimedAchievements();
+            if (claimed.includes(achievementId)) {
+                showToast("Already claimed");
+                return;
+            }
+            markAchievementClaimed(achievementId);
+        }
+        
+        addBloodPoints(points);
+        showToast(`✓ Claimed ${points} Blood Points!`);
+        loadBloodRite();
+    }
+
+    function updateBloodLevel() {
+        const bp = getBloodPoints();
+        const level = Math.floor(bp / 100) + 1;
+        const currentLevelBP = bp % 100;
+        const nextLevelBP = 100;
+        const progress = (currentLevelBP / nextLevelBP) * 100;
+        
+        const bpTotal = document.getElementById('blood-points-total');
+        const bloodLevel = document.getElementById('blood-level');
+        const currentLevel = document.getElementById('current-level');
+        const nextLevel = document.getElementById('next-level-bp');
+        const currentBP = document.getElementById('current-bp');
+        const progressBar = document.getElementById('level-progress-bar');
+        
+        if (bpTotal) bpTotal.textContent = bp;
+        if (bloodLevel) bloodLevel.textContent = level;
+        if (currentLevel) currentLevel.textContent = level;
+        if (nextLevel) nextLevel.textContent = nextLevelBP;
+        if (currentBP) currentBP.textContent = currentLevelBP;
+        if (progressBar) progressBar.style.width = progress + '%';
+    }
+
+    function loadBloodRite() {
+        if (!userAddress) return;
+        
+        const stats = getPlayerStats();
+        const today = new Date().toISOString().split('T')[0];
+        const dailyClaimed = JSON.parse(localStorage.getItem(`grotto_daily_claimed_${userAddress}_${today}`) || '[]');
+        const claimed = getClaimedAchievements();
+        
+        // Update blood points display
+        updateBloodLevel();
+        
+        // Render daily achievements
+        const dailyContainer = document.getElementById('daily-achievements');
+        if (dailyContainer) {
+            dailyContainer.innerHTML = dailyAchievements.map(ach => {
+                const isCompleted = ach.check(stats);
+                const isClaimed = dailyClaimed.includes(ach.id);
+                const canClaim = isCompleted && !isClaimed;
+                
+                return `
+                    <div class="achievement-card ${isClaimed ? 'claimed' : isCompleted ? 'completed' : ''} p-5 rounded-lg">
+                        <div class="flex items-start gap-4">
+                            <div class="text-4xl">${ach.icon}</div>
+                            <div class="flex-1">
+                                <div class="flex justify-between items-start mb-2">
+                                    <div>
+                                        <h4 class="cinzel text-purple-300 font-bold">${ach.name}</h4>
+                                        <p class="text-sm text-purple-400/70">${ach.desc}</p>
+                                    </div>
+                                    <div class="text-right">
+                                        <div class="text-xs text-purple-400/70 uppercase cinzel">Reward</div>
+                                        <div class="cinzel text-lg text-red-400 font-bold">${ach.points} BP</div>
+                                    </div>
+                                </div>
+                                ${canClaim ? 
+                                    `<button onclick="claimAchievement('${ach.id}', true, ${ach.points})" class="btn-grotto w-full py-2 text-xs rounded-lg cinzel mt-2">Claim Reward</button>` :
+                                    isClaimed ? 
+                                        `<div class="text-xs text-gray-500 uppercase cinzel text-center mt-2">✓ Claimed</div>` :
+                                        `<div class="text-xs text-purple-600/50 uppercase cinzel text-center mt-2">In Progress</div>`
+                                }
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        // Render milestone achievements
+        const milestoneContainer = document.getElementById('milestone-achievements');
+        if (milestoneContainer) {
+            milestoneContainer.innerHTML = milestoneAchievements.map(ach => {
+                const isCompleted = ach.check(stats);
+                const isClaimed = claimed.includes(ach.id);
+                const canClaim = isCompleted && !isClaimed;
+                
+                return `
+                    <div class="achievement-card ${isClaimed ? 'claimed' : isCompleted ? 'completed' : ''} p-5 rounded-lg">
+                        <div class="flex items-start gap-4">
+                            <div class="text-4xl">${ach.icon}</div>
+                            <div class="flex-1">
+                                <div class="flex justify-between items-start mb-2">
+                                    <div>
+                                        <h4 class="cinzel text-purple-300 font-bold">${ach.name}</h4>
+                                        <p class="text-sm text-purple-400/70">${ach.desc}</p>
+                                    </div>
+                                    <div class="text-right">
+                                        <div class="text-xs text-purple-400/70 uppercase cinzel">Reward</div>
+                                        <div class="cinzel text-lg text-red-400 font-bold">${ach.points} BP</div>
+                                    </div>
+                                </div>
+                                ${canClaim ? 
+                                    `<button onclick="claimAchievement('${ach.id}', false, ${ach.points})" class="btn-grotto w-full py-2 text-xs rounded-lg cinzel mt-2">Claim Reward</button>` :
+                                    isClaimed ? 
+                                        `<div class="text-xs text-gray-500 uppercase cinzel text-center mt-2">✓ Claimed</div>` :
+                                        `<div class="text-xs text-purple-600/50 uppercase cinzel text-center mt-2">Locked</div>`
+                                }
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+    }
+</script>
+<script>
     // LEADERBOARD
     async function loadLeaderboard() {
         try {
@@ -2207,7 +2301,7 @@
         }
     }
 
-    // PROFILE
+    // PROFILE WITH FIXED STATS DISPLAY
     async function loadProfile() {
         const profileContent = document.getElementById('profile-content');
         
@@ -2226,12 +2320,16 @@
         const bp = getBloodPoints();
         const level = Math.floor(bp / 100) + 1;
 
+        // Calculate win rate safely
+        const totalGamesPlayed = (stats.totalGames || 0);
+        const winRate = totalGamesPlayed > 0 ? ((stats.totalWins || 0) / totalGamesPlayed * 100).toFixed(1) : '0.0';
+
         profileContent.innerHTML = `
             <div class="grotto-glass border-2 border-purple-500/30 p-8 rounded-xl mb-6">
                 <div class="flex justify-between items-start mb-6">
                     <div>
                         <h3 class="cinzel text-2xl text-purple-300 mb-2">${username}</h3>
-                        <div class="text-sm text-purple-400/70">${userAddress}</div>
+                        <div class="text-sm text-purple-400/70 break-all">${userAddress}</div>
                     </div>
                     <div class="text-right">
                         <div class="text-xs text-purple-400/70 uppercase mb-1">Blood Level</div>
@@ -2247,7 +2345,7 @@
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                 <div class="stat-card p-6 rounded-xl text-center">
                     <div class="text-[11px] text-purple-400/70 uppercase mb-2 cinzel">Total Games</div>
-                    <div class="cinzel text-3xl text-purple-400 font-bold">${stats.totalGames || 0}</div>
+                    <div class="cinzel text-3xl text-purple-400 font-bold">${totalGamesPlayed}</div>
                 </div>
                 <div class="stat-card p-6 rounded-xl text-center border-green-900/30">
                     <div class="text-[11px] text-green-400/70 uppercase mb-2 cinzel">Wins</div>
@@ -2263,20 +2361,69 @@
                 </div>
             </div>
 
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div class="grotto-glass p-6 rounded-xl">
+                    <h3 class="cinzel text-lg text-purple-300 mb-4">Performance Stats</h3>
+                    <div class="space-y-3">
+                        <div class="flex justify-between py-2 border-b border-purple-900/20">
+                            <span class="text-purple-300">Total Wagered:</span>
+                            <span class="cinzel text-purple-400 font-semibold">${(stats.totalWagered || 0).toFixed(5)} $HERESY</span>
+                        </div>
+                        <div class="flex justify-between py-2 border-b border-purple-900/20">
+                            <span class="text-purple-300">Win Rate:</span>
+                            <span class="cinzel font-semibold ${parseFloat(winRate) >= 50 ? 'text-green-400' : 'text-red-400'}">${winRate}%</span>
+                        </div>
+                        <div class="flex justify-between py-2 border-b border-purple-900/20">
+                            <span class="text-purple-300">Current Streak:</span>
+                            <span class="cinzel text-yellow-400 font-semibold">${stats.currentStreak || 0}</span>
+                        </div>
+                        <div class="flex justify-between py-2">
+                            <span class="text-purple-300">Biggest Pot:</span>
+                            <span class="cinzel text-purple-400 font-semibold">${(stats.biggestPot || 0).toFixed(5)} $HERESY</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grotto-glass p-6 rounded-xl">
+                    <h3 class="cinzel text-lg text-purple-300 mb-4">Today's Progress</h3>
+                    <div class="space-y-3">
+                        <div class="flex justify-between py-2 border-b border-purple-900/20">
+                            <span class="text-purple-300">Games Today:</span>
+                            <span class="cinzel text-purple-400 font-semibold">${stats.dailyGames || 0}</span>
+                        </div>
+                        <div class="flex justify-between py-2 border-b border-purple-900/20">
+                            <span class="text-purple-300">Wins Today:</span>
+                            <span class="cinzel text-green-400 font-semibold">${stats.dailyWins || 0}</span>
+                        </div>
+                        <div class="flex justify-between py-2 border-b border-purple-900/20">
+                            <span class="text-purple-300">Daily Streak:</span>
+                            <span class="cinzel text-yellow-400 font-semibold">${stats.dailyStreak || 0}</span>
+                        </div>
+                        <div class="flex justify-between py-2">
+                            <span class="text-purple-300">Wagered Today:</span>
+                            <span class="cinzel text-purple-400 font-semibold">${(stats.dailyWagered || 0).toFixed(5)} $HERESY</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div class="grotto-glass p-6 rounded-xl">
-                <h3 class="cinzel text-lg text-purple-300 mb-4">Statistics</h3>
-                <div class="space-y-3">
-                    <div class="flex justify-between py-2 border-b border-purple-900/20">
-                        <span class="text-purple-300">Total Wagered:</span>
-                        <span class="cinzel text-purple-400 font-semibold">${(stats.totalWagered || 0).toFixed(5)} $HERESY</span>
+                <h3 class="cinzel text-lg text-purple-300 mb-4">Game History</h3>
+                <div class="grid grid-cols-3 gap-4 text-center">
+                    <div>
+                        <div class="text-2xl mb-2">🏆</div>
+                        <div class="text-sm text-purple-400/70 mb-1">Total Wins</div>
+                        <div class="cinzel text-xl text-green-400 font-bold">${stats.totalWins || 0}</div>
                     </div>
-                    <div class="flex justify-between py-2 border-b border-purple-900/20">
-                        <span class="text-purple-300">Win Rate:</span>
-                        <span class="cinzel font-semibold ${(stats.totalWins/(stats.totalGames||1)*100) >= 50 ? 'text-green-400' : 'text-red-400'}">${((stats.totalWins/(stats.totalGames||1))*100).toFixed(1)}%</span>
+                    <div>
+                        <div class="text-2xl mb-2">💀</div>
+                        <div class="text-sm text-purple-400/70 mb-1">Total Losses</div>
+                        <div class="cinzel text-xl text-red-400 font-bold">${stats.totalLosses || 0}</div>
                     </div>
-                    <div class="flex justify-between py-2">
-                        <span class="text-purple-300">Current Streak:</span>
-                        <span class="cinzel text-yellow-400 font-semibold">${stats.currentStreak || 0}</span>
+                    <div>
+                        <div class="text-2xl mb-2">⚖️</div>
+                        <div class="text-sm text-purple-400/70 mb-1">Draws</div>
+                        <div class="cinzel text-xl text-yellow-400 font-bold">${stats.totalDraws || 0}</div>
                     </div>
                 </div>
             </div>
@@ -2328,7 +2475,7 @@
                 <div class="space-y-6">
                     <div class="text-center">
                         <h3 class="cinzel text-2xl text-purple-300 mb-2">${playerName}</h3>
-                        <div class="text-sm text-purple-400/70">${address}</div>
+                        <div class="text-sm text-purple-400/70 break-all">${address}</div>
                     </div>
 
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -2364,29 +2511,9 @@
     function closePlayerModal() {
         document.getElementById('player-modal').classList.remove('active');
     }
-
-    // HELPER FUNCTIONS
-    function getTimeAgo(date) {
-        const seconds = Math.floor((new Date() - date) / 1000);
-        if (seconds < 60) return `${seconds}s ago`;
-        const minutes = Math.floor(seconds / 60);
-        if (minutes < 60) return `${minutes}m ago`;
-        const hours = Math.floor(minutes / 60);
-        if (hours < 24) return `${hours}h ago`;
-        const days = Math.floor(hours / 24);
-        return `${days}d ago`;
-    }
-
-    function escapeHtml(text) {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
-    }
-
-    function getStatusText(s) { 
-        return ["Open", "Active", "Sealed", "Retracted", "Forfeited"][s]; 
-    }
-
+</script>
+<script>
+    // TAB SWITCHING
     function switchTab(tab) {
         document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
         document.getElementById(`tab-${tab}`).classList.add('active');
@@ -2399,6 +2526,7 @@
         if (tab === 'bloodrite') loadBloodRite();
     }
 
+    // TOAST NOTIFICATION
     function showToast(msg) {
         const t = document.getElementById('toast');
         t.innerText = msg;
@@ -2406,6 +2534,7 @@
         setTimeout(() => t.classList.add('translate-y-32'), 4000);
     }
 
+    // WINDOW LIFECYCLE
     window.onload = init;
 
     window.onbeforeunload = () => {
