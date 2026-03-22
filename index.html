@@ -352,6 +352,7 @@ main{position:relative;z-index:1;padding:.8rem;max-width:1440px;margin:0 auto}
 
 /* ── IN-APP NOTIFICATION ── */
 .app-notif{position:fixed;top:70px;right:14px;z-index:600;max-width:340px;padding:.75rem 1rem;border-radius:10px;font-family:'DM Mono',monospace;font-size:.68rem;line-height:1.5;border:1px solid;display:flex;align-items:flex-start;gap:9px;transform:translateX(380px);transition:transform .3s cubic-bezier(.4,0,.2,1);pointer-events:none;backdrop-filter:blur(12px)}
+.app-notif.show{pointer-events:all}
 .app-notif.show{transform:translateX(0)}
 .app-notif.success{background:rgba(109,184,122,.15);border-color:rgba(109,184,122,.4);color:var(--grn)}
 .app-notif.warn{background:rgba(212,168,67,.12);border-color:rgba(212,168,67,.35);color:var(--gld)}
@@ -367,7 +368,8 @@ main{position:relative;z-index:1;padding:.8rem;max-width:1440px;margin:0 auto}
 @keyframes confettiFall{0%{transform:translateY(0) rotate(0deg) scale(1);opacity:1}100%{transform:translateY(105vh) rotate(720deg) scale(0.5);opacity:0}}
 
 /* ── SUCCESS/FAIL TOAST ── */
-.tx-toast{position:fixed;bottom:70px;left:50%;transform:translateX(-50%) translateY(100px);z-index:800;background:var(--card);border:2px solid;border-radius:16px;padding:1.1rem 1.4rem;min-width:280px;max-width:380px;text-align:center;transition:transform .4s cubic-bezier(.34,1.56,.64,1),opacity .4s;opacity:0;pointer-events:none}
+.tx-toast{position:fixed;bottom:70px;left:50%;transform:translateX(-50%) translateY(100px);z-index:800;background:var(--card);border:2px solid;border-radius:16px;padding:1.1rem 1.4rem;min-width:280px;max-width:380px;text-align:center;transition:transform .4s cubic-bezier(.34,1.56,.64,1),opacity .4s;opacity:0;pointer-events:none;cursor:default}
+.tx-toast.show{pointer-events:all}
 .tx-toast.show{transform:translateX(-50%) translateY(0);opacity:1}
 .tx-toast.success{border-color:var(--grn);box-shadow:0 8px 32px rgba(109,184,122,.25)}
 .tx-toast.fail{border-color:var(--red);box-shadow:0 8px 32px rgba(224,82,82,.2)}
@@ -4209,6 +4211,14 @@ function shortA(a){
   return a.slice(0,6)+'…'+a.slice(-4);
 }
 function fmt(n){if(n>=1e6)return(n/1e6).toFixed(1)+'M';if(n>=1e3)return(n/1e3).toFixed(1)+'K';return String(Math.round(n));}
+function fmtFull(n,dec=6){
+  // Full number — no K/M abbreviation, for swap amounts
+  if(!n||isNaN(n)) return '0';
+  if(n<0.000001) return n.toExponential(4);
+  if(n<1) return n.toPrecision(dec);
+  // Show up to dec decimal places, trim trailing zeros
+  return parseFloat(n.toFixed(dec)).toLocaleString('en-US',{maximumFractionDigits:dec});
+}
 function fmtP(n){if(n>=1e6)return(n/1e6).toFixed(2)+'M';if(n>=1e3)return(n/1e3).toFixed(1)+'K';return Math.round(n).toLocaleString();}
 function f2(n){return Number(n).toLocaleString(undefined,{maximumFractionDigits:2});}
 function fmtPrice(n){
@@ -5688,7 +5698,18 @@ Object.values(MOATS).forEach(m => {
 
 // ── PHARAOH (Avalanche DEX) — for hCASH LP ──
 const PHARAOH_ROUTER_ADDR = '0x9CEE04bDcE127DA7E448A333f006DEFb3d5e38cC';
-const HCASH_TOKEN_ADDR    = '0x3EFE52B961F534E5bEE8e853A55A44a4a3f1Ea93'; // hCASH token
+// hCASH token address resolved dynamically from LP contract (token0 or token1 that isn't WAVAX)
+// LP = 0x8F961980518BC9ab302948De7948580666dc35D9, contains WAVAX + hCASH
+let HCASH_TOKEN_ADDR = null; // resolved on first use
+async function resolveHcashToken() {
+  if (HCASH_TOKEN_ADDR) return HCASH_TOKEN_ADDR;
+  const prov = posProvider || new ethers.JsonRpcProvider(AVAX_RPC);
+  const lp = new ethers.Contract(HCASH_LP_ADDR, ['function token0() view returns (address)','function token1() view returns (address)'], prov);
+  const [t0, t1] = await Promise.all([lp.token0(), lp.token1()]);
+  HCASH_TOKEN_ADDR = t0.toLowerCase() === WAVAX_ADDR.toLowerCase() ? t1 : t0;
+  console.log('hCASH token resolved:', HCASH_TOKEN_ADDR);
+  return HCASH_TOKEN_ADDR;
+}
 const HCASH_LP_ADDR       = '0x8F961980518BC9ab302948De7948580666dc35D9'; // WAVAX/hCASH LP
 const HCASH_MOAT_ADDR     = '0x501f6e7bec3db63d8dacbc9fa0ce42d5d2329d53'; // hCASH moat contract
 
@@ -6152,8 +6173,68 @@ async function posOpenDetail(moatAddr) {
             ${{addlp:'💧 Add Liquidity',stakelp:'🔒 Stake LP',removelp:'↩ Remove LP'}[t]}
           </button>`).join('')}
       </div>
+      <!-- Swap pane: AVAX <-> hCASH -->
+      <div id="hcashPane_swap">
+        <div style="font-size:.72rem;color:var(--dim);margin-bottom:.7rem">Swap AVAX ↔ hCASH using the best available route (Odos · KyberSwap · Paraswap · LFJ V1).</div>
+        <div style="background:var(--sur);border:1px solid var(--bor);border-radius:10px;padding:.85rem;margin-bottom:.3rem">
+          <div style="display:flex;justify-content:space-between;margin-bottom:.4rem">
+            <span style="font-family:'DM Mono',monospace;font-size:.56rem;color:var(--mut)">From</span>
+            <span style="font-family:'DM Mono',monospace;font-size:.58rem;color:var(--mut)" id="hswapFromBal">—</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <input id="hswapFromAmt" type="number" placeholder="0.00" style="flex:1;background:transparent;border:none;outline:none;font-family:'Chakra Petch',sans-serif;font-size:1.35rem;font-weight:700;color:var(--txt);min-width:0" oninput="hswapQuote()">
+            <div style="display:flex;flex-direction:column;gap:3px;flex-shrink:0">
+              <div style="display:flex;gap:3px">
+                <div id="hswapBtn_avax" onclick="hswapSetFrom('avax')" style="display:flex;align-items:center;gap:4px;background:rgba(249,115,22,.15);border:1.5px solid var(--acc);border-radius:7px;padding:4px 8px;cursor:pointer">
+                  <img src="https://raw.githubusercontent.com/precidoboss/my-game-sprites/main/image-removebg-preview%20(8).png" style="width:16px;height:16px;border-radius:50%;object-fit:cover">
+                  <span style="font-family:'DM Mono',monospace;font-size:.62rem;color:var(--acc);font-weight:600">AVAX</span>
+                </div>
+                <div id="hswapBtn_hcash" onclick="hswapSetFrom('hcash')" style="display:flex;align-items:center;gap:4px;background:var(--card);border:1.5px solid var(--bor);border-radius:7px;padding:4px 8px;cursor:pointer">
+                  <img src="https://raw.githubusercontent.com/precidoboss/my-game-sprites/main/hashcashclub.png" style="width:16px;height:16px;border-radius:50%;object-fit:cover" onerror="this.style.display='none'">
+                  <span style="font-family:'DM Mono',monospace;font-size:.62rem;color:var(--mut);font-weight:600">hCASH</span>
+                </div>
+              </div>
+              <button onclick="hswapMax()" style="background:rgba(249,115,22,.1);border:1px solid rgba(249,115,22,.25);border-radius:5px;color:var(--acc);font-family:'DM Mono',monospace;font-size:.52rem;padding:2px 7px;cursor:pointer;width:100%">MAX</button>
+            </div>
+          </div>
+        </div>
+        <div style="text-align:center;margin:.25rem 0">
+          <button onclick="hswapFlip()" style="background:var(--card);border:1px solid var(--bor);border-radius:50%;width:30px;height:30px;cursor:pointer;font-size:.9rem" onmouseover="this.style.background='rgba(249,115,22,.1)'" onmouseout="this.style.background='var(--card)'">⇅</button>
+        </div>
+        <div style="background:var(--sur);border:1px solid var(--bor);border-radius:10px;padding:.85rem;margin-bottom:.6rem">
+          <div style="display:flex;justify-content:space-between;margin-bottom:.4rem">
+            <span style="font-family:'DM Mono',monospace;font-size:.56rem;color:var(--mut)">To (estimated)</span>
+            <span style="font-family:'DM Mono',monospace;font-size:.58rem;color:var(--mut)" id="hswapRouteLbl">—</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div id="hswapToAmt" style="flex:1;font-family:'Chakra Petch',sans-serif;font-size:1.35rem;font-weight:700;color:var(--acc)">—</div>
+            <div style="display:flex;align-items:center;gap:5px;background:var(--card);border:1px solid var(--bor);border-radius:7px;padding:5px 9px;flex-shrink:0">
+              <img id="hswapToLogo" src="https://raw.githubusercontent.com/precidoboss/my-game-sprites/main/hashcashclub.png" style="width:16px;height:16px;border-radius:50%;object-fit:cover" onerror="this.style.display='none'">
+              <span id="hswapToName" style="font-family:'DM Mono',monospace;font-size:.62rem">hCASH</span>
+            </div>
+          </div>
+        </div>
+        <div id="hswapDetails" style="display:none;background:var(--sur);border:1px solid var(--bor);border-radius:8px;padding:.65rem;margin-bottom:.55rem;font-family:'DM Mono',monospace;font-size:.6rem;color:var(--dim)">
+          <div style="display:flex;justify-content:space-between;margin-bottom:3px"><span>Route</span><span id="hswapDetailRoute" style="color:var(--acc)">—</span></div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:3px"><span>Price impact</span><span id="hswapDetailImpact">—</span></div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:3px"><span>Min received</span><span id="hswapDetailMin">—</span></div>
+          <div style="display:flex;justify-content:space-between"><span>Slippage</span><span id="hswapDetailSlip">1%</span></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:.65rem">
+          <span style="font-family:'DM Mono',monospace;font-size:.56rem;color:var(--mut)">Slippage:</span>
+          <button onclick="hswapSetSlip(0.5,this)" id="hSlip_0_5" class="btn btn-sm btn-g" style="padding:2px 8px;font-size:.56rem">0.5%</button>
+          <button onclick="hswapSetSlip(1.0,this)" id="hSlip_1_0" class="btn btn-sm btn-g" style="padding:2px 8px;font-size:.56rem;background:rgba(249,115,22,.15);border-color:var(--acc);color:var(--acc)">1.0%</button>
+          <button onclick="hswapSetSlip(2.0,this)" id="hSlip_2_0" class="btn btn-sm btn-g" style="padding:2px 8px;font-size:.56rem">2.0%</button>
+          <input id="hswapSlipCustom" type="number" class="inp" style="width:52px;padding:2px 5px;font-size:.58rem;text-align:center" placeholder="%" oninput="hswapSetSlip(parseFloat(this.value)||1,null)">
+        </div>
+        ${canManage ? `
+          <button id="hswapExecBtn" class="btn" style="width:100%;font-size:.88rem;padding:.75rem;display:none" onclick="hswapExecute()">🔀 Swap Now</button>
+          <div id="hswapStatus" style="font-family:'DM Mono',monospace;font-size:.62rem;color:var(--mut);text-align:center;margin-top:.4rem"></div>
+        ` : `<div style="font-family:'DM Mono',monospace;font-size:.65rem;color:var(--mut);text-align:center">Connect wallet to swap</div>`}
+      </div>
+      
       <!-- Add Liquidity pane -->
-      <div id="hcashPane_addlp">
+      <div id="hcashPane_addlp" style="display:none">
         <div style="font-size:.72rem;color:var(--dim);margin-bottom:.65rem">Provide AVAX + hCASH to Pharaoh's volatile pool, get LP tokens, then stake them below.</div>
         <!-- Input mode toggle -->
         <div style="display:flex;gap:5px;margin-bottom:.7rem;align-items:center">
@@ -6549,7 +6630,7 @@ async function posSwapQuote() {
     }
     const amtOut = Number(route.amountOut) / Math.pow(10, decimalsOut);
     posSwapRouteData = { route, amountInWei, tokenIn, decimalsIn, decimalsOut, tok, meta };
-    if(outEl) outEl.textContent = fmtP(amtOut) + ' ' + meta.ticker;
+    if(outEl) outEl.textContent = fmtFull(amtOut) + ' ' + meta.ticker;
     if(routeEl) routeEl.textContent = 'via ' + route.dex + ' · ' + posSwapSlippage + '% slippage';
     if(swapBtn) swapBtn.style.display = posAddress ? 'block' : 'none';
   }, 600);
@@ -6735,7 +6816,7 @@ function hcashSetInputMode(mode, el) {
 }
 
 function hcashTab(tab, el) {
-  ['addlp','stakelp','removelp'].forEach(t => {
+  ['swap','addlp','stakelp','removelp'].forEach(t => {
     const p = document.getElementById('hcashPane_'+t);
     const b = document.getElementById('hcashTab_'+t);
     if (p) p.style.display = 'none';
@@ -6761,6 +6842,7 @@ async function hcashLoadBalances() {
   if (!addr) return;
   const prov = posProvider || new ethers.JsonRpcProvider(AVAX_RPC);
   try {
+    const hcashAddr = await resolveHcashToken();
     const lp = new ethers.Contract(HCASH_LP_ADDR, ERC20_ABI, prov);
     const moat = new ethers.Contract(HCASH_MOAT_ADDR, MOAT_ABI, prov);
     const [lpBal, ui, pts] = await Promise.allSettled([
@@ -6783,10 +6865,11 @@ async function hcashLoadBalances() {
     if (rLpWal) rLpWal.textContent = f2(lpB) + ' LP';
     // Fetch AVAX and hCASH balances for add liquidity form
     const avaxBal = await prov.getBalance(addr);
-    const hcashTok = new ethers.Contract(HCASH_TOKEN_ADDR, ERC20_ABI, prov);
-    const hcashBal = await hcashTok.balanceOf(addr);
+    const hcashTok = new ethers.Contract(hcashAddr, ERC20_ABI, prov);
+    const [hcashBal, hcashDec] = await Promise.allSettled([hcashTok.balanceOf(addr), hcashTok.decimals()]);
+    const hcashDecVal = hcashDec.status==='fulfilled' ? Number(hcashDec.value) : 18;
     const avaxFmt = parseFloat(ethers.formatEther(avaxBal)).toFixed(4);
-    const hcashFmt = parseFloat(ethers.formatEther(hcashBal)).toFixed(4);
+    const hcashFmt = hcashBal.status==='fulfilled' ? parseFloat(ethers.formatUnits(hcashBal.value, hcashDecVal)).toFixed(4) : '0';
     const avaxEl = document.getElementById('hcashAvaxBal');
     const hcashEl = document.getElementById('hcashTokenBal');
     if (avaxEl) avaxEl.textContent = 'Balance: ' + avaxFmt + ' AVAX';
@@ -6829,6 +6912,7 @@ async function hcashQuoteLP() {
   try {
     const prov   = posProvider || new ethers.JsonRpcProvider(AVAX_RPC);
     // Use LP contract reserves to calculate ratio (most reliable)
+    const hcashTokAddr = await resolveHcashToken();
     const lp     = new ethers.Contract(HCASH_LP_ADDR, [
       'function getReserves() view returns (uint256 reserve0, uint256 reserve1, uint256 blockTimestampLast)',
       'function token0() view returns (address)',
@@ -6891,8 +6975,9 @@ async function hcashAddLiquidity() {
   }
   const statusEl = document.getElementById('hcashAddStatus');
   await posRunTx('hcashAddStatus', async () => {
+    const hcashTokenAddr = await resolveHcashToken();
     const router   = new ethers.Contract(PHARAOH_ROUTER_ADDR, PHARAOH_ROUTER_ABI, posSigner);
-    const hcashTok = new ethers.Contract(HCASH_TOKEN_ADDR, ERC20_ABI, posSigner);
+    const hcashTok = new ethers.Contract(hcashTokenAddr, ERC20_ABI, posSigner);
     const avaxWei  = ethers.parseEther(avaxAmt.toFixed(8));
     const hcashWei = ethers.parseEther(hcashAmt.toFixed(8));
     const minAvax  = avaxWei  * 95n / 100n; // 5% slippage
@@ -6906,7 +6991,7 @@ async function hcashAddLiquidity() {
       await appTx.wait();
     }
     if (statusEl) statusEl.textContent = 'Confirm add liquidity in wallet…';
-    return router.addLiquidityAVAX(HCASH_TOKEN_ADDR, false, hcashWei, minHcash, minAvax, posAddress, deadline, {value: avaxWei});
+    return router.addLiquidityAVAX(hcashTokenAddr, false, hcashWei, minHcash, minAvax, posAddress, deadline, {value: avaxWei});
   }, '✅ Liquidity added! LP tokens in your wallet — now stake them.');
   setTimeout(hcashLoadBalances, 3000);
 }
@@ -6975,9 +7060,181 @@ async function hcashRemoveLiquidity() {
       await appTx.wait();
     }
     const deadline = Math.floor(Date.now()/1000) + 1800;
-    return router.removeLiquidityAVAX(HCASH_TOKEN_ADDR, false, lpWei, 0n, 0n, posAddress, deadline);
+    const hcashTokAddrRm = await resolveHcashToken();
+    return router.removeLiquidityAVAX(hcashTokAddrRm, false, lpWei, 0n, 0n, posAddress, deadline);
   }, '✅ Liquidity removed — AVAX and hCASH returned to wallet.');
   setTimeout(hcashLoadBalances, 3000);
+}
+
+// ════════════ hCASH SWAP ENGINE ════════════
+
+let hswapFromToken = 'avax'; // 'avax' | 'hcash'
+let hswapSlippage  = 1.0;
+let hswapRouteData = null;
+let hswapTimer     = null;
+
+function hswapSetFrom(tok) {
+  hswapFromToken = tok;
+  const avaxBtn  = document.getElementById('hswapBtn_avax');
+  const hcashBtn = document.getElementById('hswapBtn_hcash');
+  const toName   = document.getElementById('hswapToName');
+  const toLogo   = document.getElementById('hswapToLogo');
+  if (avaxBtn)  { avaxBtn.style.background  = tok==='avax'  ? 'rgba(249,115,22,.15)' : 'var(--card)'; avaxBtn.style.borderColor  = tok==='avax'  ? 'var(--acc)' : 'var(--bor)'; avaxBtn.querySelector('span').style.color  = tok==='avax'  ? 'var(--acc)' : 'var(--mut)'; }
+  if (hcashBtn) { hcashBtn.style.background = tok==='hcash' ? 'rgba(249,115,22,.15)' : 'var(--card)'; hcashBtn.style.borderColor = tok==='hcash' ? 'var(--acc)' : 'var(--bor)'; hcashBtn.querySelector('span').style.color = tok==='hcash' ? 'var(--acc)' : 'var(--mut)'; }
+  const toTok = tok==='avax' ? 'hcash' : 'avax';
+  if (toName) toName.textContent = toTok==='avax' ? 'AVAX' : 'hCASH';
+  if (toLogo) toLogo.src = toTok==='avax' ? 'https://raw.githubusercontent.com/precidoboss/my-game-sprites/main/image-removebg-preview%20(8).png' : 'https://raw.githubusercontent.com/precidoboss/my-game-sprites/main/hashcashclub.png';
+  hswapUpdateFromBal();
+  hswapQuote();
+}
+
+function hswapFlip() {
+  hswapSetFrom(hswapFromToken==='avax' ? 'hcash' : 'avax');
+}
+
+async function hswapUpdateFromBal() {
+  const addr = posAddress || posViewAddr;
+  const el   = document.getElementById('hswapFromBal');
+  if (!el || !addr) return;
+  const prov = posProvider || new ethers.JsonRpcProvider(AVAX_RPC);
+  try {
+    if (hswapFromToken === 'avax') {
+      const b = await prov.getBalance(addr);
+      el.textContent = 'Balance: ' + parseFloat(ethers.formatEther(b)).toFixed(4) + ' AVAX';
+    } else {
+      const hcashAddr = await resolveHcashToken();
+      const tok = new ethers.Contract(hcashAddr, ERC20_ABI, prov);
+      const [b, d] = await Promise.all([tok.balanceOf(addr), tok.decimals()]);
+      el.textContent = 'Balance: ' + parseFloat(ethers.formatUnits(b, Number(d))).toFixed(4) + ' hCASH';
+    }
+  } catch(e) { if(el) el.textContent = 'Balance: —'; }
+}
+
+async function hswapMax() {
+  const addr = posAddress || posViewAddr;
+  const inp  = document.getElementById('hswapFromAmt');
+  if (!inp || !addr) return;
+  const prov = posProvider || new ethers.JsonRpcProvider(AVAX_RPC);
+  try {
+    if (hswapFromToken === 'avax') {
+      const b = await prov.getBalance(addr);
+      inp.value = Math.max(0, parseFloat(ethers.formatEther(b)) - 0.03).toFixed(4);
+    } else {
+      const hcashAddr = await resolveHcashToken();
+      const tok = new ethers.Contract(hcashAddr, ERC20_ABI, prov);
+      const [b, d] = await Promise.all([tok.balanceOf(addr), tok.decimals()]);
+      inp.value = parseFloat(ethers.formatUnits(b, Number(d))).toFixed(4);
+    }
+    hswapQuote();
+  } catch(e) {}
+}
+
+function hswapSetSlip(val, btn) {
+  hswapSlippage = val;
+  document.querySelectorAll('[id^="hSlip_"]').forEach(b => { b.style.background='transparent'; b.style.color='var(--mut)'; b.style.borderColor='var(--bor)'; });
+  if (btn) { btn.style.background='rgba(249,115,22,.15)'; btn.style.color='var(--acc)'; btn.style.borderColor='var(--acc)'; }
+  document.getElementById('hswapDetailSlip').textContent = val + '%';
+  hswapQuote();
+}
+
+async function hswapQuote() {
+  clearTimeout(hswapTimer);
+  hswapTimer = setTimeout(async () => {
+    const amt    = parseFloat(document.getElementById('hswapFromAmt')?.value)||0;
+    const toAmtEl   = document.getElementById('hswapToAmt');
+    const routeEl   = document.getElementById('hswapRouteLbl');
+    const detailEl  = document.getElementById('hswapDetails');
+    const execBtn   = document.getElementById('hswapExecBtn');
+    if (!toAmtEl) return;
+    if (!amt) { if(toAmtEl) toAmtEl.textContent='—'; hswapRouteData=null; if(execBtn)execBtn.style.display='none'; if(detailEl)detailEl.style.display='none'; return; }
+    if(toAmtEl) toAmtEl.textContent='…'; if(routeEl) routeEl.textContent='Quoting…';
+
+    const addr   = posAddress || posViewAddr || '0x0000000000000000000000000000000000000001';
+    const prov   = posProvider || new ethers.JsonRpcProvider(AVAX_RPC);
+    const hcashAddr = await resolveHcashToken();
+    const hcashTok  = new ethers.Contract(hcashAddr, ERC20_ABI, prov);
+    const hcashDec  = Number(await hcashTok.decimals().catch(()=>18));
+
+    const isFromAvax = hswapFromToken === 'avax';
+    const tokenIn    = isFromAvax ? 'avax' : hcashAddr;
+    const tokenOut   = isFromAvax ? hcashAddr : 'avax';
+    const decIn      = isFromAvax ? 18 : hcashDec;
+    const decOut     = isFromAvax ? hcashDec : 18;
+
+    let amountInWei;
+    try {
+      amountInWei = isFromAvax
+        ? ethers.parseEther(String(Math.floor(amt*1e9)/1e9))
+        : ethers.parseUnits(String(Math.floor(amt*1e9)/1e9), hcashDec);
+    } catch(e) { if(toAmtEl)toAmtEl.textContent='—'; return; }
+
+    const route = await getBestRoute(tokenIn, tokenOut, amountInWei, addr, decIn, decOut, prov);
+    if (!route) {
+      if(toAmtEl) toAmtEl.textContent = 'No route found';
+      if(routeEl) routeEl.textContent = 'Try smaller amount';
+      if(execBtn) execBtn.style.display='none';
+      hswapRouteData = null; return;
+    }
+
+    // Full number display — no K/M abbreviation for swap amounts
+    const amtOut    = Number(route.amountOut) / Math.pow(10, decOut);
+    const amtOutFmt = amtOut >= 1 ? amtOut.toFixed(6) : amtOut.toPrecision(6);
+    const amtInFmt  = amt >= 1 ? amt.toFixed(6) : amt.toPrecision(6);
+
+    // Price impact calc (rough — based on reserves if V1, else omit)
+    let priceImpact = '< 0.01%';
+    try {
+      const lp = new ethers.Contract(HCASH_LP_ADDR, ['function getReserves() view returns (uint256,uint256,uint256)','function token0() view returns (address)'], prov);
+      const [res, t0] = await Promise.all([lp.getReserves(), lp.token0()]);
+      const isT0Wavax = t0.toLowerCase() === WAVAX_ADDR.toLowerCase();
+      const resIn  = Number(isFromAvax ? (isT0Wavax?res[0]:res[1]) : (isT0Wavax?res[1]:res[0])) / 1e18;
+      const impact = ((amt / (resIn + amt)) * 100);
+      priceImpact = impact < 0.01 ? '< 0.01%' : impact.toFixed(2) + '%';
+      const impactEl = document.getElementById('hswapDetailImpact');
+      if (impactEl) { impactEl.textContent = priceImpact; impactEl.style.color = impact > 5 ? 'var(--red)' : impact > 1 ? 'var(--gld)' : 'var(--grn)'; }
+    } catch(e) {}
+
+    const minReceived = (amtOut * (1 - hswapSlippage/100)).toFixed(6);
+    const tokenOutName = isFromAvax ? 'hCASH' : 'AVAX';
+
+    if(toAmtEl)  toAmtEl.textContent  = amtOutFmt + ' ' + tokenOutName;
+    if(routeEl)  routeEl.textContent  = 'via ' + route.dex;
+    if(detailEl) detailEl.style.display = 'block';
+    setTxt('hswapDetailRoute', route.dex);
+    setTxt('hswapDetailMin',   minReceived + ' ' + tokenOutName);
+    if(execBtn) execBtn.style.display = posAddress ? 'block' : 'none';
+
+    hswapRouteData = { route, amountInWei, tokenIn, tokenOut, decIn, decOut, amtOut, hcashAddr, isFromAvax };
+  }, 500);
+}
+
+async function hswapExecute() {
+  if (!posSigner || !hswapRouteData) return;
+  const { route, amountInWei, tokenIn, tokenOut, decIn, decOut, hcashAddr, isFromAvax } = hswapRouteData;
+  const statusEl = document.getElementById('hswapStatus');
+  const btn      = document.getElementById('hswapExecBtn');
+  if (btn) { btn.disabled=true; btn.textContent='Swapping…'; }
+
+  try {
+    const result = await cmSmartSwap(
+      posSigner, isFromAvax ? 'avax' : hcashAddr, isFromAvax ? hcashAddr : 'avax',
+      amountInWei, posAddress, decIn, decOut,
+      isFromAvax ? '$hcash' : 'AVAX', '__hswap__'
+    );
+    const amtOut = Number(result.amtOut||0) / Math.pow(10, isFromAvax ? decOut : 18);
+    const quip = SUCCESS_QUIPS[Math.floor(Math.random()*SUCCESS_QUIPS.length)];
+    if(statusEl) statusEl.innerHTML = `<span style="color:var(--grn)">✅ ${quip} · <a href="https://snowtrace.io/tx/${result.tx.hash}" target="_blank" style="color:var(--acc)">${shortA(result.tx.hash)} ↗</a></span>`;
+    showTxToast(true, quip, 'Swap complete!', result.tx.hash);
+    setTimeout(hcashLoadBalances, 2500);
+  } catch(e) {
+    let msg = e.reason||e.shortMessage||e.message||String(e);
+    const isReject = msg.includes('user rejected')||msg.includes('ACTION_REJECTED');
+    if (isReject) msg = REJECT_QUIPS[Math.floor(Math.random()*REJECT_QUIPS.length)];
+    else if (msg.length > 120) msg = msg.slice(0,120)+'…';
+    if(statusEl) statusEl.innerHTML = `<span style="color:${isReject?'var(--gld)':'var(--red)'}">${msg} — <button onclick="hswapExecute()" style="background:none;border:none;color:var(--acc);cursor:pointer;font-family:'DM Mono',monospace;font-size:.65rem">Try again →</button></span>`;
+    if (!isReject) showTxToast(false, FAIL_QUIPS[Math.floor(Math.random()*FAIL_QUIPS.length)], msg);
+  }
+  if (btn) { btn.disabled=false; btn.textContent='🔀 Swap Now'; }
 }
 
 // ── INIT ──
