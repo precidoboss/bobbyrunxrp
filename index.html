@@ -5716,15 +5716,29 @@ const HCASH_MOAT_ADDR     = '0x501f6e7bec3db63d8dacbc9fa0ce42d5d2329d53'; // hCA
 // Pharaoh is a Velodrome/Solidly fork — ABI uses factory address in quoteAddLiquidity
 const PHARAOH_FACTORY_ADDR = '0x85448bF2F589ab1F56225DF5167c63f57758f8c1'; // PairFactory
 const PHARAOH_ROUTER_ABI = [
-  // Velodrome-style: factory is first param in quote functions
+  // Quote functions (Velodrome/Solidly style — factory is 4th param)
   'function quoteAddLiquidity(address tokenA, address tokenB, bool stable, address _factory, uint256 amountADesired, uint256 amountBDesired) view returns (uint256 amountA, uint256 amountB, uint256 liquidity)',
   'function quoteRemoveLiquidity(address tokenA, address tokenB, bool stable, address _factory, uint256 liquidity) view returns (uint256 amountA, uint256 amountB)',
+  // Add/remove with native AVAX
   'function addLiquidityAVAX(address token, bool stable, uint256 amountTokenDesired, uint256 amountTokenMin, uint256 amountAVAXMin, address to, uint256 deadline) payable returns (uint256 amountToken, uint256 amountAVAX, uint256 liquidity)',
   'function removeLiquidityAVAX(address token, bool stable, uint256 liquidity, uint256 amountTokenMin, uint256 amountAVAXMin, address to, uint256 deadline) returns (uint256 amountToken, uint256 amountAVAX)',
-  // Solidly route struct
+  // Add/remove with ERC20 tokens (WAVAX + token)
+  'function addLiquidity(address tokenA, address tokenB, bool stable, uint256 amountADesired, uint256 amountBDesired, uint256 amountAMin, uint256 amountBMin, address to, uint256 deadline) returns (uint256 amountA, uint256 amountB, uint256 liquidity)',
+  'function removeLiquidity(address tokenA, address tokenB, bool stable, uint256 liquidity, uint256 amountAMin, uint256 amountBMin, address to, uint256 deadline) returns (uint256 amountA, uint256 amountB)',
+  // Swap
   'function getAmountsOut(uint256 amountIn, tuple(address from, address to, bool stable, address factory)[] routes) view returns (uint256[] amounts)',
   'function swapExactAVAXForTokens(uint256 amountOutMin, tuple(address from, address to, bool stable, address factory)[] routes, address to, uint256 deadline) payable returns (uint256[] amounts)',
   'function swapExactTokensForAVAX(uint256 amountIn, uint256 amountOutMin, tuple(address from, address to, bool stable, address factory)[] routes, address to, uint256 deadline) returns (uint256[] amounts)',
+  'function swapExactTokensForTokens(uint256 amountIn, uint256 amountOutMin, tuple(address from, address to, bool stable, address factory)[] routes, address to, uint256 deadline) returns (uint256[] amounts)',
+];
+
+// WAVAX ABI for deposit (wrap native AVAX)
+const WAVAX_ABI = [
+  'function deposit() payable',
+  'function withdraw(uint256 wad)',
+  'function balanceOf(address) view returns (uint256)',
+  'function approve(address spender, uint256 amount) returns (bool)',
+  'function allowance(address owner, address spender) view returns (uint256)',
 ];
 
 // Moats where burn is disabled
@@ -6165,12 +6179,12 @@ async function posOpenDetail(moatAddr) {
           <div style="font-family:'DM Mono',monospace;font-size:.5rem;color:var(--mut)">My Points</div>
         </div>
       </div>
-      <!-- Tabs -->
-      <div style="display:flex;gap:4px;margin-bottom:.85rem">
-        ${['addlp','stakelp','removelp'].map((t,i)=>`
+      <!-- Tabs — 4 tabs, Swap is first/default -->
+      <div style="display:flex;gap:4px;margin-bottom:.85rem;overflow-x:auto;scrollbar-width:none">
+        ${[['swap','🔀 Swap'],['addlp','💧 Add LP'],['stakelp','🔒 Stake LP'],['removelp','↩ Remove LP']].map(([t,lbl],i)=>`
           <button onclick="hcashTab('${t}',this)" id="hcashTab_${t}"
-            style="padding:5px 12px;border-radius:7px;cursor:pointer;font-family:'DM Mono',monospace;font-size:.6rem;border:1px solid ${i===0?'rgba(212,168,67,.4)':'var(--bor)'};background:${i===0?'rgba(212,168,67,.12)':'transparent'};color:${i===0?'var(--gld)':'var(--mut)'};transition:all .15s">
-            ${{addlp:'💧 Add Liquidity',stakelp:'🔒 Stake LP',removelp:'↩ Remove LP'}[t]}
+            style="padding:5px 12px;border-radius:7px;cursor:pointer;font-family:'DM Mono',monospace;font-size:.6rem;border:1px solid ${i===0?'rgba(249,115,22,.4)':'var(--bor)'};background:${i===0?'rgba(249,115,22,.1)':'transparent'};color:${i===0?'var(--acc)':'var(--mut)'};transition:all .15s;white-space:nowrap;flex-shrink:0">
+            ${lbl}
           </button>`).join('')}
       </div>
       <!-- Swap pane: AVAX <-> hCASH -->
@@ -6236,19 +6250,7 @@ async function posOpenDetail(moatAddr) {
       <!-- Add Liquidity pane -->
       <div id="hcashPane_addlp" style="display:none">
         <div style="font-size:.72rem;color:var(--dim);margin-bottom:.65rem">Provide AVAX + hCASH to Pharaoh's volatile pool, get LP tokens, then stake them below.</div>
-        <!-- Input mode toggle -->
-        <div style="display:flex;gap:5px;margin-bottom:.7rem;align-items:center">
-          <span style="font-family:'DM Mono',monospace;font-size:.58rem;color:var(--mut)">Pay with:</span>
-          <div id="hcashModeAvax" onclick="hcashSetInputMode('avax',this)" style="display:flex;align-items:center;gap:5px;background:rgba(249,115,22,.15);border:1.5px solid var(--acc);border-radius:7px;padding:4px 9px;cursor:pointer">
-            <img src="https://raw.githubusercontent.com/precidoboss/my-game-sprites/main/image-removebg-preview%20(8).png" style="width:16px;height:16px;border-radius:50%;object-fit:cover">
-            <span style="font-family:'DM Mono',monospace;font-size:.62rem;color:var(--acc);font-weight:600">AVAX</span>
-          </div>
-          <div id="hcashModeUsdc" onclick="hcashSetInputMode('usdc',this)" style="display:flex;align-items:center;gap:5px;background:var(--sur);border:1.5px solid var(--bor);border-radius:7px;padding:4px 9px;cursor:pointer">
-            <img src="https://assets.coingecko.com/coins/images/6319/small/usdc.png" style="width:16px;height:16px;border-radius:50%;object-fit:cover">
-            <span style="font-family:'DM Mono',monospace;font-size:.62rem;color:var(--mut);font-weight:600">USDC</span>
-          </div>
-          <input type="hidden" id="hcashInputMode" value="avax">
-        </div>
+        <!-- Input: AVAX + hCASH amounts -->
         <div class="cr2" style="margin-bottom:.55rem">
           <div class="ig">
             <label class="il" id="hcashAmtLabel">AVAX Amount</label>
@@ -6797,23 +6799,6 @@ async function posRunTx(statusId, fn, successMsg) {
 
 let hcashStakeMethod = 'stake';
 
-function hcashSetInputMode(mode, el) {
-  const hidden = document.getElementById('hcashInputMode');
-  if (hidden) hidden.value = mode;
-  const avaxBtn = document.getElementById('hcashModeAvax');
-  const usdcBtn = document.getElementById('hcashModeUsdc');
-  const lbl     = document.getElementById('hcashAmtLabel');
-  const logo    = document.getElementById('hcashAmtLogo');
-  const AVAX_LOGO = 'https://raw.githubusercontent.com/precidoboss/my-game-sprites/main/image-removebg-preview%20(8).png';
-  const USDC_LOGO = 'https://assets.coingecko.com/coins/images/6319/small/usdc.png';
-  if (avaxBtn) { avaxBtn.style.background = mode==='avax'?'rgba(249,115,22,.15)':'var(--sur)'; avaxBtn.style.borderColor = mode==='avax'?'var(--acc)':'var(--bor)'; avaxBtn.querySelector('span').style.color = mode==='avax'?'var(--acc)':'var(--mut)'; }
-  if (usdcBtn) { usdcBtn.style.background = mode==='usdc'?'rgba(249,115,22,.15)':'var(--sur)'; usdcBtn.style.borderColor = mode==='usdc'?'var(--acc)':'var(--bor)'; usdcBtn.querySelector('span').style.color = mode==='usdc'?'var(--acc)':'var(--mut)'; }
-  if (lbl)  lbl.textContent  = mode==='avax' ? 'AVAX Amount' : 'USDC Amount';
-  if (logo) logo.src = mode==='avax' ? AVAX_LOGO : USDC_LOGO;
-  // Update max button & balance display
-  hcashMaxAvax();
-  hcashQuoteLP();
-}
 
 function hcashTab(tab, el) {
   hcashActiveTab = tab; // persist so we can restore after page re-render
@@ -6887,24 +6872,16 @@ async function hcashMaxAvax() {
   const addr = posAddress || posViewAddr;
   if (!addr) return;
   const prov = posProvider || new ethers.JsonRpcProvider(AVAX_RPC);
-  const mode = document.getElementById('hcashInputMode')?.value || 'avax';
   const inp  = document.getElementById('hcashAvaxAmt');
   try {
-    if (mode === 'usdc') {
-      const usdc = new ethers.Contract(USDC_ADDR, ERC20_ABI, prov);
-      const b = await usdc.balanceOf(addr);
-      if (inp) { inp.value = parseFloat(ethers.formatUnits(b,6)).toFixed(2); }
-    } else {
-      const b = await prov.getBalance(addr);
-      const maxAvax = Math.max(0, parseFloat(ethers.formatEther(b)) - 0.05);
-      if (inp) inp.value = maxAvax.toFixed(4);
-    }
+    const b = await prov.getBalance(addr);
+    const maxAvax = Math.max(0, parseFloat(ethers.formatEther(b)) - 0.05);
+    if (inp) inp.value = maxAvax.toFixed(4);
     hcashQuoteLP();
   } catch(e) {}
 }
 
 async function hcashQuoteLP() {
-  const inputMode = document.getElementById('hcashInputMode')?.value || 'avax';
   const avaxAmt   = parseFloat(document.getElementById('hcashAvaxAmt')?.value)||0;
   if (!avaxAmt) return;
   const preview  = document.getElementById('hcashLpPreview');
@@ -6930,12 +6907,7 @@ async function hcashQuoteLP() {
     const wavaxReserve = isWavaxToken0 ? r0 : r1;
     const hcashReserve = isWavaxToken0 ? r1 : r0;
 
-    let avaxIn = avaxAmt;
-    if (inputMode === 'usdc') {
-      // Convert USDC to AVAX amount using price
-      const avaxPrice = priceCache['avax']?.price || 25;
-      avaxIn = avaxAmt / avaxPrice;
-    }
+    const avaxIn = avaxAmt;
     const hcashNeeded = avaxIn * hcashReserve / wavaxReserve;
     const lpShare     = avaxIn / wavaxReserve;
     const lpExpected  = lpShare * ts;
@@ -6964,53 +6936,66 @@ async function hcashQuoteLP() {
 
 async function hcashAddLiquidity() {
   if (!posSigner) return;
-  const inputMode = document.getElementById('hcashInputMode')?.value || 'avax';
   let avaxAmt  = parseFloat(document.getElementById('hcashAvaxAmt')?.value)||0;
   const hcashAmt = parseFloat(document.getElementById('hcashTokenAmt')?.value)||0;
   if (!avaxAmt || !hcashAmt) { showAppNotif('Enter amount first', 'warn'); return; }
-  // If USDC mode: swap USDC→WAVAX first, then add liquidity
-  if (inputMode === 'usdc') {
-    // TODO: for now redirect to AVAX mode with equivalent
-    showAppNotif('Tip: Convert USDC to AVAX in the swap tab first, then come back here', 'info');
-    return;
-  }
+
   const statusEl = document.getElementById('hcashAddStatus');
   await posRunTx('hcashAddStatus', async () => {
     const hcashTokenAddr = await resolveHcashToken();
-    const router   = new ethers.Contract(PHARAOH_ROUTER_ADDR, PHARAOH_ROUTER_ABI, posSigner);
-    const hcashTok = new ethers.Contract(hcashTokenAddr, ERC20_ABI, posSigner);
-    // Get actual decimals from token contract
-    const hcashDecimals = Number(await hcashTok.decimals().catch(()=>18));
+    const router    = new ethers.Contract(PHARAOH_ROUTER_ADDR, PHARAOH_ROUTER_ABI, posSigner);
+    const hcashTok  = new ethers.Contract(hcashTokenAddr, ERC20_ABI, posSigner);
+    const wavaxTok  = new ethers.Contract(WAVAX_ADDR, WAVAX_ABI, posSigner);
+    const hcashDec  = Number(await hcashTok.decimals().catch(()=>18));
     const avaxWei   = ethers.parseEther(String(parseFloat(avaxAmt.toFixed(6))));
-    const hcashWei  = ethers.parseUnits(String(parseFloat(hcashAmt.toFixed(hcashDecimals))), hcashDecimals);
-    // Use 2% slippage tolerance
-    const minAvax   = avaxWei  * 98n / 100n;
-    const minHcash  = hcashWei * 98n / 100n;
+    const hcashWei  = ethers.parseUnits(String(parseFloat(hcashAmt.toFixed(Math.min(hcashDec,6)))), hcashDec);
+    const minAvax   = avaxWei  * 97n / 100n; // 3% slippage
+    const minHcash  = hcashWei * 97n / 100n;
     const deadline  = Math.floor(Date.now()/1000) + 1800;
-    console.log('[hCASH LP] Token:', hcashTokenAddr, 'Decimals:', hcashDecimals);
+    console.log('[hCASH LP] hcashTokenAddr:', hcashTokenAddr, 'hcashDec:', hcashDec);
     console.log('[hCASH LP] avaxWei:', avaxWei.toString(), 'hcashWei:', hcashWei.toString());
-    // Approve hCASH for router
-    const allowed = await hcashTok.allowance(posAddress, PHARAOH_ROUTER_ADDR);
-    if (allowed < hcashWei) {
-      if (statusEl) statusEl.textContent = 'Approving hCASH for Pharaoh…';
-      const appTx = await hcashTok.approve(PHARAOH_ROUTER_ADDR, ethers.MaxUint256);
-      if (statusEl) statusEl.textContent = 'Approval tx: ' + appTx.hash;
-      await appTx.wait();
+
+    // Strategy: Try addLiquidityAVAX first (native AVAX), fall back to WAVAX + addLiquidity
+    try {
+      // Step 1: Approve hCASH for router
+      const hcashAllowed = await hcashTok.allowance(posAddress, PHARAOH_ROUTER_ADDR);
+      if (hcashAllowed < hcashWei) {
+        if (statusEl) statusEl.textContent = 'Approving hCASH…';
+        const appTx = await hcashTok.approve(PHARAOH_ROUTER_ADDR, ethers.MaxUint256);
+        await appTx.wait();
+      }
+      if (statusEl) statusEl.textContent = 'Adding liquidity (AVAX + hCASH)… confirm in wallet';
+      // Try addLiquidityAVAX (router wraps AVAX internally)
+      return await router.addLiquidityAVAX(
+        hcashTokenAddr, false, hcashWei, minHcash, minAvax, posAddress, deadline,
+        { value: avaxWei, gasLimit: 500000n }
+      );
+    } catch(e1) {
+      console.warn('[hCASH LP] addLiquidityAVAX failed, trying WAVAX route:', e1.message);
+      // Fallback: wrap AVAX to WAVAX, then use addLiquidity(WAVAX, hCASH)
+      if (statusEl) statusEl.textContent = 'Wrapping AVAX to WAVAX…';
+      const wrapTx = await wavaxTok.deposit({ value: avaxWei });
+      await wrapTx.wait();
+      // Approve WAVAX for router
+      const wavaxAllowed = await wavaxTok.allowance(posAddress, PHARAOH_ROUTER_ADDR);
+      if (wavaxAllowed < avaxWei) {
+        const wAppTx = await wavaxTok.approve(PHARAOH_ROUTER_ADDR, ethers.MaxUint256);
+        await wAppTx.wait();
+      }
+      // Approve hCASH for router (may already be done above)
+      const hcashAllowed2 = await hcashTok.allowance(posAddress, PHARAOH_ROUTER_ADDR);
+      if (hcashAllowed2 < hcashWei) {
+        const hAppTx = await hcashTok.approve(PHARAOH_ROUTER_ADDR, ethers.MaxUint256);
+        await hAppTx.wait();
+      }
+      if (statusEl) statusEl.textContent = 'Adding liquidity (WAVAX + hCASH)… confirm in wallet';
+      return await router.addLiquidity(
+        WAVAX_ADDR, hcashTokenAddr, false,
+        avaxWei, hcashWei, minAvax, minHcash,
+        posAddress, deadline, { gasLimit: 500000n }
+      );
     }
-    if (statusEl) statusEl.textContent = 'Confirm add liquidity in wallet…';
-    // Pharaoh addLiquidityAVAX: token, stable, amountTokenDesired, amountTokenMin, amountAVAXMin, to, deadline
-    // AVAX sent as msg.value
-    return router.addLiquidityAVAX(
-      hcashTokenAddr,
-      false,        // volatile pair, not stable
-      hcashWei,     // amountTokenDesired
-      minHcash,     // amountTokenMin (2% slippage)
-      minAvax,      // amountAVAXMin  (2% slippage)
-      posAddress,   // recipient
-      deadline,
-      { value: avaxWei }
-    );
-  }, '✅ LP tokens minted! Click Stake LP tab to stake them in the moat 🏰');
+  }, '✅ LP tokens minted! Switching to Stake LP tab…');
   setTimeout(() => {
     hcashLoadBalances();
     // Auto-switch to stake tab so user can stake immediately
