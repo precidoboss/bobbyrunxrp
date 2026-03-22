@@ -1121,7 +1121,7 @@ main{position:relative;z-index:1;padding:.8rem;max-width:1440px;margin:0 auto}
   <!-- Wallet Connect Banner -->
   <div id="cmWalletBanner" style="margin-bottom:1rem">
     <div class="wallet-connect-btn" id="cmConnectBtn" onclick="cmConnectWallet()">
-      <div style="font-size:1.6rem">🦊</div>
+      <div style="width:36px;height:36px;border-radius:50%;overflow:hidden;border:2px solid var(--bor);flex-shrink:0"><img src="https://raw.githubusercontent.com/precidoboss/my-game-sprites/main/photo_1_2026-03-20_22-32-30-removebg-preview.png" style="width:100%;height:100%;object-fit:cover" onerror="this.parentElement.innerHTML='🦊'"></div>
       <div style="flex:1">
         <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.9rem">Connect Wallet</div>
         <div style="font-size:.7rem;color:var(--dim);margin-top:2px">MetaMask · WalletConnect · any injected wallet</div>
@@ -1130,7 +1130,7 @@ main{position:relative;z-index:1;padding:.8rem;max-width:1440px;margin:0 auto}
     </div>
     <div id="cmWalletConnected" style="display:none">
       <div class="wallet-connect-btn connected">
-        <div style="font-size:1.4rem">✅</div>
+        <div style="width:36px;height:36px;border-radius:50%;overflow:hidden;border:2px solid var(--grn);flex-shrink:0"><img src="https://raw.githubusercontent.com/precidoboss/my-game-sprites/main/photo_1_2026-03-20_22-32-30-removebg-preview.png" style="width:100%;height:100%;object-fit:cover" onerror="this.parentElement.innerHTML='🟢'"></div>
         <div style="flex:1">
           <div style="font-family:'DM Mono',monospace;font-size:.72rem;color:var(--grn);font-weight:600" id="cmConnectedAddr">—</div>
           <div style="font-size:.68rem;color:var(--mut);margin-top:2px">
@@ -4459,22 +4459,26 @@ const WAVAX_ADDR     = '0xB31f66AA3C1e785363F0875a1b74E27b85FD66c7';
 const DEAD_ADDR_CM   = '0x000000000000000000000000000000000000dEaD';
 const NATIVE_AVAX    = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE'; // sentinel for native
 
-// LFJ Router API — supports flytrade, jar, kyber, odos, okx aggregators
-const LFJ_ROUTER_API  = 'https://router-api.lfj.dev/v2/aggregator/routes/avalanche';
-const LFJ_AGGREGATORS = ['odos', 'kyber', 'jar', 'flytrade', 'okx'];
-
-// LFJ on-chain router fallback (V1 classic AMM)
+// ── PUBLIC DEX APIs (no auth, CORS-friendly) ──
+// Odos: public API, no key needed for Avalanche quotes
+const ODOS_QUOTE_URL  = 'https://api.odos.xyz/sor/quote/v2';
+const ODOS_ASSEMBLE   = 'https://api.odos.xyz/sor/assemble';
+// KyberSwap: public aggregator API
+const KYBER_QUOTE_URL = 'https://aggregator-api.kyberswap.com/avalanche/api/v1/routes';
+const KYBER_SWAP_URL  = 'https://aggregator-api.kyberswap.com/avalanche/api/v1/route/build';
+// Paraswap: public, no key, good Avalanche coverage
+const PARASWAP_PRICE  = 'https://apiv5.paraswap.io/prices';
+const PARASWAP_TX     = 'https://apiv5.paraswap.io/transactions/43114';
+// LFJ V1 on-chain AMM router (no API, direct contract — always available)
 const LFJ_V1_ROUTER   = '0x60aE616a2155Ee3d9A68541Ba4544862310933d4';
+const AVAX_CHAIN_ID_NUM = 43114;
 
-// Pharaoh (concentrated liquidity on Avalanche) router
-const PHARAOH_ROUTER  = '0xAA23611badAFB62D37E7295A682D21960ac85A90';
-
-// Gas estimates (real Avalanche costs, much lower than 0.15 AVAX)
-const GAS_APPROVE     = 0.003;  // AVAX
-const GAS_SWAP        = 0.008;  // AVAX (aggregator route)
-const GAS_STAKE       = 0.005;  // AVAX
-const GAS_LOCK        = 0.006;  // AVAX
-const GAS_BURN        = 0.005;  // AVAX
+// Gas estimates — real Avalanche C-Chain costs (AVAX)
+const GAS_APPROVE     = 0.002;
+const GAS_SWAP        = 0.006;
+const GAS_STAKE       = 0.004;
+const GAS_LOCK        = 0.005;
+const GAS_BURN        = 0.004;
 
 const ERC20_ABI = [
   'function approve(address spender, uint256 amount) returns (bool)',
@@ -4512,69 +4516,154 @@ let cmSelectedMoats = new Set();
 let cmExecuting     = false;
 let cmRouteCache    = {}; // tokenOut -> {agg, data, gasEstimate}
 
-// ── LFJ ROUTER API — Smart multi-DEX routing ──
-async function lfjGetBestRoute(tokenIn, tokenOut, amountInWei, userAddr, slippageBps=100) {
-  // tokenIn: address or 'AVAX' (native)
-  // Returns: {agg, txData, amountOut, gasEstimate, dexName} or null
+// ── PUBLIC DEX ROUTING — Multi-aggregator, no auth required ──
 
-  const isNativeIn = tokenIn.toLowerCase() === 'avax' || tokenIn === NATIVE_AVAX;
-  const tokenInAddr = isNativeIn ? NATIVE_AVAX : tokenIn;
+// ── ODOS (public, CORS-friendly, excellent Avalanche coverage) ──
+async function odosGetRoute(tokenIn, tokenOut, amountInWei, userAddr, slippagePct=1) {
+  const isNative = tokenIn.toLowerCase()==='avax' || tokenIn===NATIVE_AVAX;
+  const inputToken = isNative ? '0x0000000000000000000000000000000000000000' : tokenIn;
+  try {
+    const quoteRes = await fetch(ODOS_QUOTE_URL, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        chainId: 43114,
+        inputTokens:[{tokenAddress: inputToken, amount: amountInWei.toString()}],
+        outputTokens:[{tokenAddress: tokenOut, proportion:1}],
+        userAddr,
+        slippageLimitPercent: slippagePct,
+        referralCode: 0,
+        disableRFQs: false,
+        compact: true,
+      })
+    });
+    if (!quoteRes.ok) return null;
+    const quote = await quoteRes.json();
+    if (!quote.pathId || !quote.outAmounts?.[0]) return null;
 
-  const cacheKey = `${tokenInAddr}_${tokenOut}_${amountInWei}`;
-  if (cmRouteCache[cacheKey] && Date.now() - cmRouteCache[cacheKey].ts < 30000) {
-    return cmRouteCache[cacheKey].route;
-  }
+    // Assemble the transaction
+    const asmRes = await fetch(ODOS_ASSEMBLE, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ userAddr, pathId: quote.pathId, simulate:false })
+    });
+    if (!asmRes.ok) return null;
+    const asm = await asmRes.json();
+    if (!asm.transaction) return null;
 
-  let bestRoute = null;
-  let bestAmountOut = 0n;
-
-  // Try all aggregators in parallel and pick best output
-  const jobs = LFJ_AGGREGATORS.map(async agg => {
-    try {
-      // 1. Get quote
-      const quoteUrl = `${LFJ_ROUTER_API}/${agg}/quote?tokenIn=${tokenInAddr}&tokenOut=${tokenOut}&amountIn=${amountInWei.toString()}`;
-      const quoteRes = await fetch(quoteUrl, {headers:{'Accept':'application/json'}});
-      if (!quoteRes.ok) return null;
-      const quote = await quoteRes.json();
-      const amtOut = BigInt(quote.amountOut || '0');
-      if (amtOut === 0n) return null;
-
-      // 2. Get swap tx data
-      const swapUrl = `${LFJ_ROUTER_API}/${agg}/swap?tokenIn=${tokenInAddr}&tokenOut=${tokenOut}&amountIn=${amountInWei.toString()}&userAddress=${userAddr}&slippageBps=${slippageBps}&feeBps=0`;
-      const swapRes = await fetch(swapUrl, {headers:{'Accept':'application/json'}});
-      if (!swapRes.ok) return null;
-      const swapData = await swapRes.json();
-
-      return { agg, amtOut, swapData, quote };
-    } catch(e) {
-      return null;
-    }
-  });
-
-  const results = await Promise.all(jobs);
-  for (const r of results) {
-    if (r && r.amtOut > bestAmountOut) {
-      bestAmountOut = r.amtOut;
-      bestRoute = r;
-    }
-  }
-
-  if (!bestRoute) return null;
-
-  const route = {
-    agg: bestRoute.agg,
-    dexName: {odos:'Odos', kyber:'KyberSwap', jar:'Jar', flytrade:'FlyTrade', okx:'OKX DEX'}[bestRoute.agg] || bestRoute.agg,
-    amountOut: bestRoute.amtOut,
-    amountOutFormatted: bestRoute.amtOut,
-    txData: bestRoute.swapData,
-    gasEstimate: Number(bestRoute.swapData.gas || 300000),
-  };
-
-  cmRouteCache[cacheKey] = { route, ts: Date.now() };
-  return route;
+    return {
+      dex: 'Odos',
+      amountOut: BigInt(quote.outAmounts[0]),
+      txData: {
+        to: asm.transaction.to,
+        data: asm.transaction.data,
+        value: asm.transaction.value ? BigInt(asm.transaction.value) : 0n,
+        gasLimit: BigInt(Math.ceil(Number(asm.transaction.gas||400000) * 1.2)),
+      }
+    };
+  } catch(e) { return null; }
 }
 
-// ── FALLBACK: LFJ V1 on-chain router ──
+// ── KYBERSWAP (public aggregator API, CORS-friendly) ──
+async function kyberGetRoute(tokenIn, tokenOut, amountInWei, userAddr, slippageBps=100) {
+  const isNative = tokenIn.toLowerCase()==='avax' || tokenIn===NATIVE_AVAX;
+  const inputAddr = isNative ? '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE' : tokenIn;
+  try {
+    const routeRes = await fetch(
+      `${KYBER_QUOTE_URL}?tokenIn=${inputAddr}&tokenOut=${tokenOut}&amountIn=${amountInWei.toString()}&gasInclude=true`,
+      {headers:{'x-client-id':'moatsintel'}}
+    );
+    if (!routeRes.ok) return null;
+    const routeData = await routeRes.json();
+    if (!routeData.data?.routeSummary) return null;
+
+    // Build the swap tx
+    const buildRes = await fetch(KYBER_SWAP_URL, {
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-client-id':'moatsintel'},
+      body: JSON.stringify({
+        routeSummary: routeData.data.routeSummary,
+        sender: userAddr,
+        recipient: userAddr,
+        slippageTolerance: slippageBps,
+        deadline: Math.floor(Date.now()/1000)+1800,
+      })
+    });
+    if (!buildRes.ok) return null;
+    const built = await buildRes.json();
+    if (!built.data?.data) return null;
+
+    return {
+      dex: 'KyberSwap',
+      amountOut: BigInt(routeData.data.routeSummary.amountOut || '0'),
+      txData: {
+        to: built.data.routerAddress || '0x617Dee16B86534a5d792A4d7A62FB491B544111E',
+        data: built.data.data,
+        value: isNative ? amountInWei : 0n,
+        gasLimit: BigInt(Math.ceil(Number(built.data.gas||350000)*1.2)),
+      }
+    };
+  } catch(e) { return null; }
+}
+
+// ── PARASWAP (public, no key, good Avalanche support) ──
+async function paraswapGetRoute(tokenIn, tokenOut, amountInWei, userAddr, decimalsIn, decimalsOut) {
+  const isNative = tokenIn.toLowerCase()==='avax' || tokenIn===NATIVE_AVAX;
+  const srcToken  = isNative ? '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE' : tokenIn;
+  const srcDec    = isNative ? 18 : decimalsIn;
+  try {
+    const priceRes = await fetch(
+      `${PARASWAP_PRICE}?srcToken=${srcToken}&destToken=${tokenOut}&srcDecimals=${srcDec}&destDecimals=${decimalsOut}&amount=${amountInWei.toString()}&side=SELL&network=43114&includeDEXS=uniswapv2,uniswapv3,curve,sushiswap,traderjoe`
+    );
+    if (!priceRes.ok) return null;
+    const priceData = await priceRes.json();
+    if (!priceData.priceRoute) return null;
+
+    const txRes = await fetch(`${PARASWAP_TX}?ignoreChecks=true`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        srcToken, destToken: tokenOut,
+        srcAmount: amountInWei.toString(),
+        srcDecimals: srcDec, destDecimals: decimalsOut,
+        priceRoute: priceData.priceRoute,
+        userAddress: userAddr,
+        slippage: 100, // 1%
+      })
+    });
+    if (!txRes.ok) return null;
+    const txData = await txRes.json();
+    if (!txData.data) return null;
+
+    return {
+      dex: 'Paraswap',
+      amountOut: BigInt(priceData.priceRoute.destAmount || '0'),
+      txData: {
+        to: txData.to,
+        data: txData.data,
+        value: txData.value ? BigInt(txData.value) : 0n,
+        gasLimit: BigInt(Math.ceil(Number(txData.gas||350000)*1.2)),
+      }
+    };
+  } catch(e) { return null; }
+}
+
+// ── BEST ROUTE PICKER — tries all 3 public aggregators, picks best output ──
+async function getBestRoute(tokenIn, tokenOut, amountInWei, userAddr, decimalsIn=18, decimalsOut=18) {
+  const jobs = [
+    odosGetRoute(tokenIn, tokenOut, amountInWei, userAddr, 1),
+    kyberGetRoute(tokenIn, tokenOut, amountInWei, userAddr, 100),
+    paraswapGetRoute(tokenIn, tokenOut, amountInWei, userAddr, decimalsIn, decimalsOut),
+  ];
+  const results = await Promise.all(jobs);
+  let best = null;
+  for (const r of results) {
+    if (r && r.amountOut > 0n && (!best || r.amountOut > best.amountOut)) best = r;
+  }
+  return best; // null if no route found
+}
+
+// ── LFJ V1 on-chain router (always available, no API) ──
 const LFJ_V1_ABI = [
   'function swapExactTokensForTokens(uint256 amountIn, uint256 amountOutMin, address[] path, address to, uint256 deadline) returns (uint256[] amounts)',
   'function swapExactAVAXForTokens(uint256 amountOutMin, address[] path, address to, uint256 deadline) payable returns (uint256[] amounts)',
@@ -4583,81 +4672,76 @@ const LFJ_V1_ABI = [
 
 async function lfjV1Swap(signer, tokenIn, tokenOut, amountIn, userAddr, deadline) {
   const router = new ethers.Contract(LFJ_V1_ROUTER, LFJ_V1_ABI, signer);
-  const isNative = tokenIn.toLowerCase() === 'avax';
-
+  const isNative = tokenIn.toLowerCase()==='avax';
   const paths = isNative
     ? [[WAVAX_ADDR, tokenOut], [WAVAX_ADDR, USDC_ADDR, tokenOut]]
     : [[tokenIn, WAVAX_ADDR, tokenOut], [tokenIn, tokenOut], [tokenIn, USDC_ADDR, WAVAX_ADDR, tokenOut]];
-
   for (const path of paths) {
     try {
       const amts = await router.getAmountsOut(amountIn, path);
       const minOut = amts[amts.length-1] * 95n / 100n;
       if (minOut === 0n) continue;
-      if (isNative) {
-        const tx = await router.swapExactAVAXForTokens(minOut, path, userAddr, deadline, {value: amountIn});
-        return tx;
-      } else {
-        const tx = await router.swapExactTokensForTokens(amountIn, minOut, path, userAddr, deadline);
-        return tx;
-      }
+      const tx = isNative
+        ? await router.swapExactAVAXForTokens(minOut, path, userAddr, deadline, {value: amountIn})
+        : await router.swapExactTokensForTokens(amountIn, minOut, path, userAddr, deadline);
+      return { tx, dex:'LFJ V1', amtOut: minOut };
     } catch(e) { continue; }
   }
   return null;
 }
 
-// ── MASTER SWAP FUNCTION — tries LFJ API first, falls back to V1 ──
-async function cmSmartSwap(signer, tokenIn, tokenOut, amountIn, userAddr, decimalsOut, ticker, stepId) {
-  // tokenIn: 'avax' or ERC20 address
-  // amountIn: BigInt
-  const deadline = Math.floor(Date.now()/1000) + 1800; // 30 min
-  const isNative = tokenIn.toLowerCase() === 'avax';
+// ── MASTER SWAP — tries aggregators first, falls back to LFJ V1 ──
+async function cmSmartSwap(signer, tokenIn, tokenOut, amountIn, userAddr, decimalsIn, decimalsOut, ticker, stepId) {
+  const deadline = Math.floor(Date.now()/1000) + 1800;
+  const isNative = tokenIn.toLowerCase()==='avax';
 
-  cmUpdateStep(stepId, 'active', `Finding best route across Odos, KyberSwap, Jar, OKX DEX…`);
+  cmUpdateStep(stepId, 'active', `Finding best price: Odos · KyberSwap · Paraswap…`);
 
-  // ── Try LFJ Router API (multi-aggregator) ──
-  try {
-    const route = await lfjGetBestRoute(tokenIn, tokenOut, amountIn, userAddr, 100);
-    if (route && route.txData) {
-      const amtOutHuman = Number(route.amountOut) / Math.pow(10, decimalsOut);
-      cmUpdateStep(stepId, 'active', `Best route: ${route.dexName} → ~${fmtP(amtOutHuman)} ${ticker}. Confirm in wallet…`);
+  // ── Try public aggregators ──
+  const route = await getBestRoute(tokenIn, tokenOut, amountIn, userAddr, decimalsIn, decimalsOut);
+  if (route) {
+    const amtHuman = Number(route.amountOut) / Math.pow(10, decimalsOut);
+    cmUpdateStep(stepId, 'active', `Best route: ${route.dex} → ~${fmtP(amtHuman)} ${ticker}. Approve in wallet…`);
 
-      // Execute via signer.sendTransaction (aggregator returns raw tx data)
-      const txParams = {
-        to: route.txData.to,
-        data: route.txData.data,
-        value: route.txData.value ? BigInt(route.txData.value) : 0n,
-        gasLimit: BigInt(Math.ceil(route.gasEstimate * 1.2)),
-      };
-      const tx = await signer.sendTransaction(txParams);
-      return { tx, dex: route.dexName, amtOut: route.amountOut };
-    }
-  } catch(e) {
-    console.warn('LFJ Router API failed:', e.message);
-  }
-
-  // ── Fallback: LFJ V1 on-chain ──
-  cmUpdateStep(stepId, 'active', `Aggregator unavailable, trying LFJ V1 router…`);
-  try {
-    // Need to approve LFJ V1 router if ERC20
+    // Approve spender for ERC20 input
     if (!isNative) {
-      const tok = new ethers.Contract(tokenIn, ERC20_ABI, signer);
-      const allowance = await tok.allowance(userAddr, LFJ_V1_ROUTER);
+      const tokC = new ethers.Contract(tokenIn, ERC20_ABI, signer);
+      const allowance = await tokC.allowance(userAddr, route.txData.to);
       if (allowance < amountIn) {
-        cmUpdateStep(stepId, 'active', `Approving ${tokenIn.slice(0,8)}… for LFJ V1…`);
-        const appTx = await tok.approve(LFJ_V1_ROUTER, ethers.MaxUint256);
+        cmUpdateStep(stepId, 'active', `Approving ${route.dex} to spend ${ticker.split('$')[1]||'token'}…`);
+        const appTx = await tokC.approve(route.txData.to, ethers.MaxUint256);
         await appTx.wait();
       }
     }
-    const tx = await lfjV1Swap(signer, tokenIn, tokenOut, amountIn, userAddr, deadline);
-    if (tx) return { tx, dex: 'LFJ V1', amtOut: null };
-  } catch(e) {
-    console.warn('LFJ V1 failed:', e.message);
+
+    cmUpdateStep(stepId, 'active', `Confirm swap in wallet (${route.dex})…`);
+    const tx = await signer.sendTransaction({
+      to: route.txData.to,
+      data: route.txData.data,
+      value: route.txData.value || 0n,
+      gasLimit: route.txData.gasLimit,
+    });
+    return { tx, dex: route.dex, amtOut: route.amountOut };
   }
 
-  // ── Nothing worked ──
-  throw new Error('No liquidity route found. Please buy ' + ticker + ' manually on lfj.gg or swap.avax.network, then come back to stake.');
+  // ── Fallback: LFJ V1 on-chain ──
+  cmUpdateStep(stepId, 'active', `Aggregators unavailable — trying LFJ V1 router…`);
+  if (!isNative) {
+    const tokC = new ethers.Contract(tokenIn, ERC20_ABI, signer);
+    const allowance = await tokC.allowance(userAddr, LFJ_V1_ROUTER);
+    if (allowance < amountIn) {
+      const appTx = await tokC.approve(LFJ_V1_ROUTER, ethers.MaxUint256);
+      await appTx.wait();
+    }
+  }
+  const v1Result = await lfjV1Swap(signer, tokenIn, tokenOut, amountIn, userAddr, deadline);
+  if (v1Result) return v1Result;
+
+  // ── Nothing worked — give manual instructions ──
+  const manualUrls = ['https://lfj.gg/avalanche/trade','https://pharaoh.exchange','https://swap.avax.network'];
+  throw new Error(`No swap route found for ${ticker}. Buy it manually at lfj.gg, pharaoh.exchange, or swap.avax.network — then stake directly below.`);
 }
+
 
 // ── GAS ESTIMATOR ──
 function cmEstimateGas(moatCount, method) {
@@ -4812,7 +4896,7 @@ async function cmLoadTarget(addr) {
   document.getElementById('cmTargetProfile').innerHTML = `
     <div style="background:var(--sur);border:1px solid rgba(249,115,22,.3);border-radius:12px;padding:1rem">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:.75rem">
-        <div style="font-size:1.6rem">👤</div>
+        <div style="width:40px;height:40px;border-radius:50%;overflow:hidden;border:2px solid var(--bor);flex-shrink:0"><img src="https://raw.githubusercontent.com/precidoboss/my-game-sprites/main/photo_1_2026-03-20_22-32-30-removebg-preview.png" style="width:100%;height:100%;object-fit:cover" onerror="this.parentElement.innerHTML='👤'"></div>
         <div style="flex:1;min-width:0">
           <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.92rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${username}</div>
           <div style="font-family:'DM Mono',monospace;font-size:.58rem;color:var(--mut)">${shortA(target)}</div>
@@ -4849,7 +4933,10 @@ function cmRenderLeaderboard() {
     const uname = w.username || zephyrNames[w.wallet] || '';
     const mult = cMult(w.moatCount), cs = Math.round(w.totalPoints*mult);
     return `<div class="cm-target-card" data-addr="${w.wallet}" onclick="cmLoadTarget('${w.wallet}')">
-      <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.78rem;color:var(--mut);width:24px;flex-shrink:0">#${i+1}</div>
+      <div style="display:flex;align-items:center;gap:5px;flex-shrink:0">
+        <div style="width:22px;height:22px;border-radius:50%;overflow:hidden;border:1px solid var(--bor)"><img src="https://raw.githubusercontent.com/precidoboss/my-game-sprites/main/photo_1_2026-03-20_22-32-30-removebg-preview.png" style="width:100%;height:100%;object-fit:cover" onerror="this.parentElement.innerHTML='👤'"></div>
+        <span style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.72rem;color:var(--mut)">#${i+1}</span>
+      </div>
       <div style="flex:1;min-width:0">
         ${uname ? `<div style="font-family:'DM Mono',monospace;font-size:.68rem;color:var(--acc);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${uname}</div>` : ''}
         <div style="font-family:'DM Mono',monospace;font-size:.6rem;color:var(--dim)">${shortA(w.wallet)}</div>
@@ -5137,27 +5224,7 @@ async function cmExecute() {
 
         // If USDC input, approve a large allowance for the aggregator spender
         // The aggregator tx.to is the spender — approve before sending
-        if (cmCurrency === 'USDC') {
-          const usdcC = new ethers.Contract(USDC_ADDR, ERC20_ABI, cmSigner);
-          // Pre-check quote to find spender
-          let spenderAddr = null;
-          try {
-            const testRoute = await lfjGetBestRoute(USDC_ADDR, m.meta.tokenAddr, amountInWei, cmAddress, 100);
-            spenderAddr = testRoute?.txData?.to || null;
-          } catch(e) {}
-
-          if (spenderAddr) {
-            const allowance = await usdcC.allowance(cmAddress, spenderAddr);
-            if (allowance < amountInWei) {
-              cmUpdateStep(stepSwapId, 'active', `Approving USDC for ${spenderAddr.slice(0,10)}…`);
-              const appTx = await usdcC.approve(spenderAddr, ethers.MaxUint256);
-              cmUpdateStep(stepSwapId, 'active', `Approval sent: ${appTx.hash}`);
-              await appTx.wait();
-            }
-          }
-        }
-
-        const swapResult = await cmSmartSwap(cmSigner, tokenInAddr, m.meta.tokenAddr, amountInWei, cmAddress, decimals, m.meta.ticker, stepSwapId);
+        const swapResult = await cmSmartSwap(cmSigner, tokenInAddr, m.meta.tokenAddr, amountInWei, cmAddress, 6, decimals, m.meta.ticker, stepSwapId);
         cmUpdateStep(stepSwapId, 'active', `Swap via ${swapResult.dex} sent: ${swapResult.tx.hash} — waiting…`);
         await swapResult.tx.wait();
         tokenAmountReceived = swapResult.amtOut || await tokenContract.balanceOf(cmAddress);
@@ -5280,6 +5347,7 @@ async function cmCheckRoutes() {
   resultEl.innerHTML = '<div style="color:var(--mut);font-size:.7rem"><span class="spin"></span> Querying Odos, KyberSwap, Jar, OKX DEX, FlyTrade…</div>';
 
   const totalPts = selected.reduce((s,m)=>s+m.pts, 0);
+  const userAddr = cmAddress || '0x0000000000000000000000000000000000000001';
   const results = [];
 
   for (const m of selected) {
@@ -5288,7 +5356,8 @@ async function cmCheckRoutes() {
     let decimals   = 18;
 
     try {
-      const tokC = new ethers.Contract(m.meta.tokenAddr, ERC20_ABI, cmProvider || new ethers.JsonRpcProvider(AVAX_RPC));
+      const provider = cmProvider || new ethers.JsonRpcProvider(AVAX_RPC);
+      const tokC = new ethers.Contract(m.meta.tokenAddr, ERC20_ABI, provider);
       decimals = Number(await tokC.decimals());
     } catch(e) {}
 
@@ -5298,31 +5367,20 @@ async function cmCheckRoutes() {
       amountInWei = ethers.parseUnits(moatUsd.toFixed(6), 6);
       tokenInAddr = USDC_ADDR;
     } else {
-      amountInWei = ethers.parseEther(moatUsd.toFixed(18).slice(0,20));
-      tokenInAddr = NATIVE_AVAX;
+      amountInWei = ethers.parseEther(String(Math.floor(moatUsd * 1e6) / 1e6));
+      tokenInAddr = 'avax';
     }
 
-    // Query all aggregators
-    const aggResults = [];
-    const jobs = LFJ_AGGREGATORS.map(async agg => {
-      try {
-        const url = `${LFJ_ROUTER_API}/${agg}/quote?tokenIn=${tokenInAddr}&tokenOut=${m.meta.tokenAddr}&amountIn=${amountInWei.toString()}`;
-        const r = await fetch(url, {headers:{'Accept':'application/json'}});
-        if (!r.ok) return;
-        const data = await r.json();
-        const amtOut = BigInt(data.amountOut || '0');
-        if (amtOut > 0n) {
-          aggResults.push({
-            agg,
-            dex: {odos:'Odos',kyber:'KyberSwap',jar:'Jar',flytrade:'FlyTrade',okx:'OKX DEX'}[agg]||agg,
-            amtOut,
-            amtOutHuman: Number(amtOut) / Math.pow(10, decimals),
-          });
-        }
-      } catch(e) {}
-    });
-    await Promise.all(jobs);
-    aggResults.sort((a,b) => a.amtOut > b.amtOut ? -1 : 1);
+    // Query all 3 public aggregators in parallel
+    const [odosR, kyberR, paraR] = await Promise.all([
+      odosGetRoute(tokenInAddr, m.meta.tokenAddr, amountInWei, userAddr, 1),
+      kyberGetRoute(tokenInAddr, m.meta.tokenAddr, amountInWei, userAddr, 100),
+      paraswapGetRoute(tokenInAddr, m.meta.tokenAddr, amountInWei, userAddr, cmCurrency==='AVAX'?18:6, decimals),
+    ]);
+    const aggResults = [odosR, kyberR, paraR].filter(Boolean).map(r => ({
+      dex: r.dex, amtOut: r.amountOut,
+      amtOutHuman: Number(r.amountOut) / Math.pow(10, decimals),
+    })).sort((a,b)=> a.amtOut > b.amtOut ? -1 : 1);
     results.push({ m, moatUsd, aggResults, decimals });
   }
 
