@@ -4519,156 +4519,39 @@ let cmRouteCache    = {}; // tokenOut -> {agg, data, gasEstimate}
 // ── PUBLIC DEX ROUTING — Multi-aggregator, no auth required ──
 
 // ── ODOS (public, CORS-friendly, excellent Avalanche coverage) ──
-async function odosGetRoute(tokenIn, tokenOut, amountInWei, userAddr, slippagePct=1) {
-  const isNative = tokenIn.toLowerCase()==='avax' || tokenIn===NATIVE_AVAX;
-  const inputToken = isNative ? '0x0000000000000000000000000000000000000000' : tokenIn;
-  try {
-    const quoteRes = await fetch(ODOS_QUOTE_URL, {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({
-        chainId: 43114,
-        inputTokens:[{tokenAddress: inputToken, amount: amountInWei.toString()}],
-        outputTokens:[{tokenAddress: tokenOut, proportion:1}],
-        userAddr,
-        slippageLimitPercent: slippagePct,
-        referralCode: 0,
-        disableRFQs: false,
-        compact: true,
-      })
-    });
-    if (!quoteRes.ok) return null;
-    const quote = await quoteRes.json();
-    if (!quote.pathId || !quote.outAmounts?.[0]) return null;
-
-    // Assemble the transaction
-    const asmRes = await fetch(ODOS_ASSEMBLE, {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ userAddr, pathId: quote.pathId, simulate:false })
-    });
-    if (!asmRes.ok) return null;
-    const asm = await asmRes.json();
-    if (!asm.transaction) return null;
-
-    return {
-      dex: 'Odos',
-      amountOut: BigInt(quote.outAmounts[0]),
-      txData: {
-        to: asm.transaction.to,
-        data: asm.transaction.data,
-        value: asm.transaction.value ? BigInt(asm.transaction.value) : 0n,
-        gasLimit: BigInt(Math.ceil(Number(asm.transaction.gas||400000) * 1.2)),
-      }
-    };
-  } catch(e) { return null; }
+// ── VALIDATION HELPER — reject routes with empty/invalid calldata ──
+function isValidRoute(r) {
+  if (!r) return false;
+  if (!r.txData?.to || !r.txData?.data) return false;
+  if (r.txData.data === '' || r.txData.data === '0x' || r.txData.data.length < 10) return false;
+  if (!r.amountOut || r.amountOut === 0n) return false;
+  return true;
 }
 
-// ── KYBERSWAP (public aggregator API, CORS-friendly) ──
-async function kyberGetRoute(tokenIn, tokenOut, amountInWei, userAddr, slippageBps=100) {
-  const isNative = tokenIn.toLowerCase()==='avax' || tokenIn===NATIVE_AVAX;
-  const inputAddr = isNative ? '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE' : tokenIn;
-  try {
-    const routeRes = await fetch(
-      `${KYBER_QUOTE_URL}?tokenIn=${inputAddr}&tokenOut=${tokenOut}&amountIn=${amountInWei.toString()}&gasInclude=true`,
-      {headers:{'x-client-id':'moatsintel'}}
-    );
-    if (!routeRes.ok) return null;
-    const routeData = await routeRes.json();
-    if (!routeData.data?.routeSummary) return null;
-
-    // Build the swap tx
-    const buildRes = await fetch(KYBER_SWAP_URL, {
-      method:'POST',
-      headers:{'Content-Type':'application/json','x-client-id':'moatsintel'},
-      body: JSON.stringify({
-        routeSummary: routeData.data.routeSummary,
-        sender: userAddr,
-        recipient: userAddr,
-        slippageTolerance: slippageBps,
-        deadline: Math.floor(Date.now()/1000)+1800,
-      })
-    });
-    if (!buildRes.ok) return null;
-    const built = await buildRes.json();
-    if (!built.data?.data) return null;
-
-    return {
-      dex: 'KyberSwap',
-      amountOut: BigInt(routeData.data.routeSummary.amountOut || '0'),
-      txData: {
-        to: built.data.routerAddress || '0x617Dee16B86534a5d792A4d7A62FB491B544111E',
-        data: built.data.data,
-        value: isNative ? amountInWei : 0n,
-        gasLimit: BigInt(Math.ceil(Number(built.data.gas||350000)*1.2)),
-      }
-    };
-  } catch(e) { return null; }
-}
-
-// ── PARASWAP (public, no key, good Avalanche support) ──
-async function paraswapGetRoute(tokenIn, tokenOut, amountInWei, userAddr, decimalsIn, decimalsOut) {
-  const isNative = tokenIn.toLowerCase()==='avax' || tokenIn===NATIVE_AVAX;
-  const srcToken  = isNative ? '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE' : tokenIn;
-  const srcDec    = isNative ? 18 : decimalsIn;
-  try {
-    const priceRes = await fetch(
-      `${PARASWAP_PRICE}?srcToken=${srcToken}&destToken=${tokenOut}&srcDecimals=${srcDec}&destDecimals=${decimalsOut}&amount=${amountInWei.toString()}&side=SELL&network=43114&includeDEXS=uniswapv2,uniswapv3,curve,sushiswap,traderjoe`
-    );
-    if (!priceRes.ok) return null;
-    const priceData = await priceRes.json();
-    if (!priceData.priceRoute) return null;
-
-    const txRes = await fetch(`${PARASWAP_TX}?ignoreChecks=true`, {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({
-        srcToken, destToken: tokenOut,
-        srcAmount: amountInWei.toString(),
-        srcDecimals: srcDec, destDecimals: decimalsOut,
-        priceRoute: priceData.priceRoute,
-        userAddress: userAddr,
-        slippage: 100, // 1%
-      })
-    });
-    if (!txRes.ok) return null;
-    const txData = await txRes.json();
-    if (!txData.data) return null;
-
-    return {
-      dex: 'Paraswap',
-      amountOut: BigInt(priceData.priceRoute.destAmount || '0'),
-      txData: {
-        to: txData.to,
-        data: txData.data,
-        value: txData.value ? BigInt(txData.value) : 0n,
-        gasLimit: BigInt(Math.ceil(Number(txData.gas||350000)*1.2)),
-      }
-    };
-  } catch(e) { return null; }
-}
-
-// ── BEST ROUTE PICKER — tries all 3 public aggregators, picks best output ──
-async function getBestRoute(tokenIn, tokenOut, amountInWei, userAddr, decimalsIn=18, decimalsOut=18) {
-  const jobs = [
-    odosGetRoute(tokenIn, tokenOut, amountInWei, userAddr, 1),
-    kyberGetRoute(tokenIn, tokenOut, amountInWei, userAddr, 100),
-    paraswapGetRoute(tokenIn, tokenOut, amountInWei, userAddr, decimalsIn, decimalsOut),
-  ];
-  const results = await Promise.all(jobs);
-  let best = null;
-  for (const r of results) {
-    if (r && r.amountOut > 0n && (!best || r.amountOut > best.amountOut)) best = r;
-  }
-  return best; // null if no route found
-}
-
-// ── LFJ V1 on-chain router (always available, no API) ──
+// ── LFJ V1 on-chain — PRIMARY for small-cap Avalanche tokens (no API, always works) ──
 const LFJ_V1_ABI = [
   'function swapExactTokensForTokens(uint256 amountIn, uint256 amountOutMin, address[] path, address to, uint256 deadline) returns (uint256[] amounts)',
   'function swapExactAVAXForTokens(uint256 amountOutMin, address[] path, address to, uint256 deadline) payable returns (uint256[] amounts)',
   'function getAmountsOut(uint256 amountIn, address[] path) view returns (uint256[] amounts)',
 ];
+
+async function lfjV1Quote(provider, tokenIn, tokenOut, amountIn) {
+  // Returns { minOut, path } or null — pure read, no wallet needed
+  const isNative = tokenIn.toLowerCase()==='avax';
+  const router = new ethers.Contract(LFJ_V1_ROUTER, LFJ_V1_ABI, provider);
+  const paths = isNative
+    ? [[WAVAX_ADDR, tokenOut], [WAVAX_ADDR, USDC_ADDR, tokenOut]]
+    : [[tokenIn, WAVAX_ADDR, tokenOut], [tokenIn, tokenOut], [tokenIn, USDC_ADDR, WAVAX_ADDR, tokenOut]];
+  let best = null;
+  for (const path of paths) {
+    try {
+      const amts = await router.getAmountsOut(amountIn, path);
+      const out = amts[amts.length-1];
+      if (out > 0n && (!best || out > best.out)) best = { out, path };
+    } catch(e) { continue; }
+  }
+  return best ? { amountOut: best.out, path: best.path } : null;
+}
 
 async function lfjV1Swap(signer, tokenIn, tokenOut, amountIn, userAddr, deadline) {
   const router = new ethers.Contract(LFJ_V1_ROUTER, LFJ_V1_ABI, signer);
@@ -4690,30 +4573,217 @@ async function lfjV1Swap(signer, tokenIn, tokenOut, amountIn, userAddr, deadline
   return null;
 }
 
-// ── MASTER SWAP — tries aggregators first, falls back to LFJ V1 ──
+// ── ODOS (public, good CORS, strong Avalanche coverage) ──
+async function odosGetRoute(tokenIn, tokenOut, amountInWei, userAddr, slippagePct=1) {
+  const isNative = tokenIn.toLowerCase()==='avax';
+  // Odos uses 0x000...000 for native AVAX
+  const inputToken = isNative ? '0x0000000000000000000000000000000000000000' : tokenIn;
+  try {
+    const quoteRes = await fetch(ODOS_QUOTE_URL, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        chainId: 43114,
+        inputTokens:[{tokenAddress: inputToken, amount: amountInWei.toString()}],
+        outputTokens:[{tokenAddress: tokenOut, proportion:1}],
+        userAddr,
+        slippageLimitPercent: slippagePct,
+        referralCode: 0,
+        disableRFQs: false,
+        compact: false,
+      })
+    });
+    if (!quoteRes.ok) return null;
+    const quote = await quoteRes.json();
+    if (!quote.pathId || !quote.outAmounts?.[0]) return null;
+    const amtOut = BigInt(quote.outAmounts[0]);
+    if (amtOut === 0n) return null;
+
+    // Assemble tx — pathId is short-lived (~60s), do immediately
+    const asmRes = await fetch(ODOS_ASSEMBLE, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ userAddr, pathId: quote.pathId, simulate:false })
+    });
+    if (!asmRes.ok) return null;
+    const asm = await asmRes.json();
+    // Strict: must have actual calldata
+    if (!asm.transaction?.data || asm.transaction.data.length < 10) return null;
+
+    return {
+      dex: 'Odos',
+      amountOut: amtOut,
+      txData: {
+        to: asm.transaction.to,
+        data: asm.transaction.data,
+        value: asm.transaction.value ? BigInt(asm.transaction.value) : 0n,
+        gasLimit: BigInt(Math.ceil(Number(asm.transaction.gas||400000) * 1.25)),
+      }
+    };
+  } catch(e) { return null; }
+}
+
+// ── KYBERSWAP (public aggregator, CORS-friendly) ──
+async function kyberGetRoute(tokenIn, tokenOut, amountInWei, userAddr, slippageBps=100) {
+  const isNative = tokenIn.toLowerCase()==='avax';
+  const inputAddr = isNative ? '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE' : tokenIn;
+  try {
+    const routeRes = await fetch(
+      `${KYBER_QUOTE_URL}?tokenIn=${inputAddr}&tokenOut=${tokenOut}&amountIn=${amountInWei.toString()}&gasInclude=true`,
+      {headers:{'x-client-id':'moatsintel'}}
+    );
+    if (!routeRes.ok) return null;
+    const routeData = await routeRes.json();
+    if (!routeData.data?.routeSummary) return null;
+    const amtOut = BigInt(routeData.data.routeSummary.amountOut || '0');
+    if (amtOut === 0n) return null;
+
+    const buildRes = await fetch(KYBER_SWAP_URL, {
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-client-id':'moatsintel'},
+      body: JSON.stringify({
+        routeSummary: routeData.data.routeSummary,
+        sender: userAddr,
+        recipient: userAddr,
+        slippageTolerance: slippageBps,
+        deadline: Math.floor(Date.now()/1000)+1800,
+      })
+    });
+    if (!buildRes.ok) return null;
+    const built = await buildRes.json();
+    // Strict: reject if calldata is empty or too short
+    if (!built.data?.data || built.data.data.length < 10) return null;
+
+    return {
+      dex: 'KyberSwap',
+      amountOut: amtOut,
+      txData: {
+        to: built.data.routerAddress,
+        data: built.data.data,
+        value: isNative ? amountInWei : 0n,
+        gasLimit: BigInt(Math.ceil(Number(built.data.gas||350000)*1.25)),
+      }
+    };
+  } catch(e) { return null; }
+}
+
+// ── PARASWAP (public, no key needed) ──
+async function paraswapGetRoute(tokenIn, tokenOut, amountInWei, userAddr, decimalsIn, decimalsOut) {
+  const isNative = tokenIn.toLowerCase()==='avax';
+  const srcToken = isNative ? '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE' : tokenIn;
+  const srcDec   = isNative ? 18 : decimalsIn;
+  try {
+    const priceRes = await fetch(
+      `${PARASWAP_PRICE}?srcToken=${srcToken}&destToken=${tokenOut}&srcDecimals=${srcDec}&destDecimals=${decimalsOut}&amount=${amountInWei.toString()}&side=SELL&network=43114`
+    );
+    if (!priceRes.ok) return null;
+    const priceData = await priceRes.json();
+    if (!priceData.priceRoute?.destAmount) return null;
+    const amtOut = BigInt(priceData.priceRoute.destAmount);
+    if (amtOut === 0n) return null;
+
+    const txRes = await fetch(`${PARASWAP_TX}?ignoreChecks=true`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        srcToken, destToken: tokenOut,
+        srcAmount: amountInWei.toString(),
+        srcDecimals: srcDec, destDecimals: decimalsOut,
+        priceRoute: priceData.priceRoute,
+        userAddress: userAddr,
+        slippage: 100,
+      })
+    });
+    if (!txRes.ok) return null;
+    const txData = await txRes.json();
+    // Strict: reject empty calldata
+    if (!txData.data || txData.data.length < 10) return null;
+
+    return {
+      dex: 'Paraswap',
+      amountOut: amtOut,
+      txData: {
+        to: txData.to,
+        data: txData.data,
+        value: txData.value ? BigInt(txData.value) : 0n,
+        gasLimit: BigInt(Math.ceil(Number(txData.gas||350000)*1.25)),
+      }
+    };
+  } catch(e) { return null; }
+}
+
+// ── BEST ROUTE — LFJ V1 first (reliable for Avax small-caps), then aggregators ──
+async function getBestRoute(tokenIn, tokenOut, amountInWei, userAddr, decimalsIn=18, decimalsOut=18, provider=null) {
+  // Step 1: get LFJ V1 quote (fast, on-chain, reliable)
+  const prov = provider || (cmProvider || new ethers.JsonRpcProvider(AVAX_RPC));
+  const v1Quote = await lfjV1Quote(prov, tokenIn, tokenOut, amountInWei);
+
+  // Step 2: try aggregators in parallel
+  const [odosR, kyberR, paraR] = await Promise.all([
+    odosGetRoute(tokenIn, tokenOut, amountInWei, userAddr, 1),
+    kyberGetRoute(tokenIn, tokenOut, amountInWei, userAddr, 100),
+    paraswapGetRoute(tokenIn, tokenOut, amountInWei, userAddr, decimalsIn, decimalsOut),
+  ]);
+
+  // Step 3: pick best among valid routes
+  const candidates = [odosR, kyberR, paraR].filter(isValidRoute);
+  candidates.sort((a,b) => a.amountOut > b.amountOut ? -1 : 1);
+  const bestAgg = candidates[0] || null;
+
+  // If LFJ V1 gives better or equal output, or if aggregators failed → use V1
+  // (V1 is more reliable for small-cap tokens; aggregators sometimes return bad calldata)
+  if (v1Quote && (!bestAgg || v1Quote.amountOut >= bestAgg.amountOut * 98n / 100n)) {
+    // Return V1 quote marker — actual swap done in lfjV1Swap
+    return { dex: 'LFJ V1', amountOut: v1Quote.amountOut, _useV1: true, _v1Path: v1Quote.path };
+  }
+
+  return bestAgg; // may be null
+}
+
+// ── MASTER SWAP ──
 async function cmSmartSwap(signer, tokenIn, tokenOut, amountIn, userAddr, decimalsIn, decimalsOut, ticker, stepId) {
   const deadline = Math.floor(Date.now()/1000) + 1800;
   const isNative = tokenIn.toLowerCase()==='avax';
 
-  cmUpdateStep(stepId, 'active', `Finding best price: Odos · KyberSwap · Paraswap…`);
+  cmUpdateStep(stepId, 'active', `Checking LFJ V1 + Odos + KyberSwap + Paraswap…`);
 
-  // ── Try public aggregators ──
-  const route = await getBestRoute(tokenIn, tokenOut, amountIn, userAddr, decimalsIn, decimalsOut);
-  if (route) {
+  const route = await getBestRoute(tokenIn, tokenOut, amountIn, userAddr, decimalsIn, decimalsOut, signer.provider);
+
+  if (route?._useV1) {
+    // ── LFJ V1 path ──
     const amtHuman = Number(route.amountOut) / Math.pow(10, decimalsOut);
-    cmUpdateStep(stepId, 'active', `Best route: ${route.dex} → ~${fmtP(amtHuman)} ${ticker}. Approve in wallet…`);
-
-    // Approve spender for ERC20 input
+    cmUpdateStep(stepId, 'active', `Route: LFJ V1 → ~${fmtP(amtHuman)} ${ticker}. Approving…`);
+    // Approve V1 router for ERC20 input
     if (!isNative) {
       const tokC = new ethers.Contract(tokenIn, ERC20_ABI, signer);
-      const allowance = await tokC.allowance(userAddr, route.txData.to);
-      if (allowance < amountIn) {
-        cmUpdateStep(stepId, 'active', `Approving ${route.dex} to spend ${ticker.split('$')[1]||'token'}…`);
+      const allowed = await tokC.allowance(userAddr, LFJ_V1_ROUTER);
+      if (allowed < amountIn) {
+        cmUpdateStep(stepId, 'active', `Approving LFJ V1 router…`);
+        const appTx = await tokC.approve(LFJ_V1_ROUTER, ethers.MaxUint256);
+        cmUpdateStep(stepId, 'active', `Approval sent: ${appTx.hash}`);
+        await appTx.wait();
+      }
+    }
+    cmUpdateStep(stepId, 'active', `Confirm swap in wallet (LFJ V1)…`);
+    const v1Result = await lfjV1Swap(signer, tokenIn, tokenOut, amountIn, userAddr, deadline);
+    if (v1Result) return v1Result;
+    // V1 failed unexpectedly — fall through to aggregators below
+    cmUpdateStep(stepId, 'active', `LFJ V1 failed, trying aggregators…`);
+  }
+
+  if (route && !route._useV1 && isValidRoute(route)) {
+    // ── Aggregator path ──
+    const amtHuman = Number(route.amountOut) / Math.pow(10, decimalsOut);
+    cmUpdateStep(stepId, 'active', `Route: ${route.dex} → ~${fmtP(amtHuman)} ${ticker}. Approving…`);
+    if (!isNative) {
+      const tokC = new ethers.Contract(tokenIn, ERC20_ABI, signer);
+      const allowed = await tokC.allowance(userAddr, route.txData.to);
+      if (allowed < amountIn) {
+        cmUpdateStep(stepId, 'active', `Approving ${route.dex}…`);
         const appTx = await tokC.approve(route.txData.to, ethers.MaxUint256);
         await appTx.wait();
       }
     }
-
     cmUpdateStep(stepId, 'active', `Confirm swap in wallet (${route.dex})…`);
     const tx = await signer.sendTransaction({
       to: route.txData.to,
@@ -4724,22 +4794,20 @@ async function cmSmartSwap(signer, tokenIn, tokenOut, amountIn, userAddr, decima
     return { tx, dex: route.dex, amtOut: route.amountOut };
   }
 
-  // ── Fallback: LFJ V1 on-chain ──
-  cmUpdateStep(stepId, 'active', `Aggregators unavailable — trying LFJ V1 router…`);
+  // ── Last resort: brute-force LFJ V1 ──
+  cmUpdateStep(stepId, 'active', `No aggregator route — trying LFJ V1 fallback…`);
   if (!isNative) {
     const tokC = new ethers.Contract(tokenIn, ERC20_ABI, signer);
-    const allowance = await tokC.allowance(userAddr, LFJ_V1_ROUTER);
-    if (allowance < amountIn) {
+    const allowed = await tokC.allowance(userAddr, LFJ_V1_ROUTER);
+    if (allowed < amountIn) {
       const appTx = await tokC.approve(LFJ_V1_ROUTER, ethers.MaxUint256);
       await appTx.wait();
     }
   }
-  const v1Result = await lfjV1Swap(signer, tokenIn, tokenOut, amountIn, userAddr, deadline);
-  if (v1Result) return v1Result;
+  const v1 = await lfjV1Swap(signer, tokenIn, tokenOut, amountIn, userAddr, deadline);
+  if (v1) return v1;
 
-  // ── Nothing worked — give manual instructions ──
-  const manualUrls = ['https://lfj.gg/avalanche/trade','https://pharaoh.exchange','https://swap.avax.network'];
-  throw new Error(`No swap route found for ${ticker}. Buy it manually at lfj.gg, pharaoh.exchange, or swap.avax.network — then stake directly below.`);
+  throw new Error(`No swap route found for ${ticker}. Buy manually at lfj.gg or pharaoh.exchange, then stake here.`);
 }
 
 
@@ -5231,10 +5299,19 @@ async function cmExecute() {
         cmUpdateStep(stepSwapId, 'done', `✓ Swapped via ${swapResult.dex}! tx: ${swapResult.tx.hash}`);
 
       } catch(err) {
-        const msg = err.reason || err.shortMessage || err.message || String(err);
+        // Extract clean message — strip huge JSON receipt dumps
+        let msg = err.reason || err.shortMessage || err.message || String(err);
+        if (msg.length > 300) msg = msg.slice(0, 300) + '…';
+        // Specific known errors
+        if (msg.includes('execution reverted') || msg.includes('CALL_EXCEPTION')) {
+          msg = 'Transaction reverted — the swap path may have low liquidity or price moved. Try a smaller amount or use Check Routes first.';
+        } else if (msg.includes('insufficient funds')) {
+          msg = 'Insufficient AVAX for gas fees. You need some AVAX in your wallet to pay gas.';
+        } else if (msg.includes('user rejected') || msg.includes('ACTION_REJECTED')) {
+          msg = 'Transaction rejected in wallet.';
+        }
         cmUpdateStep(stepSwapId, 'error', '❌ ' + msg);
-        // Offer manual link
-        cmShowTxResult(false, `Swap failed for ${m.meta.ticker}.\n\n${msg}\n\nYou can buy ${m.meta.ticker} manually at:\n• lfj.gg → Trade\n• swap.avax.network\n• pharaoh.exchange\n\nThen return here and stake directly.`);
+        cmShowTxResult(false, `Swap failed for ${m.meta.ticker}:\n${msg}`);
         cmExecuting = false;
         document.getElementById('cmExecuteBtn').disabled = false;
         document.getElementById('cmTxSpinner').style.display = 'none';
@@ -5255,8 +5332,11 @@ async function cmExecute() {
         }
         cmUpdateStep(stepApproveId, 'done', '✓ Approved');
       } catch(err) {
-        cmUpdateStep(stepApproveId, 'error', '❌ Approve failed: ' + (err.reason||err.message));
-        cmShowTxResult(false, 'Approval failed: ' + (err.reason||err.message));
+        let apMsg = err.reason || err.shortMessage || err.message || 'Approval failed';
+        if (apMsg.includes('user rejected') || apMsg.includes('ACTION_REJECTED')) apMsg = 'Approval rejected in wallet.';
+        if (apMsg.length > 150) apMsg = apMsg.slice(0,150)+'…';
+        cmUpdateStep(stepApproveId, 'error', '❌ ' + apMsg);
+        cmShowTxResult(false, 'Approval failed:\n' + apMsg);
         cmExecuting = false; document.getElementById('cmExecuteBtn').disabled = false;
         document.getElementById('cmTxSpinner').style.display = 'none'; return;
       }
@@ -5287,10 +5367,16 @@ async function cmExecute() {
         await moatTx.wait();
         cmUpdateStep(stepMoatId, 'done', `✓ ${method==='burn'?'Burned':method==='lock'?'Locked':'Staked'}! tx: ${moatTx.hash}`);
       } catch(err) {
-        const msg = err.reason || err.shortMessage || err.message || String(err);
+        let msg = err.reason || err.shortMessage || err.message || String(err);
+        if (msg.length > 200) msg = msg.slice(0, 200) + '…';
+        if (msg.includes('execution reverted') || msg.includes('CALL_EXCEPTION')) {
+          msg = 'Moat contract reverted — staking may be paused, or token balance is 0. Check your balance.';
+        } else if (msg.includes('user rejected') || msg.includes('ACTION_REJECTED')) {
+          msg = 'Transaction rejected in wallet.';
+        }
         if (cmSteps.find(s=>s.id===stepMoatId)) cmUpdateStep(stepMoatId, 'error', '❌ ' + msg);
         else cmAddStep(stepMoatId, `Moat: ${m.meta.short}`, '❌ ' + msg, 'error');
-        cmShowTxResult(false, `Stake/lock failed for ${m.meta.short}: ${msg}`);
+        cmShowTxResult(false, `Stake/lock failed for ${m.meta.short}:\n${msg}`);
         cmExecuting = false; document.getElementById('cmExecuteBtn').disabled = false;
         document.getElementById('cmTxSpinner').style.display = 'none'; return;
       }
@@ -5371,16 +5457,20 @@ async function cmCheckRoutes() {
       tokenInAddr = 'avax';
     }
 
-    // Query all 3 public aggregators in parallel
-    const [odosR, kyberR, paraR] = await Promise.all([
+    // Query LFJ V1 + all aggregators in parallel
+    const prov = cmProvider || new ethers.JsonRpcProvider(AVAX_RPC);
+    const [v1Q, odosR, kyberR, paraR] = await Promise.all([
+      lfjV1Quote(prov, tokenInAddr, m.meta.tokenAddr, amountInWei),
       odosGetRoute(tokenInAddr, m.meta.tokenAddr, amountInWei, userAddr, 1),
       kyberGetRoute(tokenInAddr, m.meta.tokenAddr, amountInWei, userAddr, 100),
       paraswapGetRoute(tokenInAddr, m.meta.tokenAddr, amountInWei, userAddr, cmCurrency==='AVAX'?18:6, decimals),
     ]);
-    const aggResults = [odosR, kyberR, paraR].filter(Boolean).map(r => ({
+    // Include V1 quote as a synthetic route entry
+    const v1Entry = v1Q ? { dex:'LFJ V1 ✓', amtOut: v1Q.amountOut, amtOutHuman: Number(v1Q.amountOut)/Math.pow(10,decimals), reliable:true } : null;
+    const aggResults = [v1Entry, ...[odosR, kyberR, paraR].filter(isValidRoute).map(r => ({
       dex: r.dex, amtOut: r.amountOut,
       amtOutHuman: Number(r.amountOut) / Math.pow(10, decimals),
-    })).sort((a,b)=> a.amtOut > b.amtOut ? -1 : 1);
+    }))].filter(Boolean).sort((a,b)=> a.amtOut > b.amtOut ? -1 : 1);
     results.push({ m, moatUsd, aggResults, decimals });
   }
 
