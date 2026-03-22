@@ -388,6 +388,7 @@ main{position:relative;z-index:1;padding:.8rem;max-width:1440px;margin:0 auto}
     <div class="tab"    data-v="invest-home" onclick="nav(this)">🧮 Invest</div>
     <div class="tab"    data-v="guide"       onclick="nav(this)">💡 Guide</div>
     <div class="tab"    data-v="copymoat"    onclick="nav(this)">📋 Copy Moat</div>
+    <div class="tab"    data-v="positions"   onclick="nav(this)">🏦 My Positions</div>
     <div class="tab"    data-v="debug"       onclick="nav(this)">🛠️ Debug</div>
   </nav>
   <div class="hdr-r">
@@ -996,6 +997,80 @@ main{position:relative;z-index:1;padding:.8rem;max-width:1440px;margin:0 auto}
   </div>
 </div>
 
+
+<!-- ══ MY POSITIONS ══ -->
+<div id="view-positions" class="view">
+  <div class="sh">
+    <div class="sh-t">🏦 My Moat Positions</div>
+    <div class="live"><span class="ld"></span>on-chain</div>
+  </div>
+
+  <!-- Wallet connect strip -->
+  <div id="posWalletBanner" style="margin-bottom:1rem">
+    <div id="posConnectBtn" style="background:linear-gradient(135deg,rgba(249,115,22,.12),rgba(212,168,67,.06));border:2px solid rgba(249,115,22,.35);border-radius:12px;padding:1rem 1.3rem;cursor:pointer;display:flex;align-items:center;gap:12px;transition:all .2s" onclick="posConnect()">
+      <div style="width:40px;height:40px;border-radius:50%;overflow:hidden;border:2px solid var(--bor);flex-shrink:0"><img src="https://raw.githubusercontent.com/precidoboss/my-game-sprites/main/photo_1_2026-03-20_22-32-30-removebg-preview.png" style="width:100%;height:100%;object-fit:cover" onerror="this.parentElement.innerHTML='🦊'"></div>
+      <div style="flex:1">
+        <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.92rem">Connect Wallet to View Positions</div>
+        <div style="font-size:.7rem;color:var(--dim);margin-top:2px">MetaMask · Core · any injected wallet</div>
+      </div>
+      <div style="font-size:1.2rem;color:var(--acc)">→</div>
+    </div>
+    <div id="posConnectedBanner" style="display:none;background:rgba(109,184,122,.07);border:1px solid rgba(109,184,122,.3);border-radius:12px;padding:.85rem 1.1rem;display:none;align-items:center;gap:12px">
+      <div style="width:36px;height:36px;border-radius:50%;overflow:hidden;border:2px solid var(--grn);flex-shrink:0"><img src="https://raw.githubusercontent.com/precidoboss/my-game-sprites/main/photo_1_2026-03-20_22-32-30-removebg-preview.png" style="width:100%;height:100%;object-fit:cover" onerror="this.parentElement.innerHTML='✅'"></div>
+      <div style="flex:1">
+        <div style="font-family:'DM Mono',monospace;font-size:.72rem;color:var(--grn);font-weight:600" id="posAddr">—</div>
+        <div style="font-size:.65rem;color:var(--mut);margin-top:1px">AVAX: <span id="posAvaxBal">—</span></div>
+      </div>
+      <button class="btn btn-sm btn-g" onclick="posDisconnect()" style="font-size:.6rem">Disconnect</button>
+      <button class="btn btn-sm" onclick="posLoadPositions()" id="posRefreshBtn">↺ Refresh</button>
+    </div>
+  </div>
+
+  <!-- Or enter wallet manually -->
+  <div style="display:flex;gap:7px;margin-bottom:1rem">
+    <input class="si" id="posWalletInput" placeholder="Or enter any wallet address (0x…) to view read-only">
+    <button class="btn btn-sm" onclick="posLoadExternal()">Load →</button>
+  </div>
+
+  <!-- Summary stats -->
+  <div id="posSummary" style="display:none;margin-bottom:1rem">
+    <div class="sg">
+      <div class="sc"><div class="sl">Total Points</div><div class="sv ca" id="posTotalPts">—</div></div>
+      <div class="sc"><div class="sl">Moats Active</div><div class="sv" id="posMoatCount">—</div></div>
+      <div class="sc"><div class="sl">Council Score</div><div class="sv cg" id="posCouncil">—</div></div>
+      <div class="sc"><div class="sl">Pending Rewards</div><div class="sv cgn" id="posPendingRew">—</div></div>
+      <div class="sc"><div class="sl">Est. Portfolio</div><div class="sv" id="posPortfolioVal">—</div></div>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div id="posLoading" style="display:none;text-align:center;padding:2rem;color:var(--mut)">
+    <span class="spin"></span> Loading positions from chain…
+  </div>
+
+  <!-- Positions grid -->
+  <div id="posGrid" style="display:none">
+    <div style="display:grid;grid-template-columns:1fr;gap:.85rem" id="posCards"></div>
+  </div>
+
+  <div id="posEmpty" class="empty" style="display:none">
+    <div class="ico">🏦</div>
+    No active positions found for this wallet.
+  </div>
+</div>
+
+<!-- ══ POSITION ACTION MODAL ══ -->
+<div class="modal-overlay" id="posActionModal" onclick="if(event.target===this)closePosAction()">
+  <div class="modal" style="max-width:520px" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <div class="modal-title" id="posActionTitle">Manage Position</div>
+      <button class="modal-close" onclick="closePosAction()">✕</button>
+    </div>
+    <div class="modal-body" id="posActionBody" style="padding:1rem"></div>
+    <div class="modal-footer" id="posActionFooter"></div>
+  </div>
+</div>
+
 <!-- ══ DEBUG PANEL ══ -->
 <div id="view-debug" class="view">
   <div class="sh">
@@ -1294,15 +1369,15 @@ const API  = 'https://moat-api.fortifi.network/api';
 const DSC_PAIR = 'https://api.dexscreener.com/latest/dex/pairs/avalanche/';
 
 const MOATS = {
-  '0xcf65744c955a292d11de2a4184e9fabedbfc7b40':{name:'HEFE Moat',         short:'HEFE',  ticker:'$hefe',    emoji:'🏔️',color:'#f97316',tokenAddr:'0xcf65744c955a292d11de2a4184e9fabedbfc7b40',  pairAddr:'0xc4fa66b4839af7379a4fcbe5dd048b18fe99a2ac', altPairAddr:'0xe11e871d312cc9bae9eb24c7bdc2031f8453bf44', url:'https://moats.app/moat/0xcf65744c955a292d11de2a4184e9fabedbfc7b40',   logo:'Hefelogo-new.png',              knownSupply:690420000},
+  '0xcf65744c955a292d11de2a4184e9fabedbfc7b40':{name:'HEFE Moat',         short:'HEFE',  ticker:'$hefe',    emoji:'🏔️',color:'#f97316',tokenAddr:'0xcf65744c955a292d11de2a4184e9fabedbfc7b40',  pairAddr:'0xe11e871d312cc9bae9eb24c7bdc2031f8453bf44', altPairAddr:'0xc4fa66b4839af7379a4fcbe5dd048b18fe99a2ac', url:'https://moats.app/moat/0xcf65744c955a292d11de2a4184e9fabedbfc7b40',   logo:'Hefelogo-new.png',              knownSupply:690420000},
   '0x501f6e7bec3db63d8dacbc9fa0ce42d5d2329d53':{name:'hCASH LP Moat',     short:'hCASH', ticker:'$hcash',   emoji:'💧', color:'#d4a843',tokenAddr:'0x501f6e7bec3db63d8dacbc9fa0ce42d5d2329d53',  pairAddr:'0x8f961980518bc9ab302948de7948580666dc35d9',  url:'https://moats.app/moat/0x501f6e7bec3db63d8dacbc9fa0ce42d5d2329d53',   logo:'hashcashclub.png',   supplyType:'dynamic',knownSupply:21000000000,note:'LP NFT moat — Pharaoh liquidity positions are staked/locked, not raw tokens',lpOnly:true,lpUrl:'https://phar.gg'},
-  '0x020c73b55d139d5e259bad89b126f2a446c22ac6':{name:'FREAK Anon Moat',   short:'FREAK', ticker:'$freak',   emoji:'👾', color:'#8c8074',tokenAddr:'0x020c73b55d139d5e259bad89b126f2a446c22ac6',  pairAddr:null, useAggregator:true, url:'https://moats.app/moat/0x020c73b55d139d5e259bad89b126f2a446c22ac6',   logo:'FREAK_Anon.png',                knownSupply:1000000000},
+  '0x020c73b55d139d5e259bad89b126f2a446c22ac6':{name:'FREAK Anon Moat',   short:'FREAK', ticker:'$freak',   emoji:'👾', color:'#8c8074',tokenAddr:'0x020c73b55d139d5e259bad89b126f2a446c22ac6',  pairAddr:'0x90c2ea98d6389cc4eb05ec635ee82c493b2dfaf2', dexOverride:'pharaoh', pharaohPool:true, url:'https://moats.app/moat/0x020c73b55d139d5e259bad89b126f2a446c22ac6',   logo:'FREAK_Anon.png',                knownSupply:1000000000},
   '0x7e1f28c9622aa68001fe0b200f5e5f93f6b35cc9':{name:'Balln Chikn Moat', short:'BALLN', ticker:'$balln',   emoji:'🏀', color:'#f43f5e',tokenAddr:'0x4Afc7838167b77530278483c3d8c1fFe698a912E',  pairAddr:'0xa8f87e026481cf03dc9a68570584a664186b41c7', url:'https://moats.app/moat/0x7e1f28c9622aa68001fe0b200f5e5f93f6b35cc9',    logo:'balln-token.jpg',               knownSupply:100000},
   '0x464b2817f16f6117602ad05bae446c2fc5ba6fb7':{name:'Supercycle Moat',   short:'SUPER', ticker:'$super',   emoji:'🌀', color:'#818cf8',tokenAddr:'0xCA2e0f72653337d05B1ABceBEA5718A4A3E57a0b',  pairAddr:'0x017c5608a8ab29ab23093726cf7c64e5ef88e191', url:'https://moats.app/moat/0x464b2817f16f6117602ad05bae446c2fc5ba6fb7',    logo:'supercycle.jpg',                knownSupply:10000000000},
   '0x940b7f7d73a504ec566157eebb0566b81d57e8f8':{name:'Vitrene Moat',      short:'VIT',   ticker:'$vitrene', emoji:'💎', color:'#22d3ee',tokenAddr:'0xde34C06de75FB446b5e7b8dd272D014F2A19009D',  pairAddr:'0x1ed3c7234ed58700cb99dfd5eb1bad4242855ad8',  url:'https://moats.app/moat/0x940b7f7d73a504ec566157eebb0566b81d57e8f8',   logo:'VIT-Logo-Alternative-2.jpg',    knownSupply:10000000000},
   '0x7a4d20261a765bd9ba67d49fbf8189843eec3393':{name:'Lil Coq Moat',      short:'LIL',   ticker:'$lil',     emoji:'🐓', color:'#fb7185',tokenAddr:'0x22683BbaDD01473969F23709879187705a253763',  pairAddr:'0x8acc49857a1259d25eb3ca0aa15b398d0e149ef2', url:'https://moats.app/moat/0x7a4d20261a765bd9ba67d49fbf8189843eec3393',    logo:'LIL-Coq-Logo.png',              knownSupply:1350000000},
   '0x93d8cc111233f8c5b9a019df7c159b6f9be7b44b':{name:'Dimish Moat',       short:'DISH',  ticker:'$dimish',  emoji:'🌑', color:'#a78bfa',tokenAddr:'0x40146E96EE5297187022D1ca62A3169B5e45B0a4',  pairAddr:null, geckoPoolAddr:'0x3edc0126e36758419ba7eeb44b2a3a094e7e9bb7', geckoNetwork:'avax', url:'https://moats.app/moat/0x93d8cc111233f8c5b9a019df7c159b6f9be7b44b',   logo:'Dimish1000px.png',              knownSupply:1000000000},
-  '0x3399d03566bb6db0cb4f1e13047589a1499cebbc':{name:'Bensi Box Moat',    short:'BENSI', ticker:'$bensi',   emoji:'📦', color:'#fbbf24',tokenAddr:'0x00697F5F6dc2CA0A17e6c89bCcd1173A61eA24a6',  pairAddr:'0x7984cD0FA3DaA31f8B305A0544b6097BA40Fd3B8', url:'https://moats.app/moat/0x3399d03566bb6db0cb4f1e13047589a1499cebbc',    logo:'Bensi-Box-logo-new.jpg',        knownSupply:1000000000},
+  '0x3399d03566bb6db0cb4f1e13047589a1499cebbc':{name:'Bensi Box Moat',    short:'BENSI', ticker:'$bensi',   emoji:'📦', color:'#fbbf24',tokenAddr:'0x00697F5F6dc2CA0A17e6c89bCcd1173A61eA24a6',  pairAddr:'0x7984cD0FA3DaA31f8B305A0544b6097BA40Fd3B8', swapViaWavax:true, url:'https://moats.app/moat/0x3399d03566bb6db0cb4f1e13047589a1499cebbc',    logo:'Bensi-Box-logo-new.jpg',        knownSupply:1000000000},
   '0x9c5f177cdc0332e61e423ee9ad9e4f2333f62685':{name:'Where Is Malek Moat',short:'MALEK',ticker:'$malek',   emoji:'🔍', color:'#34d399',tokenAddr:'0xeB55FAB1C23EC0Aa5024Ee593A12edCD031Ecd9b',  pairAddr:'0xa7e81808219cb1a27c71bd56f551a43fc8cad23',   url:'https://moats.app/moat/0x9c5f177cdc0332e61e423ee9ad9e4f2333f62685',    logo:'wheremalek.jpg',                knownSupply:10000000000, isNew:true},
 };
 
@@ -1380,6 +1455,7 @@ function nav(el){
   if(v==='calculator'){populateMoatSelects();runAllocator();}
   if(v==='debug')dbInit();
   if(v==='copymoat')initCopyMoat();
+  if(v==='positions')initPositions();
 }
 function mTab(el){
   document.querySelectorAll('.mtab').forEach(x=>x.classList.remove('on'));
@@ -4535,42 +4611,61 @@ const LFJ_V1_ABI = [
   'function getAmountsOut(uint256 amountIn, address[] path) view returns (uint256[] amounts)',
 ];
 
+// Comprehensive path list for Avalanche tokens
+function buildPaths(tokenIn, tokenOut, isNative) {
+  const inp = isNative ? WAVAX_ADDR : tokenIn;
+  // All meaningful paths — WAVAX is hub for most Avax small-caps
+  return [
+    [inp, tokenOut],                           // direct
+    [inp, WAVAX_ADDR, tokenOut],               // via WAVAX
+    [inp, USDC_ADDR, WAVAX_ADDR, tokenOut],    // USDC→WAVAX→token
+    [inp, USDC_ADDR, tokenOut],                // direct via USDC
+    [inp, WAVAX_ADDR, USDC_ADDR, tokenOut],    // WAVAX→USDC→token
+  ].filter((p, i, arr) => {
+    // dedupe and remove paths where tokenIn === tokenOut in path
+    const key = p.map(x=>x.toLowerCase()).join(',');
+    return arr.findIndex(q=>q.map(x=>x.toLowerCase()).join(',')===key)===i
+      && !p.slice(1,-1).includes(tokenOut) && !p.slice(1,-1).includes(inp);
+  });
+}
+
 async function lfjV1Quote(provider, tokenIn, tokenOut, amountIn) {
-  // Returns { minOut, path } or null — pure read, no wallet needed
   const isNative = tokenIn.toLowerCase()==='avax';
   const router = new ethers.Contract(LFJ_V1_ROUTER, LFJ_V1_ABI, provider);
-  const paths = isNative
-    ? [[WAVAX_ADDR, tokenOut], [WAVAX_ADDR, USDC_ADDR, tokenOut]]
-    : [[tokenIn, WAVAX_ADDR, tokenOut], [tokenIn, tokenOut], [tokenIn, USDC_ADDR, WAVAX_ADDR, tokenOut]];
+  const paths = buildPaths(tokenIn, tokenOut, isNative);
   let best = null;
-  for (const path of paths) {
+  await Promise.allSettled(paths.map(async path => {
     try {
       const amts = await router.getAmountsOut(amountIn, path);
       const out = amts[amts.length-1];
       if (out > 0n && (!best || out > best.out)) best = { out, path };
-    } catch(e) { continue; }
-  }
+    } catch(e) {}
+  }));
   return best ? { amountOut: best.out, path: best.path } : null;
 }
 
 async function lfjV1Swap(signer, tokenIn, tokenOut, amountIn, userAddr, deadline) {
   const router = new ethers.Contract(LFJ_V1_ROUTER, LFJ_V1_ABI, signer);
   const isNative = tokenIn.toLowerCase()==='avax';
-  const paths = isNative
-    ? [[WAVAX_ADDR, tokenOut], [WAVAX_ADDR, USDC_ADDR, tokenOut]]
-    : [[tokenIn, WAVAX_ADDR, tokenOut], [tokenIn, tokenOut], [tokenIn, USDC_ADDR, WAVAX_ADDR, tokenOut]];
+  const paths = buildPaths(tokenIn, tokenOut, isNative);
+  // Quote all paths first, use best
+  const provider = signer.provider;
+  let bestPath = null, bestOut = 0n;
   for (const path of paths) {
     try {
       const amts = await router.getAmountsOut(amountIn, path);
-      const minOut = amts[amts.length-1] * 95n / 100n;
-      if (minOut === 0n) continue;
-      const tx = isNative
-        ? await router.swapExactAVAXForTokens(minOut, path, userAddr, deadline, {value: amountIn})
-        : await router.swapExactTokensForTokens(amountIn, minOut, path, userAddr, deadline);
-      return { tx, dex:'LFJ V1', amtOut: minOut };
-    } catch(e) { continue; }
+      const out = amts[amts.length-1];
+      if (out > bestOut) { bestOut = out; bestPath = path; }
+    } catch(e) {}
   }
-  return null;
+  if (!bestPath || bestOut === 0n) return null;
+  const minOut = bestOut * 95n / 100n;
+  try {
+    const tx = isNative
+      ? await router.swapExactAVAXForTokens(minOut, bestPath, userAddr, deadline, {value: amountIn})
+      : await router.swapExactTokensForTokens(amountIn, minOut, bestPath, userAddr, deadline);
+    return { tx, dex:'LFJ V1', amtOut: minOut };
+  } catch(e) { return null; }
 }
 
 // ── ODOS (public, good CORS, strong Avalanche coverage) ──
@@ -5512,6 +5607,516 @@ async function cmCheckRoutes() {
 function initCopyMoat() {
   cmRenderLeaderboard();
   if (cmAddress) cmUpdateWalletUI();
+}
+
+
+// ════════════════════════════════════════════════════════════════
+//  MY POSITIONS ENGINE  — on-chain read + manage
+// ════════════════════════════════════════════════════════════════
+
+let posProvider   = null;
+let posSigner     = null;
+let posAddress    = null;
+let posViewAddr   = null; // address being viewed (may differ from signer)
+let posIsReadOnly = false;
+
+const REWARD_TOKEN_NAMES = {
+  '0xb97ef9ef8734c71904d8002f8b6bc66dd9c48a6e': 'USDC',
+  '0xb31f66aa3c1e785363f0875a1b74e27b85fd66c7': 'WAVAX',
+  '0x49d5c2bdffac6ce2bfdb6640f4f80f226bc10bab': 'WETH.e',
+};
+
+// ── CONNECT ──
+async function posConnect() {
+  try {
+    if (!window.ethereum) { alert('No wallet found. Install MetaMask or Core.'); return; }
+    posProvider = new ethers.BrowserProvider(window.ethereum);
+    await posProvider.send('eth_requestAccounts', []);
+    const net = await posProvider.getNetwork();
+    if (Number(net.chainId) !== 43114) {
+      try { await posProvider.send('wallet_switchEthereumChain', [{ chainId: '0xa86a' }]); }
+      catch(e) {}
+    }
+    posSigner  = await posProvider.getSigner();
+    posAddress = await posSigner.getAddress();
+    posViewAddr = posAddress;
+    posIsReadOnly = false;
+    posUpdateConnectedUI();
+    posLoadPositions();
+    window.ethereum.on('accountsChanged', async accs => {
+      if (!accs.length) { posDisconnect(); return; }
+      posSigner  = await posProvider.getSigner();
+      posAddress = await posSigner.getAddress();
+      posViewAddr = posAddress;
+      posUpdateConnectedUI();
+      posLoadPositions();
+    });
+  } catch(e) {
+    console.error('posConnect:', e);
+  }
+}
+
+function posDisconnect() {
+  posProvider = posSigner = posAddress = posViewAddr = null;
+  posIsReadOnly = false;
+  document.getElementById('posConnectedBanner').style.display = 'none';
+  document.getElementById('posConnectBtn').style.display = 'flex';
+  document.getElementById('posSummary').style.display = 'none';
+  document.getElementById('posGrid').style.display = 'none';
+  document.getElementById('posEmpty').style.display = 'none';
+}
+
+function posUpdateConnectedUI() {
+  if (!posAddress) return;
+  document.getElementById('posConnectBtn').style.display = 'none';
+  const banner = document.getElementById('posConnectedBanner');
+  banner.style.display = 'flex';
+  document.getElementById('posAddr').textContent = shortA(posAddress) + (posIsReadOnly ? ' (read-only)' : '');
+  // Fetch AVAX balance
+  if (posProvider) {
+    posProvider.getBalance(posAddress).then(b => {
+      document.getElementById('posAvaxBal').textContent = parseFloat(ethers.formatEther(b)).toFixed(4) + ' AVAX';
+    }).catch(()=>{});
+  }
+}
+
+function posLoadExternal() {
+  const input = document.getElementById('posWalletInput').value.trim().toLowerCase();
+  if (!input || !input.startsWith('0x') || input.length !== 42) {
+    alert('Enter a valid 0x wallet address');
+    return;
+  }
+  posViewAddr = input;
+  posIsReadOnly = true;
+  // Use a public provider if no wallet connected
+  if (!posProvider) posProvider = new ethers.JsonRpcProvider(AVAX_RPC);
+  document.getElementById('posAddr').textContent = shortA(input) + ' (read-only)';
+  document.getElementById('posConnectedBanner').style.display = 'flex';
+  document.getElementById('posConnectBtn').style.display = 'none';
+  posLoadPositions();
+}
+
+// ── LOAD ALL POSITIONS ──
+async function posLoadPositions() {
+  const addr = posViewAddr;
+  if (!addr) return;
+  const provider = posProvider || new ethers.JsonRpcProvider(AVAX_RPC);
+
+  document.getElementById('posLoading').style.display = 'block';
+  document.getElementById('posGrid').style.display = 'none';
+  document.getElementById('posEmpty').style.display = 'none';
+  document.getElementById('posSummary').style.display = 'none';
+
+  const moatAddrs = Object.keys(MOATS);
+  const positions = [];
+  let totalPortfolioUsd = 0;
+
+  // Fetch all moat positions in parallel
+  const jobs = moatAddrs.map(async moatAddr => {
+    const meta = MOATS[moatAddr];
+    if (meta.lpOnly) return null;
+
+    try {
+      const moat = new ethers.Contract(moatAddr, MOAT_ABI, provider);
+      const token = new ethers.Contract(meta.tokenAddr, ERC20_ABI, provider);
+
+      // Read position data
+      const [userInfo, points, tokenBal, pendingRewards, decimals] = await Promise.allSettled([
+        moat.userInfo(addr),
+        moat.getCurrentPoints(addr),
+        token.balanceOf(addr),
+        moat.getAllPendingRewards(addr),
+        token.decimals(),
+      ]);
+
+      const ui     = userInfo.status==='fulfilled' ? userInfo.value : null;
+      const pts    = points.status==='fulfilled' ? Number(points.value) : 0;
+      const dec    = decimals.status==='fulfilled' ? Number(decimals.value) : 18;
+      const div    = Math.pow(10, dec);
+
+      const stakedAmt = ui ? Number(ui[0]) / div : 0;
+      const burnedAmt = ui ? Number(ui[1]) / div : 0;
+      const walletBal = tokenBal.status==='fulfilled' ? Number(tokenBal.value) / div : 0;
+
+      // Only include if they have any position
+      if (stakedAmt === 0 && burnedAmt === 0 && pts === 0) return null;
+
+      // Rewards
+      let rewards = [];
+      if (pendingRewards.status==='fulfilled') {
+        const [tkAddrs, tkAmts] = pendingRewards.value;
+        rewards = tkAddrs.map((a, i) => ({
+          addr: a.toLowerCase(),
+          symbol: REWARD_TOKEN_NAMES[a.toLowerCase()] || shortA(a),
+          amount: Number(tkAmts[i]) / 1e18,
+        })).filter(r => r.amount > 0.000001);
+      }
+
+      // Get locks
+      let locks = [];
+      try {
+        const lockData = await moat.getUserAllLocks(addr);
+        const [amounts, ends, lPts, origDur, lastUpd, active] = lockData;
+        for (let i = 0; i < amounts.length; i++) {
+          if (!active[i]) continue;
+          const endTs = Number(ends[i]);
+          const amt   = Number(amounts[i]) / div;
+          const daysLeft = Math.max(0, Math.ceil((endTs - Date.now()/1000) / 86400));
+          locks.push({ idx:i, amt, endTs, daysLeft, pts: Number(lPts[i]), origDur: Number(origDur[i]) });
+        }
+      } catch(e) {}
+
+      // Price
+      const px = priceCache[moatAddr]?.price || 0;
+      const stakedUsd = stakedAmt * px;
+      totalPortfolioUsd += stakedUsd;
+
+      return { moatAddr, meta, pts, stakedAmt, burnedAmt, walletBal, rewards, locks, dec, px, stakedUsd };
+    } catch(e) {
+      return null;
+    }
+  });
+
+  const results = (await Promise.all(jobs)).filter(Boolean);
+
+  document.getElementById('posLoading').style.display = 'none';
+
+  if (!results.length) {
+    document.getElementById('posEmpty').style.display = 'block';
+    return;
+  }
+
+  // Summary stats
+  const totalPts  = results.reduce((s,r)=>s+r.pts, 0);
+  const mCount    = results.length;
+  const council   = Math.round(totalPts * cMult(mCount));
+  const totalRew  = results.flatMap(r=>r.rewards).reduce((s,r)=>s+r.amount, 0);
+
+  // Also get points from API for accuracy
+  const apiPts = allPts.filter(p=>getWallet(p)===addr.toLowerCase());
+  const apiTotal = apiPts.reduce((s,p)=>s+p.points, 0);
+  const displayPts = apiTotal > 0 ? apiTotal : totalPts;
+
+  setTxt('posTotalPts', fmtP(displayPts));
+  setTxt('posMoatCount', mCount);
+  setTxt('posCouncil', fmtP(Math.round(displayPts * cMult(mCount))));
+  setTxt('posPendingRew', totalRew > 0 ? fmtP(totalRew) + ' tokens' : '—');
+  setTxt('posPortfolioVal', totalPortfolioUsd > 0 ? fmtK(totalPortfolioUsd) : '—');
+  document.getElementById('posSummary').style.display = 'block';
+
+  // Render cards
+  const grid = document.getElementById('posCards');
+  grid.innerHTML = results.sort((a,b)=>b.pts-a.pts).map(r => posRenderCard(r, addr)).join('');
+  document.getElementById('posGrid').style.display = 'block';
+}
+
+function posRenderCard(r, addr) {
+  const { moatAddr, meta, pts, stakedAmt, burnedAmt, walletBal, rewards, locks, px, stakedUsd } = r;
+  const col = meta.color || '#f97316';
+  const canManage = !posIsReadOnly && posAddress?.toLowerCase() === addr.toLowerCase();
+
+  const lockedTotal = locks.reduce((s,l)=>s+l.amt, 0);
+  const nextUnlock  = locks.filter(l=>l.daysLeft>0).sort((a,b)=>a.daysLeft-b.daysLeft)[0];
+
+  return `<div style="background:var(--card);border:1px solid var(--bor);border-left:4px solid ${col};border-radius:12px;padding:1rem;transition:border-color .2s" onmouseover="this.style.borderColor='${col}'" onmouseout="this.style.borderLeftColor='${col}';this.style.borderTopColor='var(--bor)';this.style.borderRightColor='var(--bor)';this.style.borderBottomColor='var(--bor)'">
+
+    <!-- Header -->
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:.85rem">
+      ${logoImg(meta.logo,'moat-logo',meta.emoji,col)}
+      <div style="flex:1;min-width:0">
+        <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.95rem">${meta.name}</div>
+        <div style="font-family:'DM Mono',monospace;font-size:.58rem;color:var(--mut)">${meta.ticker} · <a href="${meta.url||'#'}" target="_blank" style="color:var(--acc)">moats.app ↗</a></div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:1.1rem;color:${col}">${fmtP(pts)}</div>
+        <div style="font-family:'DM Mono',monospace;font-size:.56rem;color:var(--mut)">Moat Points</div>
+      </div>
+    </div>
+
+    <!-- Position breakdown -->
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:.45rem;margin-bottom:.8rem">
+      <div style="background:var(--sur);border:1px solid var(--bor);border-radius:8px;padding:.55rem;text-align:center">
+        <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.85rem;color:var(--acc)">${fmtP(stakedAmt)}</div>
+        <div style="font-family:'DM Mono',monospace;font-size:.48rem;color:var(--mut);text-transform:uppercase">Staked</div>
+        ${px>0?`<div style="font-family:'DM Mono',monospace;font-size:.5rem;color:var(--dim)">${fmtK(stakedAmt*px)}</div>`:''}
+      </div>
+      <div style="background:var(--sur);border:1px solid var(--bor);border-radius:8px;padding:.55rem;text-align:center">
+        <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.85rem;color:var(--gld)">${fmtP(lockedTotal)}</div>
+        <div style="font-family:'DM Mono',monospace;font-size:.48rem;color:var(--mut);text-transform:uppercase">Locked (${locks.length})</div>
+        ${nextUnlock?`<div style="font-family:'DM Mono',monospace;font-size:.5rem;color:var(--gld)">${nextUnlock.daysLeft}d left</div>`:''}
+      </div>
+      <div style="background:var(--sur);border:1px solid var(--bor);border-radius:8px;padding:.55rem;text-align:center">
+        <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.85rem;color:var(--red)">${fmtP(burnedAmt)}</div>
+        <div style="font-family:'DM Mono',monospace;font-size:.48rem;color:var(--mut);text-transform:uppercase">Burned</div>
+        <div style="font-family:'DM Mono',monospace;font-size:.5rem;color:var(--mut)">permanent</div>
+      </div>
+      <div style="background:var(--sur);border:1px solid var(--bor);border-radius:8px;padding:.55rem;text-align:center">
+        <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.85rem">${fmtP(walletBal)}</div>
+        <div style="font-family:'DM Mono',monospace;font-size:.48rem;color:var(--mut);text-transform:uppercase">In Wallet</div>
+        ${px>0?`<div style="font-family:'DM Mono',monospace;font-size:.5rem;color:var(--dim)">${fmtK(walletBal*px)}</div>`:''}
+      </div>
+    </div>
+
+    <!-- Active locks timeline -->
+    ${locks.length ? `
+    <div style="background:rgba(212,168,67,.06);border:1px solid rgba(212,168,67,.2);border-radius:8px;padding:.65rem;margin-bottom:.7rem">
+      <div style="font-family:'DM Mono',monospace;font-size:.56rem;color:var(--gld);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.45rem">⏳ Active Locks</div>
+      ${locks.map((l,i) => {
+        const pct = Math.min(100, Math.max(0, Math.round((1 - l.daysLeft/Math.ceil(l.origDur/86400))*100)));
+        const isUnlockable = l.daysLeft === 0;
+        return `<div style="display:flex;align-items:center;gap:8px;padding:.3rem 0;border-bottom:1px solid rgba(212,168,67,.15);${i===locks.length-1?'border-bottom:none':''}">
+          <div style="flex:1;min-width:0">
+            <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+              <span style="font-family:'DM Mono',monospace;font-size:.62rem">${fmtP(l.amt)} ${meta.ticker}</span>
+              <span style="font-family:'DM Mono',monospace;font-size:.58rem;color:${isUnlockable?'var(--grn)':'var(--gld)'}">${isUnlockable?'✅ Unlockable':l.daysLeft+'d left'}</span>
+            </div>
+            <div style="height:3px;background:var(--bor);border-radius:99px;overflow:hidden">
+              <div style="height:100%;width:${pct}%;background:${isUnlockable?'var(--grn)':'var(--gld)'};border-radius:99px"></div>
+            </div>
+          </div>
+          ${canManage && isUnlockable ? `<button class="btn btn-sm" style="font-size:.58rem;padding:2px 8px;background:var(--grn);color:#141210" onclick="posExitLock('${moatAddr}',${l.idx},'${meta.short}',${l.amt})">Exit Lock</button>` : ''}
+          ${canManage && !isUnlockable ? `<button class="btn btn-sm btn-g" style="font-size:.55rem;padding:2px 7px;border-color:var(--red);color:var(--red)" onclick="posEarlyExit('${moatAddr}',${l.idx},'${meta.short}',${l.amt},${l.daysLeft})">⚠ EEL Exit</button>` : ''}
+        </div>`;
+      }).join('')}
+    </div>` : ''}
+
+    <!-- Pending rewards -->
+    ${rewards.length ? `
+    <div style="background:rgba(109,184,122,.06);border:1px solid rgba(109,184,122,.2);border-radius:8px;padding:.65rem;margin-bottom:.7rem;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
+      <div>
+        <div style="font-family:'DM Mono',monospace;font-size:.56rem;color:var(--grn);text-transform:uppercase;margin-bottom:.3rem">💰 Pending Rewards</div>
+        ${rewards.map(rw=>`<span style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.85rem;color:var(--grn)">${fmtP(rw.amount)} ${rw.symbol} &nbsp;</span>`).join('')}
+      </div>
+      ${canManage ? `<button class="btn btn-sm" style="background:var(--grn);color:#141210;font-size:.65rem" onclick="posClaimRewards('${moatAddr}','${meta.short}')">Claim All →</button>` : ''}
+    </div>` : ''}
+
+    <!-- Actions -->
+    ${canManage ? `
+    <div style="display:flex;gap:6px;flex-wrap:wrap">
+      ${stakedAmt > 0 ? `<button class="btn btn-sm btn-g" onclick="posUnstake('${moatAddr}','${meta.short}',${stakedAmt.toFixed(6)})">↩ Unstake</button>` : ''}
+      ${walletBal > 0 ? `<button class="btn btn-sm" onclick="posStakeMore('${moatAddr}','${meta.short}',${walletBal.toFixed(6)})">+ Stake More</button>` : ''}
+      ${walletBal > 0 ? `<button class="btn btn-sm btn-g" onclick="posLockMore('${moatAddr}','${meta.short}',${walletBal.toFixed(6)})">⏳ Lock</button>` : ''}
+      <a href="${meta.url||'#'}" target="_blank" class="btn btn-sm btn-p" style="text-decoration:none;font-size:.62rem">View on Moats ↗</a>
+    </div>` : `
+    <div style="font-family:'DM Mono',monospace;font-size:.6rem;color:var(--mut);text-align:center;padding:.4rem 0">Connect wallet to manage this position</div>
+    `}
+  </div>`;
+}
+
+// ── ACTION FUNCTIONS ──
+async function posClaimRewards(moatAddr, moatShort) {
+  if (!posSigner) return;
+  openPosAction(`💰 Claim Rewards — ${moatShort}`,
+    `<div style="font-size:.78rem;color:var(--dim);margin-bottom:.8rem">Claim all pending rewards from your ${moatShort} position.</div>
+     <div id="posActionStatus" style="font-family:'DM Mono',monospace;font-size:.7rem;color:var(--mut)">Ready to claim…</div>`,
+    async () => {
+      const moat = new ethers.Contract(moatAddr, MOAT_ABI, posSigner);
+      setTxt('posActionStatus', 'Confirm in wallet…');
+      const tx = await moat.claimAllRewards();
+      setTxt('posActionStatus', `Sent: ${tx.hash} — waiting…`);
+      await tx.wait();
+      setTxt('posActionStatus', `✅ Claimed! tx: ${tx.hash}`);
+      setTimeout(posLoadPositions, 2000);
+    }
+  );
+}
+
+async function posUnstake(moatAddr, moatShort, amount) {
+  if (!posSigner) return;
+  openPosAction(`↩ Unstake — ${moatShort}`,
+    `<div style="font-size:.78rem;color:var(--dim);margin-bottom:.6rem">Unstake your ${fmtP(amount)} ${moatShort} tokens.<br><span style="color:var(--gld)">⚠️ 0.5% unstake fee applies.</span></div>
+     <div style="font-family:'DM Mono',monospace;font-size:.68rem;color:var(--mut)">Amount: ${fmtP(amount)} · Fee: ${fmtP(amount*0.005)} · Receive: ${fmtP(amount*0.995)}</div>
+     <div id="posActionStatus" style="font-family:'DM Mono',monospace;font-size:.7rem;color:var(--mut);margin-top:.6rem">Ready…</div>`,
+    async () => {
+      const moat = new ethers.Contract(moatAddr, MOAT_ABI, posSigner);
+      const token = new ethers.Contract(MOATS[moatAddr].tokenAddr, ERC20_ABI, posSigner);
+      const dec = Number(await token.decimals());
+      const amtWei = ethers.parseUnits(amount.toFixed(dec > 6 ? 6 : dec), dec);
+      setTxt('posActionStatus', 'Confirm unstake in wallet…');
+      const tx = await moat.unstake(amtWei);
+      setTxt('posActionStatus', `Sent: ${tx.hash} — waiting…`);
+      await tx.wait();
+      setTxt('posActionStatus', `✅ Unstaked! tx: ${tx.hash}`);
+      setTimeout(posLoadPositions, 2000);
+    }
+  );
+}
+
+async function posStakeMore(moatAddr, moatShort, walletBal) {
+  if (!posSigner) return;
+  openPosAction(`+ Stake More — ${moatShort}`,
+    `<div style="font-size:.78rem;color:var(--dim);margin-bottom:.6rem">Stake additional ${moatShort} tokens from your wallet.</div>
+     <div class="ig" style="margin-bottom:.7rem"><label class="il">Amount (max ${fmtP(walletBal)})</label>
+     <div style="display:flex;gap:7px"><input class="inp" id="posStakeAmt" type="number" placeholder="${walletBal.toFixed(4)}" value="${walletBal.toFixed(4)}">
+     <button class="btn btn-sm btn-g" onclick="document.getElementById('posStakeAmt').value='${walletBal.toFixed(6)}'">MAX</button></div></div>
+     <div id="posActionStatus" style="font-family:'DM Mono',monospace;font-size:.7rem;color:var(--mut)">Ready…</div>`,
+    async () => {
+      const amt = parseFloat(document.getElementById('posStakeAmt').value) || 0;
+      if (!amt) return;
+      const moat  = new ethers.Contract(moatAddr, MOAT_ABI, posSigner);
+      const token = new ethers.Contract(MOATS[moatAddr].tokenAddr, ERC20_ABI, posSigner);
+      const dec   = Number(await token.decimals());
+      const amtWei = ethers.parseUnits(String(Math.floor(amt * 1e6)/1e6), dec);
+      setTxt('posActionStatus', 'Approving…');
+      const allowed = await token.allowance(posAddress, moatAddr);
+      if (allowed < amtWei) {
+        const appTx = await token.approve(moatAddr, ethers.MaxUint256);
+        await appTx.wait();
+      }
+      setTxt('posActionStatus', 'Confirm stake in wallet…');
+      const tx = await moat.stake(amtWei);
+      setTxt('posActionStatus', `Sent: ${tx.hash} — waiting…`);
+      await tx.wait();
+      setTxt('posActionStatus', `✅ Staked! tx: ${tx.hash}`);
+      setTimeout(posLoadPositions, 2000);
+    }
+  );
+}
+
+async function posLockMore(moatAddr, moatShort, walletBal) {
+  if (!posSigner) return;
+  openPosAction(`⏳ Lock — ${moatShort}`,
+    `<div style="font-size:.78rem;color:var(--dim);margin-bottom:.6rem">Lock tokens for a multiplier boost (2.04×–5×).</div>
+     <div class="cr2" style="margin-bottom:.6rem">
+       <div class="ig"><label class="il">Amount (max ${fmtP(walletBal)})</label>
+         <input class="inp" id="posLockAmt" type="number" value="${walletBal.toFixed(4)}" oninput="posUpdateLockPreview()"></div>
+       <div class="ig"><label class="il">Lock Days (1–730)</label>
+         <input class="inp" id="posLockDays" type="number" value="180" min="1" max="730" oninput="posUpdateLockPreview()"></div>
+     </div>
+     <div id="posLockPreview" style="font-family:'DM Mono',monospace;font-size:.68rem;color:var(--acc);margin-bottom:.55rem"></div>
+     <div id="posActionStatus" style="font-family:'DM Mono',monospace;font-size:.7rem;color:var(--mut)">Ready…</div>`,
+    async () => {
+      const amt  = parseFloat(document.getElementById('posLockAmt').value) || 0;
+      const days = parseInt(document.getElementById('posLockDays').value) || 180;
+      if (!amt || !days) return;
+      const moat  = new ethers.Contract(moatAddr, MOAT_ABI, posSigner);
+      const token = new ethers.Contract(MOATS[moatAddr].tokenAddr, ERC20_ABI, posSigner);
+      const dec   = Number(await token.decimals());
+      const amtWei = ethers.parseUnits(String(Math.floor(amt * 1e6)/1e6), dec);
+      setTxt('posActionStatus', 'Approving…');
+      const allowed = await token.allowance(posAddress, moatAddr);
+      if (allowed < amtWei) {
+        const appTx = await token.approve(moatAddr, ethers.MaxUint256);
+        await appTx.wait();
+      }
+      setTxt('posActionStatus', 'Confirm lock in wallet…');
+      const tx = await moat.lock(amtWei, BigInt(days * 86400));
+      setTxt('posActionStatus', `Sent: ${tx.hash} — waiting…`);
+      await tx.wait();
+      setTxt('posActionStatus', `✅ Locked! tx: ${tx.hash}`);
+      setTimeout(posLoadPositions, 2000);
+    }
+  );
+  setTimeout(posUpdateLockPreview, 100);
+}
+
+function posUpdateLockPreview() {
+  const amt  = parseFloat(document.getElementById('posLockAmt')?.value) || 0;
+  const days = parseInt(document.getElementById('posLockDays')?.value) || 0;
+  const el   = document.getElementById('posLockPreview');
+  if (!el || !days || !amt) return;
+  const mult = lockM(days);
+  el.textContent = `${mult}× multiplier · ${fmtP(amt * mult)} estimated points · unlock in ${days} days`;
+}
+
+async function posExitLock(moatAddr, lockIdx, moatShort, amt) {
+  if (!posSigner) return;
+  openPosAction(`✅ Exit Lock — ${moatShort}`,
+    `<div style="font-size:.78rem;color:var(--dim);margin-bottom:.6rem">Your lock period is complete. Exit with no penalty.</div>
+     <div style="font-family:'DM Mono',monospace;font-size:.68rem;color:var(--grn)">Receive: ~${fmtP(amt)} ${moatShort} (minus 0.5% unstake fee)</div>
+     <div id="posActionStatus" style="font-family:'DM Mono',monospace;font-size:.7rem;color:var(--mut);margin-top:.6rem">Ready…</div>`,
+    async () => {
+      const moat = new ethers.Contract(moatAddr, MOAT_ABI, posSigner);
+      setTxt('posActionStatus', 'Confirm in wallet…');
+      const tx = await moat.exitLock(BigInt(lockIdx));
+      setTxt('posActionStatus', `Sent: ${tx.hash} — waiting…`);
+      await tx.wait();
+      setTxt('posActionStatus', `✅ Lock exited! tx: ${tx.hash}`);
+      setTimeout(posLoadPositions, 2000);
+    }
+  );
+}
+
+async function posEarlyExit(moatAddr, lockIdx, moatShort, amt, daysLeft) {
+  if (!posSigner) return;
+  // Estimate penalty
+  const origDays = 180; // fallback
+  const donePct  = Math.max(0, 100 - Math.round(daysLeft / origDays * 100));
+  const penPct   = donePct < 10 ? 95 : donePct < 20 ? 90 : donePct < 30 ? 80 : donePct < 40 ? 70 : donePct < 60 ? 60 : donePct < 70 ? 50 : donePct < 80 ? 40 : donePct < 90 ? 30 : 20;
+  const penAmt   = amt * penPct / 100;
+  const recAmt   = amt - penAmt;
+
+  openPosAction(`⚠️ Early Exit (EEL) — ${moatShort}`,
+    `<div style="background:rgba(224,82,82,.1);border:1px solid rgba(224,82,82,.3);border-radius:8px;padding:.75rem;margin-bottom:.7rem">
+       <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;color:var(--red);margin-bottom:.3rem">⚠️ EEL Penalty Warning</div>
+       <div style="font-size:.75rem;color:var(--dim);line-height:1.6">
+         ${daysLeft} days remaining · est. ${penPct}% penalty<br>
+         You lose: ~${fmtP(penAmt)} ${moatShort} (95% burned, 5% to protocol)<br>
+         You receive: ~${fmtP(recAmt)} ${moatShort}
+       </div>
+     </div>
+     <div id="posActionStatus" style="font-family:'DM Mono',monospace;font-size:.7rem;color:var(--mut)">Confirm to proceed with early exit…</div>`,
+    async () => {
+      const moat = new ethers.Contract(moatAddr, MOAT_ABI, posSigner);
+      setTxt('posActionStatus', 'Confirm early exit in wallet…');
+      const tx = await moat.earlyExitLock(BigInt(lockIdx));
+      setTxt('posActionStatus', `Sent: ${tx.hash} — waiting…`);
+      await tx.wait();
+      setTxt('posActionStatus', `✅ Early exit complete. tx: ${tx.hash}`);
+      setTimeout(posLoadPositions, 2000);
+    },
+    true // show confirm button as red
+  );
+}
+
+// ── MODAL HELPERS ──
+function openPosAction(title, bodyHtml, execFn, isDanger=false) {
+  document.getElementById('posActionTitle').textContent = title;
+  document.getElementById('posActionBody').innerHTML = bodyHtml;
+  const footer = document.getElementById('posActionFooter');
+  footer.innerHTML = `
+    <button class="btn btn-sm btn-g" onclick="closePosAction()">Cancel</button>
+    <button class="btn btn-sm" style="${isDanger?'background:var(--red)':''}" id="posConfirmBtn" onclick="posConfirm()">
+      ${isDanger ? '⚠️ Confirm Early Exit' : 'Confirm →'}
+    </button>`;
+  document.getElementById('posActionModal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  window._posExecFn = execFn;
+}
+
+async function posConfirm() {
+  const btn = document.getElementById('posConfirmBtn');
+  if (btn) { btn.disabled=true; btn.textContent='Processing…'; }
+  try {
+    await window._posExecFn();
+  } catch(e) {
+    let msg = e.reason || e.shortMessage || e.message || String(e);
+    if (msg.includes('user rejected')||msg.includes('ACTION_REJECTED')) msg = 'Rejected in wallet.';
+    if (msg.length > 150) msg = msg.slice(0,150)+'…';
+    const statusEl = document.getElementById('posActionStatus');
+    if (statusEl) statusEl.innerHTML = `<span style="color:var(--red)">❌ ${msg}</span>`;
+  }
+  if (btn) { btn.disabled=false; btn.textContent='Confirm →'; }
+}
+
+function closePosAction() {
+  document.getElementById('posActionModal').classList.remove('open');
+  document.body.style.overflow = '';
+  window._posExecFn = null;
+}
+
+// ── INIT ──
+function initPositions() {
+  if (cmAddress && !posAddress) {
+    // Reuse cmProvider/cmSigner if already connected from Copy Moat
+    posProvider = cmProvider;
+    posSigner   = cmSigner;
+    posAddress  = cmAddress;
+    posViewAddr = cmAddress;
+    posIsReadOnly = false;
+    posUpdateConnectedUI();
+    posLoadPositions();
+  }
 }
 
 </script>
