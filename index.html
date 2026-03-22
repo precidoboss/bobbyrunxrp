@@ -6816,6 +6816,7 @@ function hcashSetInputMode(mode, el) {
 }
 
 function hcashTab(tab, el) {
+  hcashActiveTab = tab; // persist so we can restore after page re-render
   ['swap','addlp','stakelp','removelp'].forEach(t => {
     const p = document.getElementById('hcashPane_'+t);
     const b = document.getElementById('hcashTab_'+t);
@@ -6978,22 +6979,44 @@ async function hcashAddLiquidity() {
     const hcashTokenAddr = await resolveHcashToken();
     const router   = new ethers.Contract(PHARAOH_ROUTER_ADDR, PHARAOH_ROUTER_ABI, posSigner);
     const hcashTok = new ethers.Contract(hcashTokenAddr, ERC20_ABI, posSigner);
-    const avaxWei  = ethers.parseEther(avaxAmt.toFixed(8));
-    const hcashWei = ethers.parseEther(hcashAmt.toFixed(8));
-    const minAvax  = avaxWei  * 95n / 100n; // 5% slippage
-    const minHcash = hcashWei * 95n / 100n;
-    const deadline = Math.floor(Date.now()/1000) + 1800;
+    // Get actual decimals from token contract
+    const hcashDecimals = Number(await hcashTok.decimals().catch(()=>18));
+    const avaxWei   = ethers.parseEther(String(parseFloat(avaxAmt.toFixed(6))));
+    const hcashWei  = ethers.parseUnits(String(parseFloat(hcashAmt.toFixed(hcashDecimals))), hcashDecimals);
+    // Use 2% slippage tolerance
+    const minAvax   = avaxWei  * 98n / 100n;
+    const minHcash  = hcashWei * 98n / 100n;
+    const deadline  = Math.floor(Date.now()/1000) + 1800;
+    console.log('[hCASH LP] Token:', hcashTokenAddr, 'Decimals:', hcashDecimals);
+    console.log('[hCASH LP] avaxWei:', avaxWei.toString(), 'hcashWei:', hcashWei.toString());
     // Approve hCASH for router
     const allowed = await hcashTok.allowance(posAddress, PHARAOH_ROUTER_ADDR);
     if (allowed < hcashWei) {
-      if (statusEl) statusEl.textContent = 'Approving hCASH…';
+      if (statusEl) statusEl.textContent = 'Approving hCASH for Pharaoh…';
       const appTx = await hcashTok.approve(PHARAOH_ROUTER_ADDR, ethers.MaxUint256);
+      if (statusEl) statusEl.textContent = 'Approval tx: ' + appTx.hash;
       await appTx.wait();
     }
     if (statusEl) statusEl.textContent = 'Confirm add liquidity in wallet…';
-    return router.addLiquidityAVAX(hcashTokenAddr, false, hcashWei, minHcash, minAvax, posAddress, deadline, {value: avaxWei});
-  }, '✅ Liquidity added! LP tokens in your wallet — now stake them.');
-  setTimeout(hcashLoadBalances, 3000);
+    // Pharaoh addLiquidityAVAX: token, stable, amountTokenDesired, amountTokenMin, amountAVAXMin, to, deadline
+    // AVAX sent as msg.value
+    return router.addLiquidityAVAX(
+      hcashTokenAddr,
+      false,        // volatile pair, not stable
+      hcashWei,     // amountTokenDesired
+      minHcash,     // amountTokenMin (2% slippage)
+      minAvax,      // amountAVAXMin  (2% slippage)
+      posAddress,   // recipient
+      deadline,
+      { value: avaxWei }
+    );
+  }, '✅ LP tokens minted! Click Stake LP tab to stake them in the moat 🏰');
+  setTimeout(() => {
+    hcashLoadBalances();
+    // Auto-switch to stake tab so user can stake immediately
+    const stakeTabEl = document.getElementById('hcashTab_stakelp');
+    if (stakeTabEl) hcashTab('stakelp', stakeTabEl);
+  }, 3200);
 }
 
 function hcashCalcLpPts() {
@@ -7069,6 +7092,7 @@ async function hcashRemoveLiquidity() {
 // ════════════ hCASH SWAP ENGINE ════════════
 
 let hswapFromToken = 'avax'; // 'avax' | 'hcash'
+let hcashActiveTab  = 'swap'; // remember which hCASH tab is open
 let hswapSlippage  = 1.0;
 let hswapRouteData = null;
 let hswapTimer     = null;
@@ -7350,6 +7374,7 @@ function launchConfetti() {
 const _posRunTxOrig = posRunTx;
 async function posRunTx(statusId, fn, successMsg) {
   const el = document.getElementById(statusId);
+  const isHcashAction = statusId.startsWith('hcash') || statusId.startsWith('hswap');
   if (el) el.innerHTML = '<span class="spin"></span> Confirm in wallet…';
   try {
     const tx = await fn();
@@ -7357,22 +7382,42 @@ async function posRunTx(statusId, fn, successMsg) {
     await tx.wait();
     const quip = SUCCESS_QUIPS[Math.floor(Math.random() * SUCCESS_QUIPS.length)];
     const displayMsg = successMsg || ('✅ ' + quip);
-    if (el) el.innerHTML = `<span style="color:var(--grn)">${displayMsg} · <a href="https://snowtrace.io/tx/${tx.hash}" target="_blank" style="color:var(--acc)">${shortA(tx.hash)} ↗</a></span>`;
+    if (el) el.innerHTML = `<span style="color:var(--grn)">${displayMsg} <a href="https://snowtrace.io/tx/${tx.hash}" target="_blank" style="color:var(--acc)">↗ Snowtrace</a></span>`;
     showTxToast(true, quip, successMsg ? successMsg.replace(/^✅ ?/,'') : 'Transaction confirmed!', tx.hash);
-    setTimeout(() => posOpenDetail(posActiveMoat), 2800);
+    if (isHcashAction) {
+      // For hCASH actions: just refresh balances, don't re-render the whole page
+      setTimeout(hcashLoadBalances, 2000);
+    } else {
+      // For regular moat actions: re-render the detail page and restore tab
+      const _savedTab = hcashActiveTab || 'swap';
+      setTimeout(() => {
+        posOpenDetail(posActiveMoat);
+        setTimeout(() => {
+          const tabEl = document.getElementById('hcashTab_' + _savedTab);
+          if (tabEl) hcashTab(_savedTab, tabEl);
+        }, 350);
+      }, 2500);
+    }
   } catch(e) {
     let msg = e.reason || e.shortMessage || e.message || String(e);
+    // Strip huge JSON receipt dumps
+    if (msg.includes('"blockHash"') || msg.length > 400) {
+      const shortPart = msg.slice(0, msg.indexOf('(action') > 0 ? msg.indexOf('(action') : 200);
+      msg = shortPart.trim() || 'Transaction failed';
+    }
     const isReject = msg.includes('user rejected') || msg.includes('ACTION_REJECTED') || msg.includes('User denied');
+    const isRevert = msg.includes('execution reverted') || msg.includes('estimateGas') || msg.includes('CALL_EXCEPTION');
     if (isReject) {
       msg = REJECT_QUIPS[Math.floor(Math.random() * REJECT_QUIPS.length)];
       showAppNotif(msg, 'info', 3500);
+      if (el) el.innerHTML = `<span style="color:var(--gld)">${msg} — <button onclick="document.getElementById('${statusId}').innerHTML=''" style="background:none;border:none;color:var(--acc);cursor:pointer;font-family:'DM Mono',monospace;font-size:.65rem">Dismiss</button></span>`;
     } else {
-      if (msg.includes('execution reverted')) msg = 'Transaction reverted — check your balance or try a smaller amount.';
-      else if (msg.length > 150) msg = msg.slice(0, 150) + '…';
+      if (isRevert) msg = msg.replace(/.*estimateGas.*?reason=null,?\s*/,'').replace(/transaction=.*$/s,'').trim() || 'Transaction reverted — check your balance and amounts.';
+      if (msg.length > 180) msg = msg.slice(0, 180) + '…';
       const failQuip = FAIL_QUIPS[Math.floor(Math.random() * FAIL_QUIPS.length)];
       showTxToast(false, failQuip, msg);
+      if (el) el.innerHTML = `<span style="color:var(--red)">${msg} — <button onclick="document.getElementById('${statusId}').innerHTML=''" style="background:none;border:none;color:var(--acc);cursor:pointer;font-family:'DM Mono',monospace;font-size:.65rem">Dismiss</button></span>`;
     }
-    if (el) el.innerHTML = `<span style="color:${isReject?'var(--gld)':'var(--red)'}">` + msg + ` — <button onclick="posActionTab('${statusId.replace('Status','')}',null)" style="background:none;border:none;color:var(--acc);cursor:pointer;font-family:'DM Mono',monospace;font-size:.65rem">Try again →</button></span>`;
   }
 }
 
