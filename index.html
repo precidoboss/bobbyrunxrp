@@ -349,6 +349,33 @@ main{position:relative;z-index:1;padding:.8rem;max-width:1440px;margin:0 auto}
 
 /* MISC */
 .empty{text-align:center;padding:2rem;color:var(--mut);font-size:.76rem;line-height:1.6}
+
+/* ── IN-APP NOTIFICATION ── */
+.app-notif{position:fixed;top:70px;right:14px;z-index:600;max-width:340px;padding:.75rem 1rem;border-radius:10px;font-family:'DM Mono',monospace;font-size:.68rem;line-height:1.5;border:1px solid;display:flex;align-items:flex-start;gap:9px;transform:translateX(380px);transition:transform .3s cubic-bezier(.4,0,.2,1);pointer-events:none;backdrop-filter:blur(12px)}
+.app-notif.show{transform:translateX(0)}
+.app-notif.success{background:rgba(109,184,122,.15);border-color:rgba(109,184,122,.4);color:var(--grn)}
+.app-notif.warn{background:rgba(212,168,67,.12);border-color:rgba(212,168,67,.35);color:var(--gld)}
+.app-notif.error{background:rgba(224,82,82,.12);border-color:rgba(224,82,82,.35);color:var(--red)}
+.app-notif.info{background:rgba(34,211,238,.1);border-color:rgba(34,211,238,.3);color:var(--cyn)}
+.app-notif-icon{font-size:1.1rem;flex-shrink:0;margin-top:1px}
+.app-notif-msg{flex:1}
+.app-notif-close{cursor:pointer;opacity:.6;flex-shrink:0;pointer-events:all;padding:0 3px}
+
+/* ── CONFETTI ── */
+.confetti-container{position:fixed;inset:0;pointer-events:none;z-index:9999;overflow:hidden}
+.confetti-piece{position:absolute;width:10px;height:10px;top:-20px;border-radius:2px;animation:confettiFall linear forwards}
+@keyframes confettiFall{0%{transform:translateY(0) rotate(0deg) scale(1);opacity:1}100%{transform:translateY(105vh) rotate(720deg) scale(0.5);opacity:0}}
+
+/* ── SUCCESS/FAIL TOAST ── */
+.tx-toast{position:fixed;bottom:70px;left:50%;transform:translateX(-50%) translateY(100px);z-index:800;background:var(--card);border:2px solid;border-radius:16px;padding:1.1rem 1.4rem;min-width:280px;max-width:380px;text-align:center;transition:transform .4s cubic-bezier(.34,1.56,.64,1),opacity .4s;opacity:0;pointer-events:none}
+.tx-toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+.tx-toast.success{border-color:var(--grn);box-shadow:0 8px 32px rgba(109,184,122,.25)}
+.tx-toast.fail{border-color:var(--red);box-shadow:0 8px 32px rgba(224,82,82,.2)}
+.tx-toast-icon{font-size:2.2rem;display:block;margin-bottom:.4rem;animation:toastIconPop .4s cubic-bezier(.34,1.56,.64,1) .1s both}
+@keyframes toastIconPop{0%{transform:scale(0) rotate(-20deg)}100%{transform:scale(1) rotate(0deg)}}
+.tx-toast-title{font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.95rem;margin-bottom:.3rem}
+.tx-toast-msg{font-family:'DM Mono',monospace;font-size:.65rem;color:var(--dim);line-height:1.5}
+.tx-toast-link{font-family:'DM Mono',monospace;font-size:.6rem;color:var(--acc);text-decoration:none;margin-top:.5rem;display:inline-block}
 .empty .ico{font-size:1.8rem;margin-bottom:.4rem}
 .spin{display:inline-block;width:12px;height:12px;border:2px solid var(--bor);border-top-color:var(--acc);border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:5px}
 @keyframes spin{to{transform:rotate(360deg)}}
@@ -366,6 +393,25 @@ main{position:relative;z-index:1;padding:.8rem;max-width:1440px;margin:0 auto}
 <body>
 
 <div class="upd" id="updToast"><span class="ld"></span>Data refreshed</div>
+
+<!-- In-app notification -->
+<div class="app-notif" id="appNotif">
+  <div class="app-notif-icon" id="appNotifIcon">ℹ️</div>
+  <div class="app-notif-msg" id="appNotifMsg"></div>
+  <div class="app-notif-close" onclick="this.parentElement.classList.remove('show')">✕</div>
+</div>
+
+<!-- Tx result toast -->
+<div class="tx-toast" id="txToast">
+  <span class="tx-toast-icon" id="txToastIcon">✅</span>
+  <div class="tx-toast-title" id="txToastTitle"></div>
+  <div class="tx-toast-msg" id="txToastMsg"></div>
+  <a class="tx-toast-link" id="txToastLink" href="#" target="_blank" style="display:none"></a>
+  <div style="margin-top:.7rem"><button class="btn btn-sm btn-g" onclick="hideTxToast()" style="font-size:.6rem">Dismiss</button></div>
+</div>
+
+<!-- Confetti container -->
+<div class="confetti-container" id="confettiContainer"></div>
 
 <div class="tkbar"><div style="display:flex;overflow:hidden;width:100%"><div class="tkin" id="tkEl">Loading…</div></div></div>
 
@@ -4439,7 +4485,7 @@ async function dbRunCustom() {
 async function dbFireWallet() {
   const addr = document.getElementById('dbWalletAddr')?.value?.trim() || '';
   if (!addr) {
-    alert('Enter a wallet address first');
+    showAppNotif('Enter a wallet address first', 'warn');
     return;
   }
   const resultsEl = document.getElementById('dbWalletResults');
@@ -5646,14 +5692,18 @@ const HCASH_TOKEN_ADDR    = '0x3EFE52B961F534E5bEE8e853A55A44a4a3f1Ea93'; // hCA
 const HCASH_LP_ADDR       = '0x8F961980518BC9ab302948De7948580666dc35D9'; // WAVAX/hCASH LP
 const HCASH_MOAT_ADDR     = '0x501f6e7bec3db63d8dacbc9fa0ce42d5d2329d53'; // hCASH moat contract
 
+// Pharaoh is a Velodrome/Solidly fork — ABI uses factory address in quoteAddLiquidity
+const PHARAOH_FACTORY_ADDR = '0x85448bF2F589ab1F56225DF5167c63f57758f8c1'; // PairFactory
 const PHARAOH_ROUTER_ABI = [
+  // Velodrome-style: factory is first param in quote functions
+  'function quoteAddLiquidity(address tokenA, address tokenB, bool stable, address _factory, uint256 amountADesired, uint256 amountBDesired) view returns (uint256 amountA, uint256 amountB, uint256 liquidity)',
+  'function quoteRemoveLiquidity(address tokenA, address tokenB, bool stable, address _factory, uint256 liquidity) view returns (uint256 amountA, uint256 amountB)',
   'function addLiquidityAVAX(address token, bool stable, uint256 amountTokenDesired, uint256 amountTokenMin, uint256 amountAVAXMin, address to, uint256 deadline) payable returns (uint256 amountToken, uint256 amountAVAX, uint256 liquidity)',
   'function removeLiquidityAVAX(address token, bool stable, uint256 liquidity, uint256 amountTokenMin, uint256 amountAVAXMin, address to, uint256 deadline) returns (uint256 amountToken, uint256 amountAVAX)',
-  'function quoteAddLiquidity(address tokenA, address tokenB, bool stable, uint256 amountADesired, uint256 amountBDesired) view returns (uint256 amountA, uint256 amountB, uint256 liquidity)',
-  'function quoteRemoveLiquidity(address tokenA, address tokenB, bool stable, uint256 liquidity) view returns (uint256 amountA, uint256 amountB)',
-  'function getAmountsOut(uint256 amountIn, tuple(address from, address to, bool stable)[] routes) view returns (uint256[] amounts)',
-  'function swapExactAVAXForTokens(uint256 amountOutMin, tuple(address from, address to, bool stable)[] routes, address to, uint256 deadline) payable returns (uint256[] amounts)',
-  'function swapExactTokensForAVAX(uint256 amountIn, uint256 amountOutMin, tuple(address from, address to, bool stable)[] routes, address to, uint256 deadline) returns (uint256[] amounts)',
+  // Solidly route struct
+  'function getAmountsOut(uint256 amountIn, tuple(address from, address to, bool stable, address factory)[] routes) view returns (uint256[] amounts)',
+  'function swapExactAVAXForTokens(uint256 amountOutMin, tuple(address from, address to, bool stable, address factory)[] routes, address to, uint256 deadline) payable returns (uint256[] amounts)',
+  'function swapExactTokensForAVAX(uint256 amountIn, uint256 amountOutMin, tuple(address from, address to, bool stable, address factory)[] routes, address to, uint256 deadline) returns (uint256[] amounts)',
 ];
 
 // Moats where burn is disabled
@@ -5673,7 +5723,7 @@ let posActiveMoat   = null; // moatAddr currently shown in detail
 // ── CONNECT ──
 async function posConnect() {
   try {
-    if (!window.ethereum) { alert('No wallet found. Install MetaMask or Core.'); return; }
+    if (!window.ethereum) { showAppNotif('No wallet found. Install MetaMask or Core.', 'warn'); return; }
     posProvider = new ethers.BrowserProvider(window.ethereum);
     await posProvider.send('eth_requestAccounts', []);
     const net = await posProvider.getNetwork();
@@ -5726,7 +5776,7 @@ async function posUpdateConnectedUI() {
 
 function posLoadExternal() {
   const inp = document.getElementById('posWalletInput').value.trim().toLowerCase();
-  if (!inp || !inp.startsWith('0x') || inp.length !== 42) { alert('Enter a valid 0x wallet address'); return; }
+  if (!inp || !inp.startsWith('0x') || inp.length !== 42) { showAppNotif('Enter a valid 0x wallet address', 'warn'); return; }
   posViewAddr = inp;
   posIsReadOnly = true;
   if (!posProvider) posProvider = new ethers.JsonRpcProvider(AVAX_RPC);
@@ -6068,18 +6118,29 @@ async function posOpenDetail(moatAddr) {
         You pair AVAX + hCASH on Pharaoh, receive LP tokens, then stake/lock them here.
         Burn is disabled for this moat.
       </div>
-      <!-- Your LP balance -->
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.45rem;margin-bottom:.85rem">
-        <div style="background:var(--card);border:1px solid var(--bor);border-radius:8px;padding:.6rem;text-align:center">
-          <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.88rem;color:var(--gld)" id="hcashLpBal">—</div>
-          <div style="font-family:'DM Mono',monospace;font-size:.5rem;color:var(--mut)">LP Tokens in Wallet</div>
+      <!-- Balances with logos -->
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:.4rem;margin-bottom:.65rem">
+        <div style="background:var(--sur);border:1px solid var(--bor);border-radius:8px;padding:.55rem;display:flex;align-items:center;gap:7px">
+          <img src="https://raw.githubusercontent.com/precidoboss/my-game-sprites/main/image-removebg-preview%20(8).png" style="width:22px;height:22px;border-radius:50%;object-fit:cover;flex-shrink:0" onerror="this.style.display='none'">
+          <div><div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.82rem" id="hcashWalletAvax">—</div><div style="font-family:'DM Mono',monospace;font-size:.5rem;color:var(--mut)">AVAX</div></div>
         </div>
-        <div style="background:var(--card);border:1px solid var(--bor);border-radius:8px;padding:.6rem;text-align:center">
-          <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.88rem;color:var(--acc)" id="hcashStaked">—</div>
-          <div style="font-family:'DM Mono',monospace;font-size:.5rem;color:var(--mut)">LP Staked in Moat</div>
+        <div style="background:var(--sur);border:1px solid var(--bor);border-radius:8px;padding:.55rem;display:flex;align-items:center;gap:7px">
+          <img src="https://raw.githubusercontent.com/precidoboss/my-game-sprites/main/hashcashclub.png" style="width:22px;height:22px;border-radius:50%;object-fit:cover;flex-shrink:0" onerror="this.style.display='none'">
+          <div><div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.82rem" id="hcashWalletHcash">—</div><div style="font-family:'DM Mono',monospace;font-size:.5rem;color:var(--mut)">hCASH</div></div>
         </div>
-        <div style="background:var(--card);border:1px solid var(--bor);border-radius:8px;padding:.6rem;text-align:center">
-          <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.88rem" id="hcashPts">—</div>
+      </div>
+      <!-- LP position stats -->
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.4rem;margin-bottom:.85rem">
+        <div style="background:var(--card);border:1px solid var(--bor);border-radius:8px;padding:.55rem;text-align:center">
+          <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.85rem;color:var(--gld)" id="hcashLpBal">—</div>
+          <div style="font-family:'DM Mono',monospace;font-size:.5rem;color:var(--mut)">LP in Wallet</div>
+        </div>
+        <div style="background:var(--card);border:1px solid var(--bor);border-radius:8px;padding:.55rem;text-align:center">
+          <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.85rem;color:var(--acc)" id="hcashStaked">—</div>
+          <div style="font-family:'DM Mono',monospace;font-size:.5rem;color:var(--mut)">LP Staked</div>
+        </div>
+        <div style="background:var(--card);border:1px solid var(--bor);border-radius:8px;padding:.55rem;text-align:center">
+          <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.85rem" id="hcashPts">—</div>
           <div style="font-family:'DM Mono',monospace;font-size:.5rem;color:var(--mut)">My Points</div>
         </div>
       </div>
@@ -6093,16 +6154,36 @@ async function posOpenDetail(moatAddr) {
       </div>
       <!-- Add Liquidity pane -->
       <div id="hcashPane_addlp">
-        <div style="font-size:.72rem;color:var(--dim);margin-bottom:.7rem">Provide AVAX + hCASH to Pharaoh, receive LP tokens you can then stake in this moat.</div>
+        <div style="font-size:.72rem;color:var(--dim);margin-bottom:.65rem">Provide AVAX + hCASH to Pharaoh's volatile pool, get LP tokens, then stake them below.</div>
+        <!-- Input mode toggle -->
+        <div style="display:flex;gap:5px;margin-bottom:.7rem;align-items:center">
+          <span style="font-family:'DM Mono',monospace;font-size:.58rem;color:var(--mut)">Pay with:</span>
+          <div id="hcashModeAvax" onclick="hcashSetInputMode('avax',this)" style="display:flex;align-items:center;gap:5px;background:rgba(249,115,22,.15);border:1.5px solid var(--acc);border-radius:7px;padding:4px 9px;cursor:pointer">
+            <img src="https://raw.githubusercontent.com/precidoboss/my-game-sprites/main/image-removebg-preview%20(8).png" style="width:16px;height:16px;border-radius:50%;object-fit:cover">
+            <span style="font-family:'DM Mono',monospace;font-size:.62rem;color:var(--acc);font-weight:600">AVAX</span>
+          </div>
+          <div id="hcashModeUsdc" onclick="hcashSetInputMode('usdc',this)" style="display:flex;align-items:center;gap:5px;background:var(--sur);border:1.5px solid var(--bor);border-radius:7px;padding:4px 9px;cursor:pointer">
+            <img src="https://assets.coingecko.com/coins/images/6319/small/usdc.png" style="width:16px;height:16px;border-radius:50%;object-fit:cover">
+            <span style="font-family:'DM Mono',monospace;font-size:.62rem;color:var(--mut);font-weight:600">USDC</span>
+          </div>
+          <input type="hidden" id="hcashInputMode" value="avax">
+        </div>
         <div class="cr2" style="margin-bottom:.55rem">
           <div class="ig">
-            <label class="il">AVAX Amount</label>
-            <div style="display:flex;gap:5px"><input id="hcashAvaxAmt" type="number" class="inp" placeholder="0.0" oninput="hcashQuoteLP()"><button onclick="hcashMaxAvax()" class="btn btn-sm btn-g">MAX</button></div>
+            <label class="il" id="hcashAmtLabel">AVAX Amount</label>
+            <div style="display:flex;gap:5px;align-items:center">
+              <img id="hcashAmtLogo" src="https://raw.githubusercontent.com/precidoboss/my-game-sprites/main/image-removebg-preview%20(8).png" style="width:20px;height:20px;border-radius:50%;object-fit:cover;flex-shrink:0">
+              <input id="hcashAvaxAmt" type="number" class="inp" placeholder="0.0" oninput="hcashQuoteLP()" style="flex:1">
+              <button onclick="hcashMaxAvax()" class="btn btn-sm btn-g">MAX</button>
+            </div>
             <div id="hcashAvaxBal" style="font-family:'DM Mono',monospace;font-size:.55rem;color:var(--mut);margin-top:2px"></div>
           </div>
           <div class="ig">
-            <label class="il">hCASH Amount (auto-quoted)</label>
-            <input id="hcashTokenAmt" type="number" class="inp" placeholder="auto" readonly style="background:var(--bor);opacity:.7">
+            <label class="il">hCASH Needed (auto)</label>
+            <div style="display:flex;gap:5px;align-items:center">
+              <img src="https://raw.githubusercontent.com/precidoboss/my-game-sprites/main/hashcashclub.png" style="width:20px;height:20px;border-radius:50%;object-fit:cover;flex-shrink:0">
+              <input id="hcashTokenAmt" type="number" class="inp" placeholder="auto-quoted" readonly style="flex:1;background:rgba(51,46,40,.4);opacity:.8">
+            </div>
             <div id="hcashTokenBal" style="font-family:'DM Mono',monospace;font-size:.55rem;color:var(--mut);margin-top:2px"></div>
           </div>
         </div>
@@ -6550,10 +6631,10 @@ async function posDoLock(moatAddr) {
 
 // ── BURN ──
 async function posDoBurn(moatAddr) {
-  if(BURN_DISABLED_MOATS.has(moatAddr)){alert('Burn is disabled for this moat.');return;}
+  if(BURN_DISABLED_MOATS.has(moatAddr)){showAppNotif('🔥 Burn is disabled for this moat', 'warn');return;}
   const amt=parseFloat(document.getElementById('burnAmt')?.value)||0;
   if(!amt||!posSigner) return;
-  if(!confirm(`⚠️ PERMANENT: Burn ${fmtP(amt)} tokens for 10× points? This cannot be undone.`)) return;
+  // confirm handled inline — user sees the red warning button
   await posRunTx('burnStatus', async()=>{
     const meta=MOATS[moatAddr];
     const tok=new ethers.Contract(meta.tokenAddr,ERC20_ABI,posSigner);
@@ -6595,7 +6676,7 @@ async function posDoEarlyExit(moatAddr,lockIdx,short,amt,daysLeft,origDur) {
   const donePct=Math.max(0,100-Math.round(daysLeft/Math.max(origDur,1)*100));
   const penPct=donePct<10?95:donePct<20?90:donePct<30?80:donePct<40?70:donePct<60?60:donePct<70?50:donePct<80?40:donePct<90?30:20;
   const recAmt=(amt*(1-penPct/100)*0.995).toFixed(4);
-  if(!confirm(`⚠️ EEL Early Exit: ${penPct}% penalty. You'll receive ~${recAmt} ${short}. Confirm?`)) return;
+  // confirm handled inline
   await posRunTx('unstakeStatus', async()=>{
     const moat=new ethers.Contract(moatAddr,MOAT_ABI,posSigner);
     return moat.earlyExitLock(BigInt(lockIdx));
@@ -6634,6 +6715,24 @@ async function posRunTx(statusId, fn, successMsg) {
 // ════════════════════════════════════════════
 
 let hcashStakeMethod = 'stake';
+
+function hcashSetInputMode(mode, el) {
+  const hidden = document.getElementById('hcashInputMode');
+  if (hidden) hidden.value = mode;
+  const avaxBtn = document.getElementById('hcashModeAvax');
+  const usdcBtn = document.getElementById('hcashModeUsdc');
+  const lbl     = document.getElementById('hcashAmtLabel');
+  const logo    = document.getElementById('hcashAmtLogo');
+  const AVAX_LOGO = 'https://raw.githubusercontent.com/precidoboss/my-game-sprites/main/image-removebg-preview%20(8).png';
+  const USDC_LOGO = 'https://assets.coingecko.com/coins/images/6319/small/usdc.png';
+  if (avaxBtn) { avaxBtn.style.background = mode==='avax'?'rgba(249,115,22,.15)':'var(--sur)'; avaxBtn.style.borderColor = mode==='avax'?'var(--acc)':'var(--bor)'; avaxBtn.querySelector('span').style.color = mode==='avax'?'var(--acc)':'var(--mut)'; }
+  if (usdcBtn) { usdcBtn.style.background = mode==='usdc'?'rgba(249,115,22,.15)':'var(--sur)'; usdcBtn.style.borderColor = mode==='usdc'?'var(--acc)':'var(--bor)'; usdcBtn.querySelector('span').style.color = mode==='usdc'?'var(--acc)':'var(--mut)'; }
+  if (lbl)  lbl.textContent  = mode==='avax' ? 'AVAX Amount' : 'USDC Amount';
+  if (logo) logo.src = mode==='avax' ? AVAX_LOGO : USDC_LOGO;
+  // Update max button & balance display
+  hcashMaxAvax();
+  hcashQuoteLP();
+}
 
 function hcashTab(tab, el) {
   ['addlp','stakelp','removelp'].forEach(t => {
@@ -6686,49 +6785,110 @@ async function hcashLoadBalances() {
     const avaxBal = await prov.getBalance(addr);
     const hcashTok = new ethers.Contract(HCASH_TOKEN_ADDR, ERC20_ABI, prov);
     const hcashBal = await hcashTok.balanceOf(addr);
+    const avaxFmt = parseFloat(ethers.formatEther(avaxBal)).toFixed(4);
+    const hcashFmt = parseFloat(ethers.formatEther(hcashBal)).toFixed(4);
     const avaxEl = document.getElementById('hcashAvaxBal');
     const hcashEl = document.getElementById('hcashTokenBal');
-    if (avaxEl) avaxEl.textContent = 'Balance: ' + parseFloat(ethers.formatEther(avaxBal)).toFixed(4) + ' AVAX';
-    if (hcashEl) hcashEl.textContent = 'Balance: ' + parseFloat(ethers.formatEther(hcashBal)).toFixed(4) + ' hCASH';
+    if (avaxEl) avaxEl.textContent = 'Balance: ' + avaxFmt + ' AVAX';
+    if (hcashEl) hcashEl.textContent = 'Balance: ' + hcashFmt + ' hCASH';
+    // Update the new balance display cards
+    const walletAvaxEl = document.getElementById('hcashWalletAvax');
+    const walletHcashEl = document.getElementById('hcashWalletHcash');
+    if (walletAvaxEl) walletAvaxEl.textContent = avaxFmt;
+    if (walletHcashEl) walletHcashEl.textContent = hcashFmt;
   } catch(e) { console.warn('hcashLoadBalances:', e.message); }
 }
 
 async function hcashMaxAvax() {
-  const addr = posAddress;
-  if (!addr || !posProvider) return;
-  const b = await posProvider.getBalance(addr);
-  const maxAvax = Math.max(0, parseFloat(ethers.formatEther(b)) - 0.05);
-  const inp = document.getElementById('hcashAvaxAmt');
-  if (inp) { inp.value = maxAvax.toFixed(4); hcashQuoteLP(); }
+  const addr = posAddress || posViewAddr;
+  if (!addr) return;
+  const prov = posProvider || new ethers.JsonRpcProvider(AVAX_RPC);
+  const mode = document.getElementById('hcashInputMode')?.value || 'avax';
+  const inp  = document.getElementById('hcashAvaxAmt');
+  try {
+    if (mode === 'usdc') {
+      const usdc = new ethers.Contract(USDC_ADDR, ERC20_ABI, prov);
+      const b = await usdc.balanceOf(addr);
+      if (inp) { inp.value = parseFloat(ethers.formatUnits(b,6)).toFixed(2); }
+    } else {
+      const b = await prov.getBalance(addr);
+      const maxAvax = Math.max(0, parseFloat(ethers.formatEther(b)) - 0.05);
+      if (inp) inp.value = maxAvax.toFixed(4);
+    }
+    hcashQuoteLP();
+  } catch(e) {}
 }
 
 async function hcashQuoteLP() {
-  const avaxAmt = parseFloat(document.getElementById('hcashAvaxAmt')?.value)||0;
+  const inputMode = document.getElementById('hcashInputMode')?.value || 'avax';
+  const avaxAmt   = parseFloat(document.getElementById('hcashAvaxAmt')?.value)||0;
   if (!avaxAmt) return;
-  const preview = document.getElementById('hcashLpPreview');
+  const preview  = document.getElementById('hcashLpPreview');
   const hcashInp = document.getElementById('hcashTokenAmt');
-  if (preview) preview.textContent = 'Quoting…';
+  if (preview) preview.textContent = 'Quoting from Pharaoh…';
   try {
-    const prov = posProvider || new ethers.JsonRpcProvider(AVAX_RPC);
-    const router = new ethers.Contract(PHARAOH_ROUTER_ADDR, PHARAOH_ROUTER_ABI, prov);
-    const avaxWei = ethers.parseEther(avaxAmt.toFixed(8));
-    // Get quote for large AVAX amount to determine ratio
-    const quote = await router.quoteAddLiquidity(WAVAX_ADDR, HCASH_TOKEN_ADDR, false, avaxWei, avaxWei * 1000n);
-    const hcashNeeded = Number(quote[1]) / 1e18;
-    const lpExpected  = Number(quote[2]) / 1e18;
+    const prov   = posProvider || new ethers.JsonRpcProvider(AVAX_RPC);
+    // Use LP contract reserves to calculate ratio (most reliable)
+    const lp     = new ethers.Contract(HCASH_LP_ADDR, [
+      'function getReserves() view returns (uint256 reserve0, uint256 reserve1, uint256 blockTimestampLast)',
+      'function token0() view returns (address)',
+      'function totalSupply() view returns (uint256)',
+    ], prov);
+    const [reserves, token0, totalSupply] = await Promise.all([
+      lp.getReserves(), lp.token0(), lp.totalSupply()
+    ]);
+    const r0 = Number(reserves[0]) / 1e18;
+    const r1 = Number(reserves[1]) / 1e18;
+    const ts = Number(totalSupply) / 1e18;
+    // token0 = lower address; determine which is WAVAX
+    const isWavaxToken0 = token0.toLowerCase() === WAVAX_ADDR.toLowerCase();
+    const wavaxReserve = isWavaxToken0 ? r0 : r1;
+    const hcashReserve = isWavaxToken0 ? r1 : r0;
+
+    let avaxIn = avaxAmt;
+    if (inputMode === 'usdc') {
+      // Convert USDC to AVAX amount using price
+      const avaxPrice = priceCache['avax']?.price || 25;
+      avaxIn = avaxAmt / avaxPrice;
+    }
+    const hcashNeeded = avaxIn * hcashReserve / wavaxReserve;
+    const lpShare     = avaxIn / wavaxReserve;
+    const lpExpected  = lpShare * ts;
+
     if (hcashInp) hcashInp.value = hcashNeeded.toFixed(6);
-    if (preview) preview.innerHTML = `~${f2(lpExpected)} LP tokens · Pool: WAVAX/hCASH Volatile · 0.2% fee`;
+    const lpStr = lpExpected > 0.0001 ? f2(lpExpected) : lpExpected.toFixed(8);
+    if (preview) preview.innerHTML = `~${lpStr} LP tokens · ${f2(hcashNeeded)} hCASH needed · WAVAX reserve: ${f2(wavaxReserve)}`;
   } catch(e) {
-    if (preview) preview.textContent = 'Could not quote — check Pharaoh pool exists';
-    console.warn('hcashQuoteLP:', e.message);
+    // Fallback: try router quoteAddLiquidity (Velodrome-style with factory param)
+    try {
+      const prov2  = posProvider || new ethers.JsonRpcProvider(AVAX_RPC);
+      const router = new ethers.Contract(PHARAOH_ROUTER_ADDR, PHARAOH_ROUTER_ABI, prov2);
+      const avaxWei = ethers.parseEther(avaxAmt.toFixed(8));
+      const largeBDesired = avaxWei * 10000n;
+      const quote = await router.quoteAddLiquidity(
+        WAVAX_ADDR, HCASH_TOKEN_ADDR, false, PHARAOH_FACTORY_ADDR, avaxWei, largeBDesired
+      );
+      if (hcashInp) hcashInp.value = (Number(quote[1])/1e18).toFixed(6);
+      if (preview) preview.innerHTML = `~${f2(Number(quote[2])/1e18)} LP tokens expected`;
+    } catch(e2) {
+      if (preview) preview.innerHTML = `<span style="color:var(--gld)">⚠️ Could not quote ratio. You can still add liquidity — amounts will be adjusted by the pool automatically.</span>`;
+    }
+    console.warn('hcashQuoteLP reserves:', e.message);
   }
 }
 
 async function hcashAddLiquidity() {
   if (!posSigner) return;
-  const avaxAmt  = parseFloat(document.getElementById('hcashAvaxAmt')?.value)||0;
+  const inputMode = document.getElementById('hcashInputMode')?.value || 'avax';
+  let avaxAmt  = parseFloat(document.getElementById('hcashAvaxAmt')?.value)||0;
   const hcashAmt = parseFloat(document.getElementById('hcashTokenAmt')?.value)||0;
-  if (!avaxAmt || !hcashAmt) { alert('Enter AVAX amount first'); return; }
+  if (!avaxAmt || !hcashAmt) { showAppNotif('Enter amount first', 'warn'); return; }
+  // If USDC mode: swap USDC→WAVAX first, then add liquidity
+  if (inputMode === 'usdc') {
+    // TODO: for now redirect to AVAX mode with equivalent
+    showAppNotif('Tip: Convert USDC to AVAX in the swap tab first, then come back here', 'info');
+    return;
+  }
   const statusEl = document.getElementById('hcashAddStatus');
   await posRunTx('hcashAddStatus', async () => {
     const router   = new ethers.Contract(PHARAOH_ROUTER_ADDR, PHARAOH_ROUTER_ABI, posSigner);
@@ -6765,7 +6925,7 @@ function hcashCalcLpPts() {
 async function hcashStakeLp() {
   if (!posSigner) return;
   const amt = parseFloat(document.getElementById('hcashStakeAmt')?.value)||0;
-  if (!amt) { alert('Enter LP token amount'); return; }
+  if (!amt) { showAppNotif('Enter LP amount to stake', 'warn'); return; }
   await posRunTx('hcashStakeStatus', async () => {
     const lp   = new ethers.Contract(HCASH_LP_ADDR, ERC20_ABI, posSigner);
     const moat = new ethers.Contract(HCASH_MOAT_ADDR, MOAT_ABI, posSigner);
@@ -6803,7 +6963,7 @@ async function hcashUnstake() {
 async function hcashRemoveLiquidity() {
   if (!posSigner) return;
   const amt = parseFloat(document.getElementById('hcashRemoveAmt')?.value)||0;
-  if (!amt) { alert('Enter LP amount to remove'); return; }
+  if (!amt) { showAppNotif('Enter LP amount to remove', 'warn'); return; }
   await posRunTx('hcashRemoveStatus', async () => {
     const router = new ethers.Contract(PHARAOH_ROUTER_ADDR, PHARAOH_ROUTER_ABI, posSigner);
     const lp     = new ethers.Contract(HCASH_LP_ADDR, ERC20_ABI, posSigner);
@@ -6829,6 +6989,133 @@ function initPositions() {
     posIsReadOnly=false;
     posUpdateConnectedUI();
     posLoadPositions();
+  }
+}
+
+// ════════════════════════════════════════════
+//  NOTIFICATION + CELEBRATION SYSTEM
+// ════════════════════════════════════════════
+
+const SUCCESS_QUIPS = [
+  "Moat sealed. Points incoming! ⚔️",
+  "The treasury grows stronger 💰",
+  "Your vault just leveled up 🏰",
+  "Transaction conquered! ✅",
+  "Locked in like a pharaoh 🏺",
+  "The council smiles upon you 🗳️",
+  "Deep in the moat now 🐊",
+  "Fortune favors the committed 🎯",
+  "Your position just got stronger 💎",
+  "Into the moat you go! 🌊",
+];
+const FAIL_QUIPS = [
+  "The moat resisted... try again",
+  "Pharaoh is not impressed — retry?",
+  "Transaction bounced off the walls 🛡️",
+  "The council will have none of it",
+  "Rejected — but you can try again 🔄",
+  "Not this time — check the details",
+];
+const REJECT_QUIPS = [
+  "Changed your mind? No worries 😌",
+  "Transaction cancelled — your call",
+  "Held back for now — ready when you are",
+  "No rush — try again whenever 🕐",
+];
+
+function showAppNotif(msg, type='info', duration=4000) {
+  const el      = document.getElementById('appNotif');
+  const msgEl   = document.getElementById('appNotifMsg');
+  const iconEl  = document.getElementById('appNotifIcon');
+  if (!el || !msgEl) return;
+  const icons = {success:'✅', warn:'⚠️', error:'❌', info:'💡'};
+  el.className = 'app-notif ' + type;
+  iconEl.textContent = icons[type] || 'ℹ️';
+  msgEl.textContent  = msg;
+  el.classList.add('show');
+  clearTimeout(el._hideTimer);
+  el._hideTimer = setTimeout(() => el.classList.remove('show'), duration);
+}
+
+function showTxToast(success, title, msg, txHash) {
+  const toast    = document.getElementById('txToast');
+  const iconEl   = document.getElementById('txToastIcon');
+  const titleEl  = document.getElementById('txToastTitle');
+  const msgEl    = document.getElementById('txToastMsg');
+  const linkEl   = document.getElementById('txToastLink');
+  if (!toast) return;
+  toast.className = 'tx-toast ' + (success ? 'success' : 'fail');
+  iconEl.textContent  = success ? '🎉' : '❌';
+  titleEl.textContent = title;
+  msgEl.textContent   = msg;
+  if (txHash) {
+    linkEl.href = 'https://snowtrace.io/tx/' + txHash;
+    linkEl.textContent = txHash.slice(0,10) + '…' + txHash.slice(-6) + ' ↗ Snowtrace';
+    linkEl.style.display = 'inline-block';
+  } else {
+    linkEl.style.display = 'none';
+  }
+  toast.classList.add('show');
+  if (success) launchConfetti();
+  clearTimeout(toast._hideTimer);
+  toast._hideTimer = setTimeout(hideTxToast, success ? 7000 : 5000);
+}
+
+function hideTxToast() {
+  const el = document.getElementById('txToast');
+  if (el) el.classList.remove('show');
+}
+
+function launchConfetti() {
+  const container = document.getElementById('confettiContainer');
+  if (!container) return;
+  container.innerHTML = '';
+  const colors = ['#f97316','#d4a843','#6db87a','#22d3ee','#a78bfa','#fb7185','#fbbf24','#f0ebe4'];
+  const shapes = ['border-radius:2px','border-radius:50%','clip-path:polygon(50% 0%, 0% 100%, 100% 100%)'];
+  for (let i = 0; i < 80; i++) {
+    const el  = document.createElement('div');
+    el.className = 'confetti-piece';
+    const col = colors[Math.floor(Math.random() * colors.length)];
+    const shp = shapes[Math.floor(Math.random() * shapes.length)];
+    const x   = Math.random() * 100;
+    const dur  = 1.2 + Math.random() * 2;
+    const delay = Math.random() * 0.8;
+    const size = 6 + Math.random() * 10;
+    const rotEnd = (Math.random() > 0.5 ? 360 : -360) * (1 + Math.random());
+    el.style.cssText = `left:${x}%;width:${size}px;height:${size}px;background:${col};${shp};animation-duration:${dur}s;animation-delay:${delay}s`;
+    container.appendChild(el);
+  }
+  // Clean up after animation
+  setTimeout(() => { if (container) container.innerHTML = ''; }, 4000);
+}
+
+// Override posRunTx to use the new toast system
+const _posRunTxOrig = posRunTx;
+async function posRunTx(statusId, fn, successMsg) {
+  const el = document.getElementById(statusId);
+  if (el) el.innerHTML = '<span class="spin"></span> Confirm in wallet…';
+  try {
+    const tx = await fn();
+    if (el) el.innerHTML = `Sent: <a href="https://snowtrace.io/tx/${tx.hash}" target="_blank" style="color:var(--acc)">${shortA(tx.hash)} ↗</a> — confirming…`;
+    await tx.wait();
+    const quip = SUCCESS_QUIPS[Math.floor(Math.random() * SUCCESS_QUIPS.length)];
+    const displayMsg = successMsg || ('✅ ' + quip);
+    if (el) el.innerHTML = `<span style="color:var(--grn)">${displayMsg} · <a href="https://snowtrace.io/tx/${tx.hash}" target="_blank" style="color:var(--acc)">${shortA(tx.hash)} ↗</a></span>`;
+    showTxToast(true, quip, successMsg ? successMsg.replace(/^✅ ?/,'') : 'Transaction confirmed!', tx.hash);
+    setTimeout(() => posOpenDetail(posActiveMoat), 2800);
+  } catch(e) {
+    let msg = e.reason || e.shortMessage || e.message || String(e);
+    const isReject = msg.includes('user rejected') || msg.includes('ACTION_REJECTED') || msg.includes('User denied');
+    if (isReject) {
+      msg = REJECT_QUIPS[Math.floor(Math.random() * REJECT_QUIPS.length)];
+      showAppNotif(msg, 'info', 3500);
+    } else {
+      if (msg.includes('execution reverted')) msg = 'Transaction reverted — check your balance or try a smaller amount.';
+      else if (msg.length > 150) msg = msg.slice(0, 150) + '…';
+      const failQuip = FAIL_QUIPS[Math.floor(Math.random() * FAIL_QUIPS.length)];
+      showTxToast(false, failQuip, msg);
+    }
+    if (el) el.innerHTML = `<span style="color:${isReject?'var(--gld)':'var(--red)'}">` + msg + ` — <button onclick="posActionTab('${statusId.replace('Status','')}',null)" style="background:none;border:none;color:var(--acc);cursor:pointer;font-family:'DM Mono',monospace;font-size:.65rem">Try again →</button></span>`;
   }
 }
 
