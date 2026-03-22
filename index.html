@@ -5702,12 +5702,21 @@ const PHARAOH_ROUTER_ADDR = '0x9CEE04bDcE127DA7E448A333f006DEFb3d5e38cC';
 // LP = 0x8F961980518BC9ab302948De7948580666dc35D9, contains WAVAX + hCASH
 let HCASH_TOKEN_ADDR = null; // resolved on first use
 async function resolveHcashToken() {
+  // Check manual override first
+  const override = document.getElementById('hcashTokenOverride')?.value?.trim().toLowerCase();
+  if (override && override.startsWith('0x') && override.length === 42) {
+    console.log('hCASH token (manual override):', override);
+    return override;
+  }
   if (HCASH_TOKEN_ADDR) return HCASH_TOKEN_ADDR;
   const prov = posProvider || new ethers.JsonRpcProvider(AVAX_RPC);
   const lp = new ethers.Contract(HCASH_LP_ADDR, ['function token0() view returns (address)','function token1() view returns (address)'], prov);
   const [t0, t1] = await Promise.all([lp.token0(), lp.token1()]);
   HCASH_TOKEN_ADDR = t0.toLowerCase() === WAVAX_ADDR.toLowerCase() ? t1 : t0;
-  console.log('hCASH token resolved:', HCASH_TOKEN_ADDR);
+  console.log('hCASH token resolved:', HCASH_TOKEN_ADDR, '| t0:', t0, '| t1:', t1);
+  // Update the display
+  const resolvedEl = document.getElementById('hcashResolvedAddr');
+  if (resolvedEl) resolvedEl.innerHTML = `Resolved: <span style="color:var(--acc)">${HCASH_TOKEN_ADDR}</span> (t0:${t0.slice(0,8)}… t1:${t1.slice(0,8)}…)`;
   return HCASH_TOKEN_ADDR;
 }
 const HCASH_LP_ADDR       = '0x8F961980518BC9ab302948De7948580666dc35D9'; // WAVAX/hCASH LP
@@ -6250,6 +6259,12 @@ async function posOpenDetail(moatAddr) {
       <!-- Add Liquidity pane -->
       <div id="hcashPane_addlp" style="display:none">
         <div style="font-size:.72rem;color:var(--dim);margin-bottom:.65rem">Provide AVAX + hCASH to Pharaoh's volatile pool, get LP tokens, then stake them below.</div>
+        <!-- Manual token address override -->
+        <div style="background:rgba(212,168,67,.06);border:1px solid rgba(212,168,67,.2);border-radius:8px;padding:.55rem;margin-bottom:.65rem;font-family:'DM Mono',monospace;font-size:.58rem">
+          <div style="color:var(--gld);margin-bottom:3px">hCASH Token Address (auto-resolved from LP, override if needed)</div>
+          <input id="hcashTokenOverride" class="inp" placeholder="Leave blank to auto-detect, or paste 0x… address" style="font-size:.6rem;padding:4px 8px;width:100%;box-sizing:border-box">
+          <div id="hcashResolvedAddr" style="color:var(--mut);margin-top:3px">Resolved: checking…</div>
+        </div>
         <!-- Input: AVAX + hCASH amounts -->
         <div class="cr2" style="margin-bottom:.55rem">
           <div class="ig">
@@ -6802,6 +6817,7 @@ let hcashStakeMethod = 'stake';
 
 function hcashTab(tab, el) {
   hcashActiveTab = tab; // persist so we can restore after page re-render
+  if (tab === 'addlp') { resolveHcashToken(); } // show resolved address
   ['swap','addlp','stakelp','removelp'].forEach(t => {
     const p = document.getElementById('hcashPane_'+t);
     const b = document.getElementById('hcashTab_'+t);
@@ -6882,82 +6898,109 @@ async function hcashMaxAvax() {
 }
 
 async function hcashQuoteLP() {
-  const avaxAmt   = parseFloat(document.getElementById('hcashAvaxAmt')?.value)||0;
-  if (!avaxAmt) return;
+  const avaxAmt  = parseFloat(document.getElementById('hcashAvaxAmt')?.value)||0;
   const preview  = document.getElementById('hcashLpPreview');
   const hcashInp = document.getElementById('hcashTokenAmt');
-  if (preview) preview.textContent = 'Quoting from Pharaoh…';
+  if (!avaxAmt) { if(hcashInp) hcashInp.value=''; if(preview) preview.textContent=''; return; }
+  if (preview) preview.innerHTML = '<span class="spin"></span> Quoting…';
+
+  const prov = posProvider || new ethers.JsonRpcProvider(AVAX_RPC);
   try {
-    const prov   = posProvider || new ethers.JsonRpcProvider(AVAX_RPC);
-    // Use LP contract reserves to calculate ratio (most reliable)
-    const hcashTokAddr = await resolveHcashToken();
-    const lp     = new ethers.Contract(HCASH_LP_ADDR, [
-      'function getReserves() view returns (uint256 reserve0, uint256 reserve1, uint256 blockTimestampLast)',
-      'function token0() view returns (address)',
-      'function totalSupply() view returns (uint256)',
-    ], prov);
-    const [reserves, token0, totalSupply] = await Promise.all([
-      lp.getReserves(), lp.token0(), lp.totalSupply()
-    ]);
-    const r0 = Number(reserves[0]) / 1e18;
-    const r1 = Number(reserves[1]) / 1e18;
-    const ts = Number(totalSupply) / 1e18;
-    // token0 = lower address; determine which is WAVAX
-    const isWavaxToken0 = token0.toLowerCase() === WAVAX_ADDR.toLowerCase();
-    const wavaxReserve = isWavaxToken0 ? r0 : r1;
-    const hcashReserve = isWavaxToken0 ? r1 : r0;
+    const hcashAddr = await resolveHcashToken();
+    const hcashTok  = new ethers.Contract(hcashAddr, ERC20_ABI, prov);
+    const hcashDec  = Number(await hcashTok.decimals().catch(()=>18));
+    const avaxWei   = ethers.parseEther(String(parseFloat(avaxAmt.toFixed(6))));
+    const router    = new ethers.Contract(PHARAOH_ROUTER_ADDR, PHARAOH_ROUTER_ABI, prov);
+    // Supply a very large hCASH desired so router returns exact pool ratio
+    const bigDes = ethers.parseUnits('9999999999', hcashDec);
 
-    const avaxIn = avaxAmt;
-    const hcashNeeded = avaxIn * hcashReserve / wavaxReserve;
-    const lpShare     = avaxIn / wavaxReserve;
-    const lpExpected  = lpShare * ts;
+    // PRIMARY: router quoteAddLiquidity (authoritative — uses same math as addLiquidityAVAX)
+    const q = await router.quoteAddLiquidity(
+      WAVAX_ADDR, hcashAddr, false, PHARAOH_FACTORY_ADDR, avaxWei, bigDes
+    );
+    const wavaxUsed   = parseFloat(ethers.formatEther(q[0]));
+    const hcashNeeded = parseFloat(ethers.formatUnits(q[1], hcashDec));
+    const lpExpected  = parseFloat(ethers.formatEther(q[2]));
+    const ratio       = (hcashNeeded / wavaxUsed).toFixed(2);
 
-    if (hcashInp) hcashInp.value = hcashNeeded.toFixed(6);
-    const lpStr = lpExpected > 0.0001 ? f2(lpExpected) : lpExpected.toFixed(8);
-    if (preview) preview.innerHTML = `~${lpStr} LP tokens · ${f2(hcashNeeded)} hCASH needed · WAVAX reserve: ${f2(wavaxReserve)}`;
+    if (hcashInp) hcashInp.value = hcashNeeded.toFixed(Math.min(hcashDec, 6));
+    const lpFmt = lpExpected > 0.0001 ? lpExpected.toFixed(8) : lpExpected.toExponential(4);
+    if (preview) preview.innerHTML =
+      `<span style="color:var(--grn)">✓</span>&nbsp;${lpFmt} LP · ${hcashNeeded.toFixed(4)} hCASH · 1 AVAX = ${ratio} hCASH`;
+    console.log('[quoteAddLiq]', {wavaxUsed, hcashNeeded, lpExpected, hcashDec, ratio});
+
   } catch(e) {
-    // Fallback: try router quoteAddLiquidity (Velodrome-style with factory param)
+    console.warn('[quoteAddLiq] failed, falling back to reserves:', e.message);
+    // FALLBACK: raw reserve math with BigInt
     try {
-      const prov2  = posProvider || new ethers.JsonRpcProvider(AVAX_RPC);
-      const router = new ethers.Contract(PHARAOH_ROUTER_ADDR, PHARAOH_ROUTER_ABI, prov2);
-      const avaxWei = ethers.parseEther(avaxAmt.toFixed(8));
-      const largeBDesired = avaxWei * 10000n;
-      const quote = await router.quoteAddLiquidity(
-        WAVAX_ADDR, HCASH_TOKEN_ADDR, false, PHARAOH_FACTORY_ADDR, avaxWei, largeBDesired
-      );
-      if (hcashInp) hcashInp.value = (Number(quote[1])/1e18).toFixed(6);
-      if (preview) preview.innerHTML = `~${f2(Number(quote[2])/1e18)} LP tokens expected`;
+      const hcashAddr2 = await resolveHcashToken();
+      const hcashTok2  = new ethers.Contract(hcashAddr2, ERC20_ABI, prov);
+      const hcashDec2  = Number(await hcashTok2.decimals().catch(()=>18));
+      const lp = new ethers.Contract(HCASH_LP_ADDR, [
+        'function getReserves() view returns (uint256,uint256,uint256)',
+        'function token0() view returns (address)',
+        'function totalSupply() view returns (uint256)',
+      ], prov);
+      const [res, t0, ts] = await Promise.all([lp.getReserves(), lp.token0(), lp.totalSupply()]);
+      const isWavaxT0   = t0.toLowerCase() === WAVAX_ADDR.toLowerCase();
+      const wavaxRes    = isWavaxT0 ? res[0] : res[1];
+      const hcashRes    = isWavaxT0 ? res[1] : res[0];
+      const avaxWei2    = ethers.parseEther(String(parseFloat(avaxAmt.toFixed(6))));
+      // BigInt ratio: hcashWei = avaxWei * hcashRes / wavaxRes
+      const hcashWei    = avaxWei2 * hcashRes / wavaxRes;
+      const hcashNeeded2 = parseFloat(ethers.formatUnits(hcashWei, hcashDec2));
+      const lpShare     = Number(avaxWei2) / Number(wavaxRes);
+      const lpExp2      = lpShare * Number(ts) / 1e18;
+      if (hcashInp) hcashInp.value = hcashNeeded2.toFixed(Math.min(hcashDec2, 6));
+      if (preview) preview.innerHTML =
+        `<span style="color:var(--gld)">~</span>&nbsp;${lpExp2.toFixed(8)} LP · ${hcashNeeded2.toFixed(4)} hCASH (reserve estimate)`;
+      console.log('[quoteReserves]', {hcashNeeded2, lpExp2, hcashDec2});
     } catch(e2) {
-      if (preview) preview.innerHTML = `<span style="color:var(--gld)">⚠️ Could not quote ratio. You can still add liquidity — amounts will be adjusted by the pool automatically.</span>`;
+      if (preview) preview.innerHTML = `<span style="color:var(--red)">⚠ Quote failed: ${e2.message?.slice(0,80)||'RPC error'}</span>`;
     }
-    console.warn('hcashQuoteLP reserves:', e.message);
   }
 }
+
 
 async function hcashAddLiquidity() {
   if (!posSigner) return;
   const avaxAmt  = parseFloat(document.getElementById('hcashAvaxAmt')?.value)||0;
-  const hcashAmt = parseFloat(document.getElementById('hcashTokenAmt')?.value)||0;
-  if (!avaxAmt || !hcashAmt) { showAppNotif('Enter AVAX amount first', 'warn'); return; }
+  if (!avaxAmt) { showAppNotif('Enter AVAX amount first', 'warn'); return; }
 
-  // phar.gg uses addLiquidityAVAX — sends native AVAX as msg.value,
-  // router wraps it to WAVAX internally. We match that exact flow.
   const statusEl = document.getElementById('hcashAddStatus');
+  if (statusEl) statusEl.innerHTML = '<span class="spin"></span> Fetching exact amounts from Pharaoh…';
 
   try {
     const hcashTokenAddr = await resolveHcashToken();
     const hcashTok = new ethers.Contract(hcashTokenAddr, ERC20_ABI, posSigner);
     const hcashDec = Number(await hcashTok.decimals().catch(()=>18));
     const avaxWei  = ethers.parseEther(String(parseFloat(avaxAmt.toFixed(6))));
-    const hcashWei = ethers.parseUnits(
-      String(parseFloat(hcashAmt.toFixed(Math.min(hcashDec, 6)))), hcashDec
-    );
-    const minAvax  = avaxWei  * 97n / 100n; // 3% slippage
-    const minHcash = hcashWei * 97n / 100n;
-    const deadline = Math.floor(Date.now()/1000) + 1800;
+    const router   = new ethers.Contract(PHARAOH_ROUTER_ADDR, PHARAOH_ROUTER_ABI, posSigner);
 
-    console.log('[hCASH LP] token:', hcashTokenAddr, 'dec:', hcashDec,
-      'avax:', ethers.formatEther(avaxWei), 'hcash:', ethers.formatUnits(hcashWei, hcashDec));
+    // ── Get EXACT hCASH amount from router (prevents INSUFFICIENT_B_AMOUNT revert) ──
+    const bigDes  = ethers.parseUnits('9999999999', hcashDec);
+    let hcashWei;
+    try {
+      const q = await router.quoteAddLiquidity(
+        WAVAX_ADDR, hcashTokenAddr, false, PHARAOH_FACTORY_ADDR, avaxWei, bigDes
+      );
+      hcashWei = q[1];
+      const ratio = (parseFloat(ethers.formatUnits(hcashWei, hcashDec)) / parseFloat(ethers.formatEther(avaxWei))).toFixed(2);
+      console.log('[hCASH LP] Quoted:', ethers.formatEther(avaxWei), 'AVAX →', ethers.formatUnits(hcashWei, hcashDec), 'hCASH · ratio:', ratio);
+      if (statusEl) statusEl.innerHTML = `<span style="font-size:.6rem;color:var(--dim)">Quoted: ${parseFloat(ethers.formatUnits(hcashWei,hcashDec)).toFixed(6)} hCASH for ${avaxAmt} AVAX (1 AVAX = ${ratio} hCASH)</span>`;
+      await new Promise(r => setTimeout(r, 1200)); // show quote briefly
+    } catch(qErr) {
+      // Router quote failed — fall back to UI amount
+      const hcashAmt = parseFloat(document.getElementById('hcashTokenAmt')?.value)||0;
+      if (!hcashAmt) { showAppNotif('Quote failed. Enter hCASH amount manually.', 'warn'); return; }
+      hcashWei = ethers.parseUnits(String(parseFloat(hcashAmt.toFixed(Math.min(hcashDec,6)))), hcashDec);
+      console.warn('[hCASH LP] quote failed, using UI value:', qErr.message);
+    }
+
+    // Use 0 minimums — let router use whatever the pool ratio dictates, return excess
+    const minAvax  = 0n;
+    const minHcash = 0n;
+    const deadline = Math.floor(Date.now()/1000) + 1800;
 
     // ── Step 1: Approve hCASH for router ──
     const hcashAllowed = await hcashTok.allowance(posAddress, PHARAOH_ROUTER_ADDR);
@@ -6969,7 +7012,6 @@ async function hcashAddLiquidity() {
 
     // ── Step 2: addLiquidityAVAX (native AVAX as msg.value) ──
     if (statusEl) statusEl.innerHTML = '<span class="spin"></span> Step 2/2: Confirm in wallet…';
-    const router = new ethers.Contract(PHARAOH_ROUTER_ADDR, PHARAOH_ROUTER_ABI, posSigner);
     const tx = await router.addLiquidityAVAX(
       hcashTokenAddr,   // token = hCASH
       false,            // volatile pair
