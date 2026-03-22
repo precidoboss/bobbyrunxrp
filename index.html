@@ -522,7 +522,7 @@ main{position:relative;z-index:1;padding:.8rem;max-width:1440px;margin:0 auto}
   </div>
   <div class="panel">
     <div class="ph"><div class="ptitle">🏆 Global Leaderboard</div><span class="live"><span class="ld"></span>live</span></div>
-    <div class="pb0 tw"><table class="tbl" id="lbTbl"><thead><tr><th>Rank</th><th>Wallet</th><th>Moats</th><th>Points</th><th>Council Score</th><th>Share</th><th>Copy</th></tr></thead><tbody></tbody></table></div>
+    <div class="pb0 tw"><table class="tbl" id="lbTbl"><thead><tr><th>Rank</th><th>Wallet</th><th>Moats</th><th>Points</th><th>Council Score</th><th>Share</th><th></th></tr></thead><tbody></tbody></table></div>
   </div>
 </div>
 
@@ -1206,31 +1206,40 @@ main{position:relative;z-index:1;padding:.8rem;max-width:1440px;margin:0 auto}
     <!-- Strategy method -->
     <div class="ccard" style="margin-bottom:.85rem">
       <div class="ctit">Participation Method</div>
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem" id="cmMethodGrid">
-        <div class="token-badge active" id="cmMethod_mirror" onclick="cmSetMethod('mirror')" style="padding:.6rem;flex-direction:column;align-items:flex-start;gap:2px">
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:.45rem" id="cmMethodGrid">
+        <div class="token-badge active" id="cmMethod_mirror" onclick="cmSetMethod('mirror')" style="padding:.55rem .5rem;flex-direction:column;align-items:flex-start;gap:2px">
           <span>🪞 Mirror</span>
-          <span style="font-size:.52rem;color:var(--mut);font-weight:400">Copy their exact method</span>
+          <span style="font-size:.5rem;color:var(--mut);font-weight:400">Copy their strategy</span>
         </div>
-        <div class="token-badge inactive" id="cmMethod_stake" onclick="cmSetMethod('stake')" style="padding:.6rem;flex-direction:column;align-items:flex-start;gap:2px">
+        <div class="token-badge inactive" id="cmMethod_stake" onclick="cmSetMethod('stake')" style="padding:.55rem .5rem;flex-direction:column;align-items:flex-start;gap:2px">
           <span>🔒 Stake</span>
-          <span style="font-size:.52rem;color:var(--mut);font-weight:400">Flexible, 1×</span>
+          <span style="font-size:.5rem;color:var(--mut);font-weight:400">Flexible · 1×</span>
         </div>
-        <div class="token-badge inactive" id="cmMethod_lock90" onclick="cmSetMethod('lock90')" style="padding:.6rem;flex-direction:column;align-items:flex-start;gap:2px">
-          <span>⏳ Lock 90d</span>
-          <span style="font-size:.52rem;color:var(--mut);font-weight:400">2.73×</span>
+        <div class="token-badge inactive" id="cmMethod_lock90" onclick="cmSetMethod('lock90')" style="padding:.55rem .5rem;flex-direction:column;align-items:flex-start;gap:2px">
+          <span>⏳ 90d</span>
+          <span style="font-size:.5rem;color:var(--mut);font-weight:400">2.73×</span>
         </div>
-        <div class="token-badge inactive" id="cmMethod_lock180" onclick="cmSetMethod('lock180')" style="padding:.6rem;flex-direction:column;align-items:flex-start;gap:2px">
-          <span>⏳ Lock 180d</span>
-          <span style="font-size:.52rem;color:var(--mut);font-weight:400">3.23×</span>
+        <div class="token-badge inactive" id="cmMethod_lock180" onclick="cmSetMethod('lock180')" style="padding:.55rem .5rem;flex-direction:column;align-items:flex-start;gap:2px">
+          <span>⏳ 180d</span>
+          <span style="font-size:.5rem;color:var(--mut);font-weight:400">3.23×</span>
         </div>
-        <div class="token-badge inactive" id="cmMethod_lock365" onclick="cmSetMethod('lock365')" style="padding:.6rem;flex-direction:column;align-items:flex-start;gap:2px">
-          <span>⏳ Lock 365d</span>
-          <span style="font-size:.52rem;color:var(--mut);font-weight:400">4.00×</span>
+        <div class="token-badge inactive" id="cmMethod_lock365" onclick="cmSetMethod('lock365')" style="padding:.55rem .5rem;flex-direction:column;align-items:flex-start;gap:2px">
+          <span>⏳ 365d</span>
+          <span style="font-size:.5rem;color:var(--mut);font-weight:400">4.00×</span>
         </div>
-        <div class="token-badge inactive" id="cmMethod_burn" onclick="cmSetMethod('burn')" style="padding:.6rem;flex-direction:column;align-items:flex-start;gap:2px">
+        <div class="token-badge inactive" id="cmMethod_lock730" onclick="cmSetMethod('lock730')" style="padding:.55rem .5rem;flex-direction:column;align-items:flex-start;gap:2px">
+          <span>⏳ 730d</span>
+          <span style="font-size:.5rem;color:var(--mut);font-weight:400">5.00× max</span>
+        </div>
+        <div class="token-badge inactive" id="cmMethod_burn" onclick="cmSetMethod('burn')" style="padding:.55rem .5rem;flex-direction:column;align-items:flex-start;gap:2px">
           <span>🔥 Burn</span>
-          <span style="font-size:.52rem;color:var(--mut);font-weight:400">10×, permanent</span>
+          <span style="font-size:.5rem;color:var(--mut);font-weight:400">10× permanent</span>
         </div>
+      </div>
+      <!-- DEX Router info -->
+      <div style="margin-top:.55rem;background:rgba(168,85,247,.06);border:1px solid rgba(168,85,247,.2);border-radius:8px;padding:.6rem .8rem;font-family:'DM Mono',monospace;font-size:.58rem;color:var(--mut);line-height:1.6">
+        🔀 <span style="color:var(--pur)">Smart routing:</span> Odos · KyberSwap · Jar · OKX DEX · FlyTrade — best price auto-selected
+        <br>💡 Fallback to LFJ V1 (TraderJoe classic) if aggregators unavailable
       </div>
     </div>
 
@@ -1239,9 +1248,15 @@ main{position:relative;z-index:1;padding:.8rem;max-width:1440px;margin:0 auto}
       <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.82rem;margin-bottom:.6rem">④ Preview &amp; Execute</div>
       <div id="cmPreviewCards"></div>
       <div id="cmGasEstimate" class="gas-estimate" style="display:none"></div>
-      <button class="btn" id="cmExecuteBtn" style="width:100%;margin-top:.8rem;display:none;font-size:.88rem;padding:.85rem" onclick="cmExecute()">
-        🚀 Execute Copy Strategy
-      </button>
+      <div style="display:flex;gap:7px;margin-top:.8rem">
+        <button class="btn btn-g" id="cmCheckRoutesBtn" style="flex:1;font-size:.75rem;padding:.65rem;display:none" onclick="cmCheckRoutes()">
+          🔀 Check Routes
+        </button>
+        <button class="btn" id="cmExecuteBtn" style="flex:2;display:none;font-size:.88rem;padding:.65rem" onclick="cmExecute()">
+          🚀 Execute Copy Strategy
+        </button>
+      </div>
+      <div id="cmRouteCheckResult" style="display:none;margin-top:.5rem"></div>
       <div style="font-family:'DM Mono',monospace;font-size:.58rem;color:var(--mut);text-align:center;margin-top:.4rem" id="cmConnectPrompt">
         Connect wallet above to execute
       </div>
@@ -1279,14 +1294,14 @@ const API  = 'https://moat-api.fortifi.network/api';
 const DSC_PAIR = 'https://api.dexscreener.com/latest/dex/pairs/avalanche/';
 
 const MOATS = {
-  '0xcf65744c955a292d11de2a4184e9fabedbfc7b40':{name:'HEFE Moat',         short:'HEFE',  ticker:'$hefe',    emoji:'🏔️',color:'#f97316',tokenAddr:'0xcf65744c955a292d11de2a4184e9fabedbfc7b40',  pairAddr:'0xc4fa66b4839af7379a4fcbe5dd048b18fe99a2ac',  altPairAddr:'0xe11e871d312cc9bae9eb24c7bdc2031f8453bf44', url:'https://moats.app/moat/0xcf65744c955a292d11de2a4184e9fabedbfc7b40',   logo:'Hefelogo-new.png',              knownSupply:690420000},
+  '0xcf65744c955a292d11de2a4184e9fabedbfc7b40':{name:'HEFE Moat',         short:'HEFE',  ticker:'$hefe',    emoji:'🏔️',color:'#f97316',tokenAddr:'0xcf65744c955a292d11de2a4184e9fabedbfc7b40',  pairAddr:'0xc4fa66b4839af7379a4fcbe5dd048b18fe99a2ac', altPairAddr:'0xe11e871d312cc9bae9eb24c7bdc2031f8453bf44', url:'https://moats.app/moat/0xcf65744c955a292d11de2a4184e9fabedbfc7b40',   logo:'Hefelogo-new.png',              knownSupply:690420000},
   '0x501f6e7bec3db63d8dacbc9fa0ce42d5d2329d53':{name:'hCASH LP Moat',     short:'hCASH', ticker:'$hcash',   emoji:'💧', color:'#d4a843',tokenAddr:'0x501f6e7bec3db63d8dacbc9fa0ce42d5d2329d53',  pairAddr:'0x8f961980518bc9ab302948de7948580666dc35d9',  url:'https://moats.app/moat/0x501f6e7bec3db63d8dacbc9fa0ce42d5d2329d53',   logo:'hashcashclub.png',   supplyType:'dynamic',knownSupply:21000000000,note:'LP NFT moat — Pharaoh liquidity positions are staked/locked, not raw tokens',lpOnly:true,lpUrl:'https://phar.gg'},
-  '0x020c73b55d139d5e259bad89b126f2a446c22ac6':{name:'FREAK Anon Moat',   short:'FREAK', ticker:'$freak',   emoji:'👾', color:'#8c8074',tokenAddr:'0x020c73b55d139d5e259bad89b126f2a446c22ac6',  pairAddr:null, useAggregator:true, aggregatorUrl:'https://traderjoexyz.com/avalanche/trade?outputCurrency=0x020c73b55d139d5e259bad89b126f2a446c22ac6',                                             url:'https://moats.app/moat/0x020c73b55d139d5e259bad89b126f2a446c22ac6',   logo:'FREAK_Anon.png',                knownSupply:1000000000},
+  '0x020c73b55d139d5e259bad89b126f2a446c22ac6':{name:'FREAK Anon Moat',   short:'FREAK', ticker:'$freak',   emoji:'👾', color:'#8c8074',tokenAddr:'0x020c73b55d139d5e259bad89b126f2a446c22ac6',  pairAddr:null, useAggregator:true, url:'https://moats.app/moat/0x020c73b55d139d5e259bad89b126f2a446c22ac6',   logo:'FREAK_Anon.png',                knownSupply:1000000000},
   '0x7e1f28c9622aa68001fe0b200f5e5f93f6b35cc9':{name:'Balln Chikn Moat', short:'BALLN', ticker:'$balln',   emoji:'🏀', color:'#f43f5e',tokenAddr:'0x4Afc7838167b77530278483c3d8c1fFe698a912E',  pairAddr:'0xa8f87e026481cf03dc9a68570584a664186b41c7', url:'https://moats.app/moat/0x7e1f28c9622aa68001fe0b200f5e5f93f6b35cc9',    logo:'balln-token.jpg',               knownSupply:100000},
   '0x464b2817f16f6117602ad05bae446c2fc5ba6fb7':{name:'Supercycle Moat',   short:'SUPER', ticker:'$super',   emoji:'🌀', color:'#818cf8',tokenAddr:'0xCA2e0f72653337d05B1ABceBEA5718A4A3E57a0b',  pairAddr:'0x017c5608a8ab29ab23093726cf7c64e5ef88e191', url:'https://moats.app/moat/0x464b2817f16f6117602ad05bae446c2fc5ba6fb7',    logo:'supercycle.jpg',                knownSupply:10000000000},
   '0x940b7f7d73a504ec566157eebb0566b81d57e8f8':{name:'Vitrene Moat',      short:'VIT',   ticker:'$vitrene', emoji:'💎', color:'#22d3ee',tokenAddr:'0xde34C06de75FB446b5e7b8dd272D014F2A19009D',  pairAddr:'0x1ed3c7234ed58700cb99dfd5eb1bad4242855ad8',  url:'https://moats.app/moat/0x940b7f7d73a504ec566157eebb0566b81d57e8f8',   logo:'VIT-Logo-Alternative-2.jpg',    knownSupply:10000000000},
   '0x7a4d20261a765bd9ba67d49fbf8189843eec3393':{name:'Lil Coq Moat',      short:'LIL',   ticker:'$lil',     emoji:'🐓', color:'#fb7185',tokenAddr:'0x22683BbaDD01473969F23709879187705a253763',  pairAddr:'0x8acc49857a1259d25eb3ca0aa15b398d0e149ef2', url:'https://moats.app/moat/0x7a4d20261a765bd9ba67d49fbf8189843eec3393',    logo:'LIL-Coq-Logo.png',              knownSupply:1350000000},
-  '0x93d8cc111233f8c5b9a019df7c159b6f9be7b44b':{name:'Dimish Moat',       short:'DISH',  ticker:'$dimish',  emoji:'🌑', color:'#a78bfa',tokenAddr:'0x40146E96EE5297187022D1ca62A3169B5e45B0a4',  pairAddr:null, geckoPoolAddr:'0x3edc0126e36758419ba7eeb44b2a3a094e7e9bb7', geckoNetwork:'avax',                                             url:'https://moats.app/moat/0x93d8cc111233f8c5b9a019df7c159b6f9be7b44b',   logo:'Dimish1000px.png',              knownSupply:1000000000},
+  '0x93d8cc111233f8c5b9a019df7c159b6f9be7b44b':{name:'Dimish Moat',       short:'DISH',  ticker:'$dimish',  emoji:'🌑', color:'#a78bfa',tokenAddr:'0x40146E96EE5297187022D1ca62A3169B5e45B0a4',  pairAddr:null, geckoPoolAddr:'0x3edc0126e36758419ba7eeb44b2a3a094e7e9bb7', geckoNetwork:'avax', url:'https://moats.app/moat/0x93d8cc111233f8c5b9a019df7c159b6f9be7b44b',   logo:'Dimish1000px.png',              knownSupply:1000000000},
   '0x3399d03566bb6db0cb4f1e13047589a1499cebbc':{name:'Bensi Box Moat',    short:'BENSI', ticker:'$bensi',   emoji:'📦', color:'#fbbf24',tokenAddr:'0x00697F5F6dc2CA0A17e6c89bCcd1173A61eA24a6',  pairAddr:'0x7984cD0FA3DaA31f8B305A0544b6097BA40Fd3B8', url:'https://moats.app/moat/0x3399d03566bb6db0cb4f1e13047589a1499cebbc',    logo:'Bensi-Box-logo-new.jpg',        knownSupply:1000000000},
   '0x9c5f177cdc0332e61e423ee9ad9e4f2333f62685':{name:'Where Is Malek Moat',short:'MALEK',ticker:'$malek',   emoji:'🔍', color:'#34d399',tokenAddr:'0xeB55FAB1C23EC0Aa5024Ee593A12edCD031Ecd9b',  pairAddr:'0xa7e81808219cb1a27c71bd56f551a43fc8cad23',   url:'https://moats.app/moat/0x9c5f177cdc0332e61e423ee9ad9e4f2333f62685',    logo:'wheremalek.jpg',                knownSupply:10000000000, isNew:true},
 };
@@ -1433,15 +1448,14 @@ function normEvs(d){
     // Parse amounts — API may return as string or in event data sub-object
     const evtData = e.data||e.eventData||e.args||{};
     const rawAmt = e.amount||e.tokenAmount||e.stakedAmount||evtData.amount||evtData.value||0;
-    // Auto-detect if amount is in raw wei (18 decimals) — if > 1e15 it's almost certainly wei
     const rawAmtNum = Number(rawAmt)||0;
     const cAddrForAmt = (e.contractAddress||e.contract||e.moatAddress||'').toLowerCase();
     const supForAmt = supplyCache[MOATS[cAddrForAmt]?.tokenAddr?.toLowerCase()];
     const decimalsForAmt = supForAmt?.decimals || 18;
-    const tokenAmount = rawAmtNum > 1e15 ? rawAmtNum / Math.pow(10, decimalsForAmt) : rawAmtNum;
+    const tokenAmount = rawAmtNum > 1e12 ? rawAmtNum / Math.pow(10, decimalsForAmt) : rawAmtNum;
     const rawReward = e.rewardAmount||e.reward||e.claimed||e.claimedAmount||evtData.rewardAmount||evtData.reward||0;
     const rawRewardNum = Number(rawReward)||0;
-    const rewardAmount = rawRewardNum > 1e15 ? rawRewardNum / Math.pow(10, 18) : rawRewardNum;
+    const rewardAmount = rawRewardNum > 1e12 ? rawRewardNum / Math.pow(10, 18) : rawRewardNum;
 
     // Resolve moat token symbol from MOATS config
     const cAddr = (e.contractAddress||e.contract||e.moatAddress||'').toLowerCase();
@@ -1540,16 +1554,6 @@ async function loadAll(){
   btn.classList.add('loading'); btn.textContent='↻ Loading…';
   try{
     const addrs=Object.keys(MOATS);
-
-    // ── TIER 0: Show skeleton/cached data immediately if available ──
-    if(isFirstLoad){
-      document.getElementById('rfBtn').textContent='↻ Loading…';
-      // Show placeholder stats while loading
-      ['ovW','ovP','ovM','ovEv'].forEach(id=>{
-        const el=document.getElementById(id);
-        if(el&&el.textContent==='—')el.innerHTML='<span class="spin"></span>';
-      });
-    }
 
     // ── TIER 1: Fast parallel — events + global LB (2 requests, ~500ms) ──
     const [evR, globalLbR] = await Promise.allSettled([
@@ -2209,12 +2213,12 @@ async function fetchPairData(meta) {
     } catch(e) {}
   }
 
-  // Strategy 2: GeckoTerminal (for tokens not on DexScreener or with low volume)
+  // Strategy 2: GeckoTerminal (for tokens with low DexScreener volume like DIMISH)
   if (meta.geckoPoolAddr) {
     try {
       const network = meta.geckoNetwork || 'avax';
-      const url = 'https://api.geckoterminal.com/api/v2/networks/' + network + '/pools/' + meta.geckoPoolAddr;
-      const r = await fetch(url, {headers:{'Accept':'application/json'}}).then(x => x.json());
+      const gtUrl = 'https://api.geckoterminal.com/api/v2/networks/' + network + '/pools/' + meta.geckoPoolAddr;
+      const r = await fetch(gtUrl, {headers:{'Accept':'application/json'}}).then(x => x.json());
       const pool = r?.data?.attributes;
       if (pool) {
         return {
@@ -2222,8 +2226,7 @@ async function fetchPairData(meta) {
           priceChange: { h24: parseFloat(pool.price_change_percentage?.h24 || 0) },
           volume: { h24: parseFloat(pool.volume_usd?.h24 || 0) },
           liquidity: { usd: parseFloat(pool.reserve_in_usd || 0) },
-          marketCap: 0,
-          fdv: parseFloat(pool.fdv_usd || 0),
+          marketCap: 0, fdv: parseFloat(pool.fdv_usd || 0),
           dexId: pool.dex_id || 'GeckoTerminal',
           pairAddress: meta.geckoPoolAddr,
           url: 'https://www.geckoterminal.com/' + network + '/pools/' + meta.geckoPoolAddr,
@@ -2255,9 +2258,6 @@ async function loadPrice(addr){
   if(!meta.pairAddr && !meta.geckoPoolAddr && !meta.tokenAddr){
     if(grid)grid.innerHTML=`<div style="grid-column:1/-1" class="empty"><div class="ico">📊</div>No DEX pair configured for ${meta.ticker}.</div>`;
     return;
-  }
-  if(!meta.pairAddr && !meta.geckoPoolAddr){
-    if(grid)grid.innerHTML=`<div style="grid-column:1/-1" class="empty"><div class="ico">📊</div>No direct pair for ${meta.ticker}. Searching by token address…</div>`;
   }
   try{
     const p = await fetchPairData(meta);
@@ -2543,59 +2543,78 @@ function renderSignals(){
     const meta=MOATS[addr]||{};
     const burnRatio=m.walletCount?m.burnCount/m.walletCount:0;
     if(burnRatio>0.1)sigsFilt.push({type:'bull',icon:'🔥',title:'High Burn Commitment',moat:meta.name||m.name,
-      body:`${(burnRatio*100).toFixed(1)}% of wallets in this moat estimated as burn-tier — signals long-term holder conviction.`,score:Math.round(burnRatio*100)});
+      body:`${(burnRatio*100).toFixed(1)}% of wallets are burn-tier — signals deep long-term conviction.`,score:Math.round(burnRatio*100)});
   });
 
   // 6. Price momentum from priceCache
   Object.entries(priceCache).forEach(([addr,px])=>{
-    const meta=MOATS[addr]||{};
-    if(!meta.name)return;
+    const meta=MOATS[addr]||{}; if(!meta.name)return;
     if(px.ch24>=10)sigsFilt.push({type:'bull',icon:'📈',title:'Strong Price Momentum',moat:meta.name,
-      body:`${meta.ticker} is up ${px.ch24.toFixed(1)}% in 24h with $${fmtK(px.vol24||0).replace('$','')} volume. Momentum may attract new stakers.`,score:Math.round(px.ch24)});
-    if(px.ch24<=-15)sigsFilt.push({type:'bear',icon:'📉',title:'Sharp Price Drop',moat:meta.name,
-      body:`${meta.ticker} is down ${Math.abs(px.ch24).toFixed(1)}% in 24h. Could be a dip-buy opportunity or exit signal.`,score:Math.round(Math.abs(px.ch24))});
+      body:`${meta.ticker} is up ${px.ch24.toFixed(1)}% in 24h with $${fmtK(px.vol24||0)} volume. Momentum may attract new stakers.`,score:Math.round(px.ch24)});
+    else if(px.ch24<=-15)sigsFilt.push({type:'bear',icon:'📉',title:'Sharp Price Drop',moat:meta.name,
+      body:`${meta.ticker} is down ${Math.abs(px.ch24).toFixed(1)}% in 24h. Could be a dip-buy opportunity or an exit signal.`,score:Math.round(Math.abs(px.ch24))});
   });
 
   // 7. Single-wallet dominance (one wallet > 30% of moat)
   moatEntries.forEach(([addr,m])=>{
-    const meta=MOATS[addr]||{};
-    if(!m.sorted.length)return;
-    const top=m.sorted[0];
-    const dom=m.totalPoints?top.points/m.totalPoints:0;
-    if(dom>0.3)sigsFilt.push({type:'bear',icon:'🎯',title:'Single Wallet Dominance',moat:meta.name||m.name,
-      body:`One wallet holds ${(dom*100).toFixed(1)}% of all ${meta.name} points. High centralization risk.`,score:Math.round(dom*100)});
+    const meta=MOATS[addr]||{}; if(!m.sorted.length)return;
+    const dom=m.totalPoints?m.sorted[0].points/m.totalPoints:0;
+    if(dom>0.3)sigsFilt.push({type:'bear',icon:'🐳',title:'Single Wallet Dominance',moat:meta.name||m.name,
+      body:`One wallet holds ${(dom*100).toFixed(1)}% of all ${meta.short} points. High centralization risk — if they exit, pool shrinks fast.`,score:Math.round(dom*100)});
   });
 
-  // 8. New moat with fast growth (walletCount > 5 but recent)
+  // 8. New moat with fast growth
   moatEntries.forEach(([addr,m])=>{
     const meta=MOATS[addr]||{};
-    if(meta.isNew && m.walletCount>3)sigsFilt.push({type:'bull',icon:'🆕',title:'New Moat Gaining Traction',moat:meta.name||m.name,
-      body:`${meta.name} is new and already has ${m.walletCount} wallets. Early entry = highest relative points impact.`,score:75});
+    if(meta.isNew&&m.walletCount>3)sigsFilt.push({type:'bull',icon:'🆕',title:'New Moat Gaining Traction',moat:meta.name||m.name,
+      body:`${meta.name} is newly launched and already has ${m.walletCount} wallets. Earliest entry = highest proportional points.`,score:75});
   });
 
-  // 9. Lock dominance = high conviction moat
+  // 9. Lock+burn dominance = high conviction moat
   moatEntries.forEach(([addr,m])=>{
     const meta=MOATS[addr]||{};
-    const lockRatio=m.walletCount?(m.lockCount+m.burnCount)/m.walletCount:0;
-    if(lockRatio>0.6&&m.walletCount>5)sigsFilt.push({type:'bull',icon:'💎',title:'High Conviction Moat',moat:meta.name||m.name,
-      body:`${(lockRatio*100).toFixed(0)}% of wallets are locked or burned — strong signal of long-term commitment from holders.`,score:Math.round(lockRatio*80)});
+    const ratio=m.walletCount?(m.lockCount+m.burnCount)/m.walletCount:0;
+    if(ratio>0.6&&m.walletCount>5)sigsFilt.push({type:'bull',icon:'💎',title:'High Conviction Holders',moat:meta.name||m.name,
+      body:`${(ratio*100).toFixed(0)}% of wallets are locked or burned — very low sell pressure, strong hands.`,score:Math.round(ratio*80)});
   });
 
-  // 10. Low liquidity warning
+  // 10. Low pool liquidity warning
   Object.entries(priceCache).forEach(([addr,px])=>{
-    const meta=MOATS[addr]||{};
-    if(!meta.name)return;
-    if(px.liq>0&&px.liq<5000)sigsFilt.push({type:'bear',icon:'💧',title:'Low Pool Liquidity',moat:meta.name,
-      body:`${meta.ticker} pool has only $${fmtK(px.liq).replace('$','')} liquidity — large buys could cause significant slippage.`,score:Math.round((5000-px.liq)/50)});
+    const meta=MOATS[addr]||{}; if(!meta.name)return;
+    if(px.liq>0&&px.liq<5000)sigsFilt.push({type:'bear',icon:'💧',title:'Low DEX Liquidity',moat:meta.name,
+      body:`${meta.ticker} pool has only ${fmtK(px.liq)} liquidity — large buys could cause severe slippage. Buy in small increments.`,score:Math.round((5000-px.liq)/50)});
   });
 
-  setTxt('sigCount', sigsFilt.length);
-  setTxt('sigBull', sigsFilt.filter(s=>s.type==='bull').length);
-  setTxt('sigBear', sigsFilt.filter(s=>s.type==='bear').length);
-  setTxt('sigNeut', sigsFilt.filter(s=>s.type==='neut').length);
+  // 11. Moat with most events in last 7 days (hot activity)
+  const recentCutoff=Date.now()/1000-7*86400;
+  const recentByMoat={};
+  allEvs.forEach(e=>{if(e.timestamp>recentCutoff){recentByMoat[e.contractAddress]=(recentByMoat[e.contractAddress]||0)+1;}});
+  const topActive=Object.entries(recentByMoat).sort((a,b)=>b[1]-a[1])[0];
+  if(topActive){
+    const[addr,cnt]=topActive; const meta=MOATS[addr]||{};
+    if(meta.name)sigsFilt.push({type:'neut',icon:'⚡',title:'Hottest Activity (7d)',moat:meta.name,
+      body:`${meta.name} has ${cnt} on-chain events in the last 7 days — most active moat this week.`,score:Math.min(cnt,100)});
+  }
+
+  // 12. Eco share gap — moat with lowest share vs highest (entry opportunity)
+  if(moatEntries.length>=2){
+    const shares=moatEntries.map(([addr,m])=>({addr,share:totPts?m.totalPoints/totPts:0,meta:MOATS[addr]||{}}));
+    const lowest=shares.sort((a,b)=>a.share-b.share)[0];
+    if(lowest.share<0.03&&lowest.meta.name)sigsFilt.push({type:'bull',icon:'🎯',title:'Underrepresented Moat',moat:lowest.meta.name,
+      body:`${lowest.meta.name} has only ${(lowest.share*100).toFixed(2)}% of total ecosystem points. Entering now gives outsized relative weight.`,score:Math.round((0.05-lowest.share)*2000)});
+  }
+
+  // Dedupe by title+moat
+  const seen=new Set();
+  const sigsFinal=sigsFilt.filter(s=>{const k=s.title+'|'+s.moat;if(seen.has(k))return false;seen.add(k);return true;});
+
+  setTxt('sigCount', sigsFinal.length);
+  setTxt('sigBull', sigsFinal.filter(s=>s.type==='bull').length);
+  setTxt('sigBear', sigsFinal.filter(s=>s.type==='bear').length);
+  setTxt('sigNeut', sigsFinal.filter(s=>s.type==='neut').length);
 
   const grid=document.getElementById('sigGrid');
-  grid.innerHTML=sigsFilt.slice(0,12).map(s=>`
+  grid.innerHTML=sigsFinal.slice(0,15).map(s=>`
     <div class="sig">
       <div class="sig-tag sig-${s.type}">
         ${s.icon} ${s.type==='bull'?'Bullish Signal':s.type==='bear'?'Risk Alert':'Insight'}
@@ -4383,12 +4402,12 @@ async function dbFireWallet() {
 // dbInit is called from nav() directly — see nav() function above
 
 
+
 // ════════════════════════════════════════════
 //  COPY MOAT PLANNER
 // ════════════════════════════════════════════
 
 function openCopyMoat(walletAddr) {
-  // Navigate to the copy moat page and pre-load the wallet
   nav(document.querySelector('[data-v="copymoat"]'));
   const normAddr = walletAddr.toLowerCase();
   const inputEl = document.getElementById('cmTargetInput');
@@ -4402,160 +4421,12 @@ function closeCopyMoat() {
   copyMoatTarget = null;
 }
 
-async function renderCopyMoatPlan(addr) {
-  const body = document.getElementById('copyMoatBody');
-  const investBtn = document.getElementById('copyMoatInvestBtn');
-  body.innerHTML = '<div class="empty"><span class="spin"></span>Fetching strategy…</div>';
-
-  // Fetch profile from API for accurate per-moat data
-  let profile = null;
-  try { profile = await fetch(API+'/profile/'+addr).then(r=>r.json()); } catch(e){}
-
-  // Get local pts as fallback
-  const localPts = allPts.filter(p=>getWallet(p)===addr);
-  let moatPts = localPts;
-  if(profile?.contractPoints?.length){
-    moatPts = profile.contractPoints.map(cp=>({
-      contractAddress:(cp.contractAddress||'').toLowerCase(),
-      points:Number(cp.points||0), rank:cp.rank, weight:cp.weight,
-    })).filter(p=>p.contractAddress&&p.points>0);
-    if(!moatPts.length) moatPts = localPts;
-  }
-
-  if(!moatPts.length){
-    body.innerHTML='<div class="empty">No moat data found for this wallet.</div>';
-    return;
-  }
-
-  const username = profile?.username&&!profile.username.startsWith('0x')?profile.username:(wMap[addr]?.username||shortA(addr));
-  const totPts = moatPts.reduce((s,p)=>s+p.points,0);
-  const mCnt = new Set(moatPts.map(p=>p.contractAddress)).size;
-  const mult = cMult(mCnt), council = Math.round(totPts*mult);
-  const ecoTot = allPts.reduce((s,p)=>s+p.points,0);
-
-  // Fetch live prices for all their moats
-  const priceJobs = moatPts.map(p => {
-    if(priceCache[p.contractAddress]?.price>0) return Promise.resolve(priceCache[p.contractAddress]);
-    const meta = MOATS[p.contractAddress];
-    if(!meta) return Promise.resolve(null);
-    return fetchPairData(meta).then(px=>{
-      if(!px)return null;
-      const obj={price:Number(px.priceUsd||0),ch24:Number(px.priceChange?.h24||0),liq:Number(px.liquidity?.usd||0)};
-      priceCache[p.contractAddress]=obj; return obj;
-    }).catch(()=>null);
-  });
-  const prices = await Promise.all(priceJobs);
-
-  // Infer strategy from points magnitude vs moat avg
-  function inferStrategy(p) {
-    const m = moatMap[p.contractAddress];
-    if(!m||!m.avgPoints) return {type:'staked',mult:1,label:'Stake (1×)'};
-    const ratio = p.points / m.avgPoints;
-    if(ratio>5) return {type:'burned',mult:10,label:'Burn (10×)'};
-    if(ratio>4.5) return {type:'locked',mult:lockM(730),label:'Lock ~730d (5×)'};
-    if(ratio>3.5) return {type:'locked',mult:lockM(365),label:'Lock ~365d (4×)'};
-    if(ratio>2.5) return {type:'locked',mult:lockM(180),label:'Lock ~180d (3.23×)'};
-    if(ratio>1.5) return {type:'locked',mult:lockM(90),label:'Lock ~90d (2.73×)'};
-    return {type:'staked',mult:1,label:'Stake (1×)'};
-  }
-
-  const plans = moatPts.sort((a,b)=>b.points-a.points).map((p,i)=>{
-    const meta = MOATS[p.contractAddress];
-    const px = prices[i];
-    const strat = inferStrategy(p);
-    const supply = supplyCache[meta?.tokenAddr?.toLowerCase()]||{totalSupply:meta?.knownSupply||0};
-    // Estimate tokens held: pts / (ptsPerToken * mult)
-    const ppt = estPtsPerToken(p.contractAddress);
-    const estTokens = ppt&&strat.mult ? p.points/(ppt*strat.mult) : null;
-    const estUsd = estTokens&&px?.price>0 ? estTokens*px.price : null;
-    return {p, meta, px, strat, estTokens, estUsd};
-  });
-
-  const totalEstUsd = plans.reduce((s,r)=>s+(r.estUsd||0),0);
-
-  body.innerHTML = `
-    <!-- Target wallet header -->
-    <div style="background:var(--sur);border:1px solid var(--bor);border-radius:10px;padding:.9rem;margin-bottom:.9rem;display:flex;align-items:center;gap:11px">
-      <div style="font-size:1.6rem">👤</div>
-      <div style="flex:1">
-        <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.88rem">${username}</div>
-        <div style="font-family:'DM Mono',monospace;font-size:.58rem;color:var(--mut)">${shortA(addr)}</div>
-      </div>
-      <div style="text-align:right">
-        <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.88rem;color:var(--acc)">${fmtP(council)}</div>
-        <div style="font-family:'DM Mono',monospace;font-size:.54rem;color:var(--mut)">Council Score · ${mult}×</div>
-      </div>
-    </div>
-
-    <!-- Strategy note -->
-    <div style="background:rgba(168,85,247,.07);border:1px solid rgba(168,85,247,.2);border-radius:9px;padding:.75rem;margin-bottom:.9rem;font-size:.72rem;color:var(--dim);line-height:1.65">
-      🤖 <b style="color:var(--pur)">Strategy inferred</b> from points magnitude relative to moat average. Actual lock duration is not visible on-chain without indexing transaction history — this is the best estimate from available data.
-      ${totalEstUsd>0?'<br>💰 <b style="color:var(--acc)">Estimated portfolio value: $'+f2(totalEstUsd)+'</b> based on current prices.':''}
-    </div>
-
-    <!-- Per-moat plan cards -->
-    ${plans.map(r=>{
-      if(!r.meta) return '';
-      const stratCol = r.strat.type==='burned'?'var(--red)':r.strat.type==='locked'?'var(--gld)':'var(--acc)';
-      const stratIcon = r.strat.type==='burned'?'🔥':r.strat.type==='locked'?'⏳':'🔒';
-      return `<div style="background:${r.meta.color}0d;border:1px solid ${r.meta.color}44;border-left:3px solid ${r.meta.color};border-radius:9px;padding:.85rem;margin-bottom:.55rem">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem;flex-wrap:wrap;gap:6px">
-          <div style="display:flex;align-items:center;gap:8px">
-            ${logoImg(r.meta.logo,'moat-logo-sm',r.meta.emoji,r.meta.color)}
-            <div>
-              <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.82rem">${r.meta.name}</div>
-              <div style="font-family:'DM Mono',monospace;font-size:.58rem;color:${stratCol}">${stratIcon} ${r.strat.label}</div>
-            </div>
-          </div>
-          <div style="text-align:right">
-            <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.85rem;color:var(--gld)">${fmtP(r.p.points)} pts</div>
-            <div style="font-family:'DM Mono',monospace;font-size:.54rem;color:var(--mut)">${r.p.weight?r.p.weight.toFixed(2)+'% weight':''}</div>
-          </div>
-        </div>
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:5px">
-          <div style="background:var(--card);border-radius:6px;padding:.4rem;text-align:center">
-            <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.75rem">${r.estTokens?('~'+fmtP(r.estTokens)):'—'}</div>
-            <div style="font-family:'DM Mono',monospace;font-size:.48rem;color:var(--mut)">Est. Tokens</div>
-          </div>
-          <div style="background:var(--card);border-radius:6px;padding:.4rem;text-align:center">
-            <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.75rem">${r.px?.price?'$'+fmtPrice(r.px.price):'—'}</div>
-            <div style="font-family:'DM Mono',monospace;font-size:.48rem;color:var(--mut)">Token Price</div>
-          </div>
-          <div style="background:var(--card);border-radius:6px;padding:.4rem;text-align:center">
-            <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.75rem;color:var(--acc)">${r.estUsd?'$'+f2(r.estUsd):'—'}</div>
-            <div style="font-family:'DM Mono',monospace;font-size:.48rem;color:var(--mut)">Est. Value</div>
-          </div>
-        </div>
-        ${!r.meta.lpOnly?`<div style="margin-top:.5rem;font-size:.58rem;color:var(--mut)">
-          To copy: buy ${r.estTokens?'~'+fmtP(r.estTokens)+' '+r.meta.ticker:r.meta.ticker} on
-          <a href="https://traderjoexyz.com/avalanche/trade?outputCurrency=${r.meta.tokenAddr}" target="_blank" style="color:var(--acc)">TraderJoe ↗</a> then
-          <a href="${r.meta.url||'https://moats.app'}" target="_blank" style="color:var(--acc)">stake on Moats ↗</a>
-        </div>`:'<div style="margin-top:.5rem;font-size:.58rem;color:var(--gld)">&#9888; LP NFT moat — provide liquidity on Pharaoh first</div>'}
-      </div>`;
-    }).join('')}
-
-    <!-- USDC input for matching -->
-    <div style="background:var(--card);border:1px solid var(--bor);border-radius:10px;padding:.9rem;margin-top:.5rem">
-      <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.75rem;margin-bottom:.6rem">💰 Match with your USDC</div>
-      <div style="display:flex;gap:7px;align-items:center">
-        <input class="inp" id="copyMoatUsdc" type="number" placeholder="USDC amount" style="flex:1">
-        <button class="btn btn-sm" onclick="calcCopyMoatMatch()">Calculate →</button>
-      </div>
-      <div id="copyMoatMatchResult" style="margin-top:.6rem;font-size:.72rem;color:var(--dim)"></div>
-    </div>`;
-
-  if(investBtn) investBtn.style.display='block';
-}
-
 function calcCopyMoatMatch() {
   const usdc = Number(document.getElementById('copyMoatUsdc')?.value)||0;
   const resultEl = document.getElementById('copyMoatMatchResult');
   if(!usdc||!copyMoatTarget){resultEl.textContent='Enter a USDC amount.';return;}
-
   const localPts = allPts.filter(p=>getWallet(p)===copyMoatTarget);
   if(!localPts.length){resultEl.textContent='No data.';return;}
-
-  // Distribute USDC proportionally across moats by their point weight
   const totPts = localPts.reduce((s,p)=>s+p.points,0);
   const rows = localPts.sort((a,b)=>b.points-a.points).map(p=>{
     const share = totPts?p.points/totPts:0;
@@ -4564,8 +4435,8 @@ function calcCopyMoatMatch() {
     const tokens = px?.price>0 ? myUsd/px.price : null;
     const meta = MOATS[p.contractAddress];
     return `<div style="display:flex;justify-content:space-between;padding:.25rem 0;border-bottom:1px solid var(--bor)">
-      <span style="color:${meta?.color||'var(--dim)'}">${meta?.short||shortA(p.contractAddress)}</span>
-      <span style="font-family:'DM Mono',monospace;font-size:.66rem">$${f2(myUsd)} ${tokens?'≈ '+fmtP(tokens)+' '+meta?.ticker:''}  </span>
+      <span style="color:${meta?.color||'var(--dim)'};">${meta?.short||shortA(p.contractAddress)}</span>
+      <span style="font-family:'DM Mono',monospace;font-size:.66rem">$${f2(myUsd)} ${tokens?'≈ '+fmtP(tokens)+' '+meta?.ticker:''}</span>
     </div>`;
   }).join('');
   resultEl.innerHTML = `<div style="margin-bottom:.4rem;font-weight:600;color:var(--acc)">$${f2(usdc)} split to match their allocation:</div>${rows}`;
@@ -4576,21 +4447,34 @@ function copyCopyMoatToAllocator() {
   openAllocator();
 }
 
-
 // ════════════════════════════════════════════════════════════════
-//  COPY MOAT ENGINE  — ethers.js v6 + Avalanche C-Chain
+//  COPY MOAT ENGINE  — LFJ Router API + Multi-DEX + ethers.js v6
 // ════════════════════════════════════════════════════════════════
 
 // ── CONSTANTS ──
-const AVAX_CHAIN_ID = 43114;
-const AVAX_RPC      = 'https://api.avax.network/ext/bc/C/rpc';
-const USDC_ADDR     = '0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E'; // USDC on Avalanche
-const WAVAX_ADDR    = '0xB31f66AA3C1e785363F0875a1b74E27b85FD66c7'; // WAVAX
-const DEAD_ADDR_CM  = '0x000000000000000000000000000000000000dEaD';
+const AVAX_CHAIN_ID  = 43114;
+const AVAX_RPC       = 'https://api.avax.network/ext/bc/C/rpc';
+const USDC_ADDR      = '0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E';
+const WAVAX_ADDR     = '0xB31f66AA3C1e785363F0875a1b74E27b85FD66c7';
+const DEAD_ADDR_CM   = '0x000000000000000000000000000000000000dEaD';
+const NATIVE_AVAX    = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE'; // sentinel for native
 
-// LFJ (TraderJoe) routers — we try V2.1 first, fallback to V1
-const LFJ_ROUTER_V2 = '0xb4315e873dBcf96Ffd0acd8EA43f689D8c20fB30'; // V2.1 LB Router
-const LFJ_ROUTER_V1 = '0x60aE616a2155Ee3d9A68541Ba4544862310933d4'; // V1 classic
+// LFJ Router API — supports flytrade, jar, kyber, odos, okx aggregators
+const LFJ_ROUTER_API  = 'https://router-api.lfj.dev/v2/aggregator/routes/avalanche';
+const LFJ_AGGREGATORS = ['odos', 'kyber', 'jar', 'flytrade', 'okx'];
+
+// LFJ on-chain router fallback (V1 classic AMM)
+const LFJ_V1_ROUTER   = '0x60aE616a2155Ee3d9A68541Ba4544862310933d4';
+
+// Pharaoh (concentrated liquidity on Avalanche) router
+const PHARAOH_ROUTER  = '0xAA23611badAFB62D37E7295A682D21960ac85A90';
+
+// Gas estimates (real Avalanche costs, much lower than 0.15 AVAX)
+const GAS_APPROVE     = 0.003;  // AVAX
+const GAS_SWAP        = 0.008;  // AVAX (aggregator route)
+const GAS_STAKE       = 0.005;  // AVAX
+const GAS_LOCK        = 0.006;  // AVAX
+const GAS_BURN        = 0.005;  // AVAX
 
 const ERC20_ABI = [
   'function approve(address spender, uint256 amount) returns (bool)',
@@ -4608,48 +4492,188 @@ const MOAT_ABI = [
   'function earlyExitLock(uint256 _lockIndex)',
   'function exitLock(uint256 _lockIndex)',
   'function claimAllRewards()',
-  'function getTotalAmounts() view returns (uint256 _totalStaked, uint256 _totalLocked, uint256 _totalBurned, uint256 _totalInContract)',
   'function getCurrentPoints(address _user) view returns (uint256)',
-  'function getUserAllLocks(address _user) view returns (uint256[] amounts, uint256[] ends, uint256[] points, uint256[] originalDurations, uint256[] lastUpdated, bool[] active)',
   'function userInfo(address) view returns (uint256 stakedAmount, uint256 totalUserBurn, uint256 stakingPoints, uint256 burnPoints, uint256 activeLockCount)',
   'function getAllPendingRewards(address _user) view returns (address[] tokens, uint256[] amounts)',
-  'function calculateEarlyExitFee(address _user, uint256 _lockIndex) view returns (uint256 fee, uint256 amountAfterFee)',
-  'function getRewardTokens() view returns (address[] addresses, uint256[] totalDeposited, uint256[] totalClaimed, uint256[] unallocated)',
   'function stakingEnabled() view returns (bool)',
   'function lockingEnabled() view returns (bool)',
   'function burningEnabled() view returns (bool)',
-  'function tokenDecimals() view returns (uint8)',
-  'function POINTS_PER_TOKEN() view returns (uint256)',
-  'function MULTIPLIER_PRECISION() view returns (uint256)',
 ];
 
+// ── WALLET STATE ──
+let cmProvider      = null;
+let cmSigner        = null;
+let cmAddress       = null;
+let cmCurrency      = 'USDC';
+let cmMethod        = 'mirror';
+let cmTargetWallet  = null;
+let cmTargetMoats   = [];
+let cmSelectedMoats = new Set();
+let cmExecuting     = false;
+let cmRouteCache    = {}; // tokenOut -> {agg, data, gasEstimate}
+
+// ── LFJ ROUTER API — Smart multi-DEX routing ──
+async function lfjGetBestRoute(tokenIn, tokenOut, amountInWei, userAddr, slippageBps=100) {
+  // tokenIn: address or 'AVAX' (native)
+  // Returns: {agg, txData, amountOut, gasEstimate, dexName} or null
+
+  const isNativeIn = tokenIn.toLowerCase() === 'avax' || tokenIn === NATIVE_AVAX;
+  const tokenInAddr = isNativeIn ? NATIVE_AVAX : tokenIn;
+
+  const cacheKey = `${tokenInAddr}_${tokenOut}_${amountInWei}`;
+  if (cmRouteCache[cacheKey] && Date.now() - cmRouteCache[cacheKey].ts < 30000) {
+    return cmRouteCache[cacheKey].route;
+  }
+
+  let bestRoute = null;
+  let bestAmountOut = 0n;
+
+  // Try all aggregators in parallel and pick best output
+  const jobs = LFJ_AGGREGATORS.map(async agg => {
+    try {
+      // 1. Get quote
+      const quoteUrl = `${LFJ_ROUTER_API}/${agg}/quote?tokenIn=${tokenInAddr}&tokenOut=${tokenOut}&amountIn=${amountInWei.toString()}`;
+      const quoteRes = await fetch(quoteUrl, {headers:{'Accept':'application/json'}});
+      if (!quoteRes.ok) return null;
+      const quote = await quoteRes.json();
+      const amtOut = BigInt(quote.amountOut || '0');
+      if (amtOut === 0n) return null;
+
+      // 2. Get swap tx data
+      const swapUrl = `${LFJ_ROUTER_API}/${agg}/swap?tokenIn=${tokenInAddr}&tokenOut=${tokenOut}&amountIn=${amountInWei.toString()}&userAddress=${userAddr}&slippageBps=${slippageBps}&feeBps=0`;
+      const swapRes = await fetch(swapUrl, {headers:{'Accept':'application/json'}});
+      if (!swapRes.ok) return null;
+      const swapData = await swapRes.json();
+
+      return { agg, amtOut, swapData, quote };
+    } catch(e) {
+      return null;
+    }
+  });
+
+  const results = await Promise.all(jobs);
+  for (const r of results) {
+    if (r && r.amtOut > bestAmountOut) {
+      bestAmountOut = r.amtOut;
+      bestRoute = r;
+    }
+  }
+
+  if (!bestRoute) return null;
+
+  const route = {
+    agg: bestRoute.agg,
+    dexName: {odos:'Odos', kyber:'KyberSwap', jar:'Jar', flytrade:'FlyTrade', okx:'OKX DEX'}[bestRoute.agg] || bestRoute.agg,
+    amountOut: bestRoute.amtOut,
+    amountOutFormatted: bestRoute.amtOut,
+    txData: bestRoute.swapData,
+    gasEstimate: Number(bestRoute.swapData.gas || 300000),
+  };
+
+  cmRouteCache[cacheKey] = { route, ts: Date.now() };
+  return route;
+}
+
+// ── FALLBACK: LFJ V1 on-chain router ──
 const LFJ_V1_ABI = [
   'function swapExactTokensForTokens(uint256 amountIn, uint256 amountOutMin, address[] path, address to, uint256 deadline) returns (uint256[] amounts)',
   'function swapExactAVAXForTokens(uint256 amountOutMin, address[] path, address to, uint256 deadline) payable returns (uint256[] amounts)',
   'function getAmountsOut(uint256 amountIn, address[] path) view returns (uint256[] amounts)',
 ];
 
-// ── WALLET STATE ──
-let cmProvider = null;
-let cmSigner   = null;
-let cmAddress  = null;
-let cmCurrency = 'USDC'; // USDC | AVAX
-let cmMethod   = 'mirror';
-let cmTargetWallet = null;
-let cmTargetMoats  = []; // [{addr, meta, pts, strat, selected, pct}]
-let cmSelectedMoats = new Set();
-let cmExecuting = false;
+async function lfjV1Swap(signer, tokenIn, tokenOut, amountIn, userAddr, deadline) {
+  const router = new ethers.Contract(LFJ_V1_ROUTER, LFJ_V1_ABI, signer);
+  const isNative = tokenIn.toLowerCase() === 'avax';
+
+  const paths = isNative
+    ? [[WAVAX_ADDR, tokenOut], [WAVAX_ADDR, USDC_ADDR, tokenOut]]
+    : [[tokenIn, WAVAX_ADDR, tokenOut], [tokenIn, tokenOut], [tokenIn, USDC_ADDR, WAVAX_ADDR, tokenOut]];
+
+  for (const path of paths) {
+    try {
+      const amts = await router.getAmountsOut(amountIn, path);
+      const minOut = amts[amts.length-1] * 95n / 100n;
+      if (minOut === 0n) continue;
+      if (isNative) {
+        const tx = await router.swapExactAVAXForTokens(minOut, path, userAddr, deadline, {value: amountIn});
+        return tx;
+      } else {
+        const tx = await router.swapExactTokensForTokens(amountIn, minOut, path, userAddr, deadline);
+        return tx;
+      }
+    } catch(e) { continue; }
+  }
+  return null;
+}
+
+// ── MASTER SWAP FUNCTION — tries LFJ API first, falls back to V1 ──
+async function cmSmartSwap(signer, tokenIn, tokenOut, amountIn, userAddr, decimalsOut, ticker, stepId) {
+  // tokenIn: 'avax' or ERC20 address
+  // amountIn: BigInt
+  const deadline = Math.floor(Date.now()/1000) + 1800; // 30 min
+  const isNative = tokenIn.toLowerCase() === 'avax';
+
+  cmUpdateStep(stepId, 'active', `Finding best route across Odos, KyberSwap, Jar, OKX DEX…`);
+
+  // ── Try LFJ Router API (multi-aggregator) ──
+  try {
+    const route = await lfjGetBestRoute(tokenIn, tokenOut, amountIn, userAddr, 100);
+    if (route && route.txData) {
+      const amtOutHuman = Number(route.amountOut) / Math.pow(10, decimalsOut);
+      cmUpdateStep(stepId, 'active', `Best route: ${route.dexName} → ~${fmtP(amtOutHuman)} ${ticker}. Confirm in wallet…`);
+
+      // Execute via signer.sendTransaction (aggregator returns raw tx data)
+      const txParams = {
+        to: route.txData.to,
+        data: route.txData.data,
+        value: route.txData.value ? BigInt(route.txData.value) : 0n,
+        gasLimit: BigInt(Math.ceil(route.gasEstimate * 1.2)),
+      };
+      const tx = await signer.sendTransaction(txParams);
+      return { tx, dex: route.dexName, amtOut: route.amountOut };
+    }
+  } catch(e) {
+    console.warn('LFJ Router API failed:', e.message);
+  }
+
+  // ── Fallback: LFJ V1 on-chain ──
+  cmUpdateStep(stepId, 'active', `Aggregator unavailable, trying LFJ V1 router…`);
+  try {
+    // Need to approve LFJ V1 router if ERC20
+    if (!isNative) {
+      const tok = new ethers.Contract(tokenIn, ERC20_ABI, signer);
+      const allowance = await tok.allowance(userAddr, LFJ_V1_ROUTER);
+      if (allowance < amountIn) {
+        cmUpdateStep(stepId, 'active', `Approving ${tokenIn.slice(0,8)}… for LFJ V1…`);
+        const appTx = await tok.approve(LFJ_V1_ROUTER, ethers.MaxUint256);
+        await appTx.wait();
+      }
+    }
+    const tx = await lfjV1Swap(signer, tokenIn, tokenOut, amountIn, userAddr, deadline);
+    if (tx) return { tx, dex: 'LFJ V1', amtOut: null };
+  } catch(e) {
+    console.warn('LFJ V1 failed:', e.message);
+  }
+
+  // ── Nothing worked ──
+  throw new Error('No liquidity route found. Please buy ' + ticker + ' manually on lfj.gg or swap.avax.network, then come back to stake.');
+}
+
+// ── GAS ESTIMATOR ──
+function cmEstimateGas(moatCount, method) {
+  const perMoat = GAS_APPROVE + GAS_SWAP + (method === 'lock' ? GAS_LOCK : method === 'burn' ? GAS_BURN : GAS_STAKE);
+  return (perMoat * moatCount).toFixed(4);
+}
 
 // ── WALLET CONNECT ──
 async function cmConnectWallet() {
   try {
     if (!window.ethereum) {
-      cmShowError('No wallet detected. Please install MetaMask.');
+      cmShowError('No wallet detected. Install MetaMask or Core wallet.');
       return;
     }
     cmProvider = new ethers.BrowserProvider(window.ethereum);
-    const accounts = await cmProvider.send('eth_requestAccounts', []);
-    // Check / switch to Avalanche
+    await cmProvider.send('eth_requestAccounts', []);
     const network = await cmProvider.getNetwork();
     if (Number(network.chainId) !== AVAX_CHAIN_ID) {
       try {
@@ -4657,8 +4681,7 @@ async function cmConnectWallet() {
       } catch(e) {
         if (e.code === 4902) {
           await cmProvider.send('wallet_addEthereumChain', [{
-            chainId: '0xa86a',
-            chainName: 'Avalanche C-Chain',
+            chainId: '0xa86a', chainName: 'Avalanche C-Chain',
             rpcUrls: [AVAX_RPC],
             nativeCurrency: { name: 'AVAX', symbol: 'AVAX', decimals: 18 },
             blockExplorerUrls: ['https://snowtrace.io'],
@@ -4669,15 +4692,14 @@ async function cmConnectWallet() {
     cmSigner  = await cmProvider.getSigner();
     cmAddress = await cmSigner.getAddress();
     await cmUpdateWalletUI();
-    // Listen for account changes
-    window.ethereum.on('accountsChanged', async (accs) => {
-      if (accs.length === 0) { cmDisconnect(); return; }
+    window.ethereum.on('accountsChanged', async accs => {
+      if (!accs.length) { cmDisconnect(); return; }
       cmSigner  = await cmProvider.getSigner();
       cmAddress = await cmSigner.getAddress();
       await cmUpdateWalletUI();
     });
   } catch(e) {
-    cmShowError('Wallet connect failed: ' + (e.reason || e.message || e));
+    cmShowError('Connect failed: ' + (e.reason || e.message || e));
   }
 }
 
@@ -4695,22 +4717,17 @@ async function cmUpdateWalletUI() {
   document.getElementById('cmWalletConnected').style.display = 'block';
   document.getElementById('cmConnectedAddr').textContent = shortA(cmAddress);
 
-  // Balances
   const [avaxBal, usdcBal] = await Promise.allSettled([
     cmProvider.getBalance(cmAddress),
-    (async () => {
-      const usdc = new ethers.Contract(USDC_ADDR, ERC20_ABI, cmProvider);
-      return usdc.balanceOf(cmAddress);
-    })(),
+    (async () => { const c = new ethers.Contract(USDC_ADDR, ERC20_ABI, cmProvider); return c.balanceOf(cmAddress); })(),
   ]);
   const avax = avaxBal.status==='fulfilled' ? parseFloat(ethers.formatEther(avaxBal.value)).toFixed(4) : '?';
   const usdc = usdcBal.status==='fulfilled' ? parseFloat(ethers.formatUnits(usdcBal.value, 6)).toFixed(2) : '?';
-  document.getElementById('cmAvaxBal').textContent = avax;
-  document.getElementById('cmUsdcBal').textContent = usdc;
+  document.getElementById('cmAvaxBal').textContent = avax + ' AVAX';
+  document.getElementById('cmUsdcBal').textContent = usdc + ' USDC';
 
   const net = await cmProvider.getNetwork();
-  document.getElementById('cmNetwork').textContent = Number(net.chainId)===AVAX_CHAIN_ID ? 'Avalanche ✓' : '⚠️ Wrong network';
-
+  document.getElementById('cmNetwork').textContent = Number(net.chainId)===AVAX_CHAIN_ID ? '✓ Avalanche' : '⚠️ Wrong network';
   document.getElementById('cmExecuteBtn').style.display = cmTargetMoats.length ? 'block' : 'none';
   document.getElementById('cmConnectPrompt').style.display = 'none';
   cmUpdateCurrencyBal();
@@ -4734,10 +4751,12 @@ async function cmUpdateCurrencyBal() {
 // ── TARGET WALLET LOADER ──
 async function cmLoadTarget(addr) {
   const inputEl = document.getElementById('cmTargetInput');
-  const target  = (addr || inputEl.value).trim().toLowerCase();
-  if (!target || !target.startsWith('0x')) { cmShowError('Invalid wallet address'); return; }
+  const target  = (addr || inputEl?.value || '').trim().toLowerCase();
+  if (!target || !target.startsWith('0x')) { cmShowInlineError('Invalid wallet address'); return; }
   cmTargetWallet = target;
-  document.getElementById('cmTargetProfile').innerHTML = '<div style="text-align:center;padding:1rem;color:var(--mut)"><span class="spin"></span> Fetching profile…</div>';
+  if (inputEl) inputEl.value = target;
+
+  document.getElementById('cmTargetProfile').innerHTML = '<div style="text-align:center;padding:1rem;color:var(--mut)"><span class="spin"></span> Loading profile…</div>';
 
   let profile = null;
   try { profile = await fetch(API + '/profile/' + target).then(r=>r.json()); } catch(e) {}
@@ -4757,45 +4776,57 @@ async function cmLoadTarget(addr) {
     return;
   }
 
-  const username = profile?.username && !profile.username.startsWith('0x') ? profile.username : shortA(target);
+  const username = profile?.username && !profile.username.startsWith('0x') ? profile.username : (wMap[target]?.username || shortA(target));
   const totPts   = moatPts.reduce((s,p) => s+p.points, 0);
   const mCnt     = new Set(moatPts.map(p=>p.contractAddress)).size;
   const council  = Math.round(totPts * cMult(mCnt));
+  const ecoTot   = allPts.reduce((s,p)=>s+p.points,0);
+  const sh       = ecoTot ? (totPts/ecoTot*100).toFixed(3) : '0';
 
-  // Infer strategy per moat
-  cmTargetMoats = moatPts.sort((a,b) => b.points - a.points).map(p => {
+  // Infer strategy per moat from point magnitude
+  cmTargetMoats = moatPts.sort((a,b) => b.points-a.points).map(p => {
     const meta = MOATS[p.contractAddress];
-    if (!meta || meta.lpOnly) return null;
+    if (!meta) return null;
     const m = moatMap[p.contractAddress] || {};
     const ratio = m.avgPoints ? p.points / m.avgPoints : 1;
     let strat = 'stake', lockDays = 0;
-    if (ratio > 8)       { strat = 'burn'; }
-    else if (ratio > 4)  { strat = 'lock'; lockDays = 365; }
-    else if (ratio > 2.5){ strat = 'lock'; lockDays = 180; }
-    else if (ratio > 1.5){ strat = 'lock'; lockDays = 90; }
-    const stratLabel = strat==='burn' ? '🔥 Burn (10×)' : strat==='lock' ? '⏳ Lock '+lockDays+'d ('+lockM(lockDays).toFixed(2)+'×)' : '🔒 Stake (1×)';
-    return { addr: p.contractAddress, meta, pts: p.points, weight: p.weight||0, strat, lockDays, stratLabel, selected: true, pct: 0 };
+    if      (ratio > 8)   { strat = 'burn'; }
+    else if (ratio > 4.5) { strat = 'lock'; lockDays = 365; }
+    else if (ratio > 2.8) { strat = 'lock'; lockDays = 180; }
+    else if (ratio > 1.5) { strat = 'lock'; lockDays = 90; }
+
+    const stratLabel = strat==='burn' ? '🔥 Burn (10×)' : strat==='lock' ? `⏳ Lock ${lockDays}d (${lockM(lockDays).toFixed(2)}×)` : '🔒 Stake (1×)';
+    const isLP = meta.lpOnly || false;
+    const canAuto = !isLP; // LP moats can't be auto-bought
+
+    return { addr: p.contractAddress, meta, pts: p.points, weight: p.weight||0,
+             strat, lockDays, stratLabel, selected: canAuto, pct: 0, isLP, canAuto };
   }).filter(Boolean);
 
-  // Calculate percentage split by points weight
-  const totalW = cmTargetMoats.reduce((s,m) => s+m.pts, 0);
+  // Calculate percentage split by points
+  const totalW = cmTargetMoats.reduce((s,m)=>s+m.pts, 0);
   cmTargetMoats.forEach(m => { m.pct = totalW ? Math.round(m.pts/totalW*100) : Math.round(100/cmTargetMoats.length); });
-  cmSelectedMoats = new Set(cmTargetMoats.map(m=>m.addr));
+  cmSelectedMoats = new Set(cmTargetMoats.filter(m=>m.canAuto).map(m=>m.addr));
 
   // Render profile card
   document.getElementById('cmTargetProfile').innerHTML = `
     <div style="background:var(--sur);border:1px solid rgba(249,115,22,.3);border-radius:12px;padding:1rem">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:.7rem">
-        <div style="font-size:1.4rem">👤</div>
-        <div style="flex:1">
-          <div style="font-family:'Chakra Petch',sans-serif;font-weight:700">${username}</div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:.75rem">
+        <div style="font-size:1.6rem">👤</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.92rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${username}</div>
           <div style="font-family:'DM Mono',monospace;font-size:.58rem;color:var(--mut)">${shortA(target)}</div>
         </div>
       </div>
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem;text-align:center">
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:.5rem;text-align:center;margin-bottom:.6rem">
         <div><div style="font-family:'Chakra Petch',sans-serif;font-weight:700;color:var(--acc)">${fmtP(council)}</div><div style="font-family:'DM Mono',monospace;font-size:.5rem;color:var(--mut)">Council</div></div>
         <div><div style="font-family:'Chakra Petch',sans-serif;font-weight:700">${mCnt}</div><div style="font-family:'DM Mono',monospace;font-size:.5rem;color:var(--mut)">Moats</div></div>
         <div><div style="font-family:'Chakra Petch',sans-serif;font-weight:700;color:var(--gld)">${cMult(mCnt)}×</div><div style="font-family:'DM Mono',monospace;font-size:.5rem;color:var(--mut)">Diversity</div></div>
+        <div><div style="font-family:'Chakra Petch',sans-serif;font-weight:700;color:var(--dim)">${sh}%</div><div style="font-family:'DM Mono',monospace;font-size:.5rem;color:var(--mut)">Eco Share</div></div>
+      </div>
+      <div style="font-family:'DM Mono',monospace;font-size:.58rem;color:var(--mut);line-height:1.55">
+        Strategy inferred from points ratio vs moat average.
+        ${cmTargetMoats.filter(m=>m.isLP).length > 0 ? '<br>⚠️ LP NFT moats excluded — need manual liquidity provision.' : ''}
       </div>
     </div>`;
 
@@ -4803,7 +4834,6 @@ async function cmLoadTarget(addr) {
   cmRenderMoatPositions();
   cmUpdatePreview();
 
-  // Highlight selected in leaderboard
   document.querySelectorAll('.cm-target-card').forEach(el => {
     el.classList.toggle('selected', el.dataset.addr === target);
   });
@@ -4812,43 +4842,44 @@ async function cmLoadTarget(addr) {
 // ── LEADERBOARD PICKER ──
 function cmRenderLeaderboard() {
   const el = document.getElementById('cmLeaderList'); if (!el) return;
-  const sw = sortedWallets().slice(0, 20);
+  const sw = sortedWallets().slice(0, 25);
   if (!sw.length) { el.innerHTML = '<div style="color:var(--mut);font-size:.72rem;padding:.5rem">Load data first — hit Refresh</div>'; return; }
   const ecoTot = allPts.reduce((s,p)=>s+p.points,0);
   el.innerHTML = sw.map((w,i) => {
     const uname = w.username || zephyrNames[w.wallet] || '';
     const mult = cMult(w.moatCount), cs = Math.round(w.totalPoints*mult);
-    const sh = ecoTot ? (w.totalPoints/ecoTot*100).toFixed(3) : '0';
     return `<div class="cm-target-card" data-addr="${w.wallet}" onclick="cmLoadTarget('${w.wallet}')">
-      <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.78rem;color:var(--mut);width:22px">#${i+1}</div>
+      <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.78rem;color:var(--mut);width:24px;flex-shrink:0">#${i+1}</div>
       <div style="flex:1;min-width:0">
-        ${uname ? `<div style="font-family:'DM Mono',monospace;font-size:.7rem;color:var(--acc);font-weight:600">${uname}</div>` : ''}
-        <div style="font-family:'DM Mono',monospace;font-size:.62rem;color:var(--dim)">${shortA(w.wallet)}</div>
+        ${uname ? `<div style="font-family:'DM Mono',monospace;font-size:.68rem;color:var(--acc);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${uname}</div>` : ''}
+        <div style="font-family:'DM Mono',monospace;font-size:.6rem;color:var(--dim)">${shortA(w.wallet)}</div>
+        <div style="font-family:'DM Mono',monospace;font-size:.54rem;color:var(--mut)">${w.moatCount} moats · ${cMult(w.moatCount)}× diversity</div>
       </div>
-      <div style="text-align:right">
-        <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.78rem;color:var(--acc)">${fmtP(cs)}</div>
-        <div style="font-family:'DM Mono',monospace;font-size:.54rem;color:var(--mut)">${w.moatCount} moats · ${sh}%</div>
+      <div style="text-align:right;flex-shrink:0">
+        <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.82rem;color:var(--acc)">${fmtP(cs)}</div>
+        <div style="font-family:'DM Mono',monospace;font-size:.54rem;color:var(--mut)">${fmtP(w.totalPoints)} pts</div>
       </div>
     </div>`;
   }).join('');
 }
 
-// ── MOAT POSITIONS RENDERER ──
+// ── MOAT POSITION RENDERER ──
 function cmRenderMoatPositions() {
   const el = document.getElementById('cmMoatPositions'); if (!el) return;
-  el.innerHTML = cmTargetMoats.map((m,i) => {
+  el.innerHTML = cmTargetMoats.map((m) => {
     const sel = cmSelectedMoats.has(m.addr);
     const stratCol = m.strat==='burn'?'var(--red)':m.strat==='lock'?'var(--gld)':'var(--acc)';
-    return `<div class="moat-position-row${sel?' selected':''}" onclick="cmToggleMoat('${m.addr}')">
-      <div style="display:flex;align-items:center;gap:8px;flex:1">
-        <div style="font-size:.9rem">${sel?'☑':'☐'}</div>
+    const isLP = m.isLP;
+    return `<div class="moat-position-row${sel&&!isLP?' selected':''}" style="${isLP?'opacity:.55;cursor:not-allowed':''}" ${!isLP?`onclick="cmToggleMoat('${m.addr}')"`:''}>
+      <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0">
+        <div style="font-size:.9rem;flex-shrink:0">${isLP?'🏊':sel?'☑':'☐'}</div>
         ${logoImg(m.meta.logo,'moat-logo-sm',m.meta.emoji,m.meta.color)}
-        <div style="flex:1">
-          <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.75rem;color:${m.meta.color}">${m.meta.short}</div>
-          <div style="font-family:'DM Mono',monospace;font-size:.58rem;color:${stratCol}">${m.stratLabel}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.75rem;color:${m.meta.color};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.meta.short}</div>
+          <div style="font-family:'DM Mono',monospace;font-size:.56rem;color:${isLP?'var(--gld)':stratCol}">${isLP?'⚠️ LP NFT — manual only':m.stratLabel}</div>
         </div>
       </div>
-      <div style="text-align:right">
+      <div style="text-align:right;flex-shrink:0">
         <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.75rem">${m.pct}%</div>
         <div style="font-family:'DM Mono',monospace;font-size:.54rem;color:var(--mut)">${fmtP(m.pts)} pts</div>
       </div>
@@ -4857,6 +4888,8 @@ function cmRenderMoatPositions() {
 }
 
 function cmToggleMoat(addr) {
+  const m = cmTargetMoats.find(x=>x.addr===addr);
+  if (m?.isLP) return;
   if (cmSelectedMoats.has(addr)) cmSelectedMoats.delete(addr);
   else cmSelectedMoats.add(addr);
   cmRenderMoatPositions();
@@ -4864,7 +4897,7 @@ function cmToggleMoat(addr) {
 }
 
 function cmSelectAllMoats(selectAll) {
-  if (selectAll) cmTargetMoats.forEach(m => cmSelectedMoats.add(m.addr));
+  if (selectAll) cmTargetMoats.filter(m=>m.canAuto).forEach(m => cmSelectedMoats.add(m.addr));
   else cmSelectedMoats.clear();
   cmRenderMoatPositions();
   cmUpdatePreview();
@@ -4876,6 +4909,7 @@ function cmSetCurrency(cur) {
   document.getElementById('cmBadgeUsdc').className = 'token-badge ' + (cur==='USDC'?'active':'inactive');
   document.getElementById('cmBadgeAvax').className = 'token-badge ' + (cur==='AVAX'?'active':'inactive');
   cmUpdateCurrencyBal();
+  cmRouteCache = {}; // invalidate route cache on currency change
   cmUpdatePreview();
 }
 
@@ -4888,12 +4922,12 @@ function cmSetMethod(method) {
 }
 
 async function cmSetMax() {
-  if (!cmAddress || !cmProvider) { document.getElementById('cmTargetInput').focus(); return; }
+  if (!cmAddress || !cmProvider) return;
   try {
     let max;
     if (cmCurrency === 'AVAX') {
       const b = await cmProvider.getBalance(cmAddress);
-      max = Math.max(0, parseFloat(ethers.formatEther(b)) - 0.05); // keep 0.05 AVAX for gas
+      max = Math.max(0, parseFloat(ethers.formatEther(b)) - 0.03);
     } else {
       const usdc = new ethers.Contract(USDC_ADDR, ERC20_ABI, cmProvider);
       const b = await usdc.balanceOf(cmAddress);
@@ -4901,13 +4935,11 @@ async function cmSetMax() {
     }
     document.getElementById('cmAmount').value = max.toFixed(cmCurrency==='AVAX'?4:2);
     cmUpdateAmountPreview();
-  } catch(e) { cmShowError('Could not fetch balance: '+e.message); }
+  } catch(e) {}
 }
 
 // ── PREVIEW ──
-async function cmUpdateAmountPreview() {
-  cmUpdatePreview();
-}
+async function cmUpdateAmountPreview() { cmUpdatePreview(); }
 
 async function cmUpdatePreview() {
   const amtRaw = parseFloat(document.getElementById('cmAmount')?.value) || 0;
@@ -4920,20 +4952,20 @@ async function cmUpdatePreview() {
   if (!selected.length || !amtRaw) {
     previewEl.innerHTML = '<div style="color:var(--mut);font-size:.72rem;text-align:center;padding:.8rem">Select moats and enter an amount to preview</div>';
     if (executeBtn) executeBtn.style.display = 'none';
+    if (gasEl) gasEl.style.display = 'none';
     return;
   }
 
-  // Recalculate pcts for selected only
-  const totalPts = selected.reduce((s,m) => s+m.pts, 0);
+  const totalPts = selected.reduce((s,m)=>s+m.pts, 0);
   const allocations = selected.map(m => ({
     ...m,
     allocPct: totalPts ? m.pts/totalPts : 1/selected.length,
     usd: amtRaw * (totalPts ? m.pts/totalPts : 1/selected.length),
-    method: cmMethod==='mirror' ? m.strat : cmMethod,
-    lockSeconds: cmMethod==='mirror' ? m.lockDays*86400 : ({lock90:7776000,lock180:15552000,lock365:31536000,lock730:63072000}[cmMethod]||0),
+    method: cmMethod==='mirror' ? m.strat : cmMethod.startsWith('lock') ? 'lock' : cmMethod,
+    lockDays: cmMethod==='mirror' ? m.lockDays : ({lock90:90, lock180:180, lock365:365, lock730:730}[cmMethod]||0),
   }));
 
-  // Get prices and estimate tokens
+  // Fetch prices
   const priceJobs = allocations.map(a => {
     if (priceCache[a.addr]?.price > 0) return Promise.resolve(priceCache[a.addr]);
     return fetchPairData(a.meta).then(p => {
@@ -4944,16 +4976,21 @@ async function cmUpdatePreview() {
   });
   const prices = await Promise.all(priceJobs);
 
-  // Estimate total points we'll get
   let totalEstPts = 0;
+  const methodLabel = m => {
+    if (m.method === 'burn') return '🔥 Burn (10×)';
+    if (m.method === 'stake') return '🔒 Stake (1×)';
+    if (m.method === 'lock') return `⏳ Lock ${m.lockDays}d (${lockM(m.lockDays).toFixed(2)}×)`;
+    return m.method;
+  };
+
   const cards = allocations.map((a,i) => {
     const px = prices[i];
     const inUsd = cmCurrency==='AVAX' ? a.usd * (priceCache['avax']?.price||25) : a.usd;
     const tokens = px?.price > 0 ? inUsd/px.price : null;
-    const multMap = {stake:1,lock:lockM(a.lockDays||90),burn:10};
-    const mult = multMap[a.method]||1;
-    const supply = supplyCache[a.meta.tokenAddr?.toLowerCase()]?.totalSupply || a.meta.knownSupply || 0;
+    const mult = a.method==='burn'?10:a.method==='lock'?lockM(a.lockDays||90):1;
     const m = moatMap[a.addr] || {};
+    const supply = supplyCache[a.meta.tokenAddr?.toLowerCase()]?.totalSupply || a.meta.knownSupply || 0;
     let estPts = 0;
     if (tokens && supply > 0 && m.totalPoints > 0) {
       const bwc=m.burnCount||0,lwc=m.lockCount||0,swc=m.stakeCount||0,totc=m.walletCount||1;
@@ -4961,220 +4998,242 @@ async function cmUpdatePreview() {
       estPts=(tokens/supply)*m.totalPoints*(mult/avgM);
     } else if (tokens) estPts=tokens*mult;
     totalEstPts += estPts;
-    const stratCol = a.method==='burn'?'var(--red)':a.method.startsWith('lock')||a.method==='lock'?'var(--gld)':'var(--acc)';
-    const methodLabel = a.method==='burn'?'🔥 Burn (10×)':a.method==='stake'?'🔒 Stake (1×)':a.method==='lock'?'⏳ Lock '+a.lockDays+'d':'⏳ '+a.method;
+
+    const stratCol = a.method==='burn'?'var(--red)':a.method==='lock'?'var(--gld)':'var(--acc)';
+    const hasLiquidity = !a.meta.useAggregator || px?.price > 0;
+
     return `<div style="background:${a.meta.color}0d;border:1px solid ${a.meta.color}44;border-left:3px solid ${a.meta.color};border-radius:9px;padding:.75rem;margin-bottom:.45rem">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:.4rem">
         ${logoImg(a.meta.logo,'moat-logo-sm',a.meta.emoji,a.meta.color)}
         <div style="flex:1">
           <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.78rem">${a.meta.name}</div>
-          <div style="font-family:'DM Mono',monospace;font-size:.56rem;color:${stratCol}">${methodLabel}</div>
+          <div style="font-family:'DM Mono',monospace;font-size:.56rem;color:${stratCol}">${methodLabel(a)}</div>
         </div>
         <div style="text-align:right">
           <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;color:var(--acc);font-size:.82rem">$${f2(a.usd)}</div>
           <div style="font-family:'DM Mono',monospace;font-size:.52rem;color:var(--mut)">${(a.allocPct*100).toFixed(0)}% of budget</div>
         </div>
       </div>
-      <div style="display:flex;gap:.5rem;flex-wrap:wrap">
-        ${px?.price?`<span style="font-family:'DM Mono',monospace;font-size:.58rem;background:var(--sur);border:1px solid var(--bor);border-radius:4px;padding:1px 6px">$${fmtPrice(px.price)} per token</span>`:''}
+      <div style="display:flex;gap:.4rem;flex-wrap:wrap;margin-bottom:.35rem">
+        ${px?.price?`<span style="font-family:'DM Mono',monospace;font-size:.58rem;background:var(--sur);border:1px solid var(--bor);border-radius:4px;padding:1px 6px">$${fmtPrice(px.price)} per ${a.meta.ticker}</span>`:''}
         ${tokens?`<span style="font-family:'DM Mono',monospace;font-size:.58rem;background:var(--sur);border:1px solid var(--bor);border-radius:4px;padding:1px 6px">~${fmtP(tokens)} ${a.meta.ticker}</span>`:''}
         ${estPts?`<span style="font-family:'DM Mono',monospace;font-size:.58rem;color:var(--acc);background:rgba(249,115,22,.08);border:1px solid rgba(249,115,22,.2);border-radius:4px;padding:1px 6px">~${fmtP(estPts)} pts</span>`:''}
+        ${px?.ch24!==0&&px?.ch24?`<span style="font-family:'DM Mono',monospace;font-size:.56rem;color:${px.ch24>=0?'var(--grn)':'var(--red)'};background:var(--sur);border:1px solid var(--bor);border-radius:4px;padding:1px 6px">${px.ch24>=0?'+':''}${px.ch24.toFixed(1)}% 24h</span>`:''}
       </div>
-      <div style="margin-top:.4rem;font-family:'DM Mono',monospace;font-size:.56rem;color:var(--mut)">
-        ${a.meta.useAggregator ? `<span style="color:var(--gld)">⚠️ ${a.meta.ticker} has no direct LFJ V1 liquidity path — buy manually via <a href="${a.meta.aggregatorUrl||'https://traderjoexyz.com/avalanche'}" target="_blank" style="color:var(--acc)">TraderJoe ↗</a> then stake below.</span>` : `1 tx: swap ${cmCurrency} → ${a.meta.ticker} on LFJ · 1 tx: approve moat · 1 tx: ${a.method==='burn'?'burn':a.method==='stake'?'stake':'lock'}`}
+      <div style="font-family:'DM Mono',monospace;font-size:.55rem;color:var(--mut)">
+        Route: LFJ Router (Odos/Kyber/Jar/OKX DEX) with V1 fallback
+        · ${a.method==='burn'?'permanent 🔥':a.method==='lock'?'locked '+a.lockDays+'d':'flexible unstake'}
       </div>
+      ${a.meta.useAggregator&&!px?.price?`<div style="margin-top:.35rem;font-family:'DM Mono',monospace;font-size:.56rem;color:var(--gld)">⚠️ Price not found. Will attempt route at execution — may fail if no liquidity.</div>`:''}
     </div>`;
   });
 
+  const gasEst = cmEstimateGas(selected.length, cmMethod==='mirror' ? 'stake' : cmMethod);
+
   previewEl.innerHTML = cards.join('') + `
-    <div style="background:var(--sur);border:1px solid var(--bor);border-radius:8px;padding:.7rem;display:flex;justify-content:space-between;align-items:center;margin-top:.4rem">
-      <span style="font-family:'DM Mono',monospace;font-size:.65rem;color:var(--mut)">Total est. points</span>
-      <span style="font-family:'Chakra Petch',sans-serif;font-weight:700;color:var(--acc)">${fmtP(totalEstPts)}</span>
-    </div>
-    <div style="font-family:'DM Mono',monospace;font-size:.58rem;color:var(--mut);text-align:center;margin-top:.4rem">
-      ${allocations.length} moats · ${allocations.length*3} transactions total (swap + approve + stake/lock per moat)
+    <div style="background:var(--sur);border:1px solid var(--bor);border-radius:8px;padding:.7rem;margin-top:.4rem">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.3rem">
+        <span style="font-family:'DM Mono',monospace;font-size:.62rem;color:var(--mut)">Total estimated points</span>
+        <span style="font-family:'Chakra Petch',sans-serif;font-weight:700;color:var(--acc)">${fmtP(totalEstPts)}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <span style="font-family:'DM Mono',monospace;font-size:.62rem;color:var(--mut)">${selected.length} moats · est. ${selected.length * 2}–${selected.length * 3} transactions</span>
+        <span style="font-family:'DM Mono',monospace;font-size:.62rem;color:var(--mut)">⛽ ~${gasEst} AVAX gas</span>
+      </div>
     </div>`;
 
   if (executeBtn) executeBtn.style.display = cmAddress ? 'block' : 'none';
-  if (gasEl) { gasEl.style.display='block'; gasEl.textContent='⛽ Estimated gas: ~'+((allocations.length*3)*0.15).toFixed(2)+' AVAX total (approx 0.15 AVAX per transaction)'; }
+  const checkBtn = document.getElementById('cmCheckRoutesBtn');
+  if (checkBtn) checkBtn.style.display = 'block';
+  if (gasEl) {
+    gasEl.style.display = 'block';
+    gasEl.innerHTML = `⛽ Estimated gas: ~${gasEst} AVAX total &nbsp;·&nbsp; Swap routed via LFJ (Odos / KyberSwap / Jar / OKX DEX)`;
+  }
 }
 
-// ── EXECUTION ENGINE ──
+// ── STEP RENDERER ──
 let cmSteps = [];
-
 function cmAddStep(id, title, detail, state='waiting') {
   cmSteps.push({id, title, detail, state});
   cmRenderSteps();
 }
 function cmUpdateStep(id, state, detail) {
   const step = cmSteps.find(s=>s.id===id);
-  if (step) { step.state=state; if(detail) step.detail=detail; cmRenderSteps(); }
+  if (step) { step.state=state; if(detail!==undefined) step.detail=detail; cmRenderSteps(); }
 }
 function cmRenderSteps() {
   const el = document.getElementById('cmStepsList'); if (!el) return;
-  const spinIcon = '<span class="spin" style="display:inline-block;width:12px;height:12px;border:2px solid var(--acc);border-top-color:transparent;border-radius:50%;animation:spin .7s linear infinite"></span>';
   el.innerHTML = cmSteps.map((s,i) => {
-    const numContent = s.state==='done'?'✓':s.state==='error'?'✕':s.state==='active'?spinIcon:(i+1);
+    const numContent = s.state==='done'?'✓':s.state==='error'?'✕':s.state==='active'?'<span class="spin"></span>':(i+1);
+    const txLinks = (s.detail||'').replace(/(0x[a-fA-F0-9]{64})/g, '<a href="https://snowtrace.io/tx/$1" target="_blank" style="color:var(--acc);font-size:.58rem">$1 ↗</a>');
     return `<div class="cm-step ${s.state}">
       <div class="cm-step-num">${numContent}</div>
       <div class="cm-step-body">
         <div class="cm-step-title">${s.title}</div>
-        <div class="cm-step-detail">${s.detail||''}</div>
+        <div class="cm-step-detail">${txLinks}</div>
       </div>
     </div>`;
   }).join('');
-  // Update progress bar
   const done = cmSteps.filter(s=>s.state==='done').length;
-  const pct = cmSteps.length ? Math.round(done/cmSteps.length*100) : 0;
   const bar = document.getElementById('cmProgressBar');
-  if (bar) bar.style.width = pct+'%';
+  if (bar) bar.style.width = cmSteps.length ? Math.round(done/cmSteps.length*100)+'%' : '0%';
 }
 
+// ── MAIN EXECUTION ENGINE ──
 async function cmExecute() {
   if (cmExecuting) return;
-  if (!cmAddress || !cmSigner) { cmShowError('Connect wallet first'); return; }
+  if (!cmAddress || !cmSigner) { cmShowInlineError('Connect wallet first'); return; }
   const amtRaw = parseFloat(document.getElementById('cmAmount')?.value) || 0;
-  if (!amtRaw || amtRaw <= 0) { cmShowError('Enter an amount'); return; }
-
+  if (!amtRaw) { cmShowInlineError('Enter an amount'); return; }
   const selected = cmTargetMoats.filter(m => cmSelectedMoats.has(m.addr));
-  if (!selected.length) { cmShowError('Select at least one moat'); return; }
+  if (!selected.length) { cmShowInlineError('Select at least one moat'); return; }
 
   cmExecuting = true;
   cmSteps = [];
+  cmRouteCache = {};
   document.getElementById('cmTxProgress').style.display = 'block';
   document.getElementById('cmExecuteBtn').disabled = true;
   document.getElementById('cmTxSpinner').style.display = 'inline-block';
   document.getElementById('cmTxTitle').textContent = 'Executing Copy Strategy…';
   document.getElementById('cmTxResult').style.display = 'none';
 
-  const totalPts = selected.reduce((s,m) => s+m.pts, 0);
-  const router = new ethers.Contract(LFJ_ROUTER_V1, LFJ_V1_ABI, cmSigner);
-  const deadline = Math.floor(Date.now()/1000) + 1200; // 20 min
+  const totalPts = selected.reduce((s,m)=>s+m.pts, 0);
 
   try {
     for (let i = 0; i < selected.length; i++) {
       const m = selected[i];
-      const allocPct = totalPts ? m.pts/totalPts : 1/selected.length;
-      const moatUsd  = amtRaw * allocPct;
-      const method   = cmMethod==='mirror' ? m.strat : cmMethod;
-      const lockDays = cmMethod==='mirror' ? m.lockDays : ({lock90:90,lock180:180,lock365:365,lock730:730}[cmMethod]||0);
-      const lockSecs = lockDays * 86400;
-      const moatContract = new ethers.Contract(m.addr, MOAT_ABI, cmSigner);
-      const tokenContract= new ethers.Contract(m.meta.tokenAddr, ERC20_ABI, cmSigner);
+      const allocPct    = totalPts ? m.pts/totalPts : 1/selected.length;
+      const moatUsd     = amtRaw * allocPct;
+      const method      = cmMethod==='mirror' ? m.strat : cmMethod.startsWith('lock') ? 'lock' : cmMethod;
+      const lockDaysKey = cmMethod==='mirror' ? m.lockDays : ({lock90:90,lock180:180,lock365:365,lock730:730}[cmMethod]||0);
+      const lockSecs    = lockDaysKey * 86400;
 
-      // Get token decimals
+      const moatContract  = new ethers.Contract(m.addr, MOAT_ABI, cmSigner);
+      const tokenContract = new ethers.Contract(m.meta.tokenAddr, ERC20_ABI, cmSigner);
+
       let decimals = 18;
       try { decimals = Number(await tokenContract.decimals()); } catch(e) {}
 
-      // ── STEP 1: SWAP ──
+      // ── STEP A: SWAP ──
       const stepSwapId = `swap_${i}`;
-      cmAddStep(stepSwapId, `Swap ${cmCurrency} → ${m.meta.ticker} (${m.meta.short})`,
-        `Swapping $${f2(moatUsd)} ${cmCurrency} on LFJ router…`, 'active');
+      const inCur = cmCurrency==='AVAX' ? 'AVAX' : 'USDC';
+      cmAddStep(stepSwapId, `${i+1}. Swap ${inCur} → ${m.meta.ticker}`, `Preparing $${f2(moatUsd)} swap…`, 'active');
 
       let tokenAmountReceived;
       try {
+        let amountInWei;
+        let tokenInAddr;
+
         if (cmCurrency === 'USDC') {
-          const usdcContract = new ethers.Contract(USDC_ADDR, ERC20_ABI, cmSigner);
-          const usdcAmount   = ethers.parseUnits(moatUsd.toFixed(6), 6);
+          amountInWei = ethers.parseUnits(moatUsd.toFixed(6), 6);
+          tokenInAddr = USDC_ADDR;
+          // Approve USDC for aggregator if needed (approve max to avoid per-agg approvals)
+          const usdcC = new ethers.Contract(USDC_ADDR, ERC20_ABI, cmSigner);
+          // We'll approve after we know the spender from the route — handled inside cmSmartSwap
+        } else {
+          amountInWei = ethers.parseEther(moatUsd.toFixed(18).slice(0, 20));
+          tokenInAddr = 'avax';
+        }
 
-          // Check/set allowance for router
-          const allowance = await usdcContract.allowance(cmAddress, LFJ_ROUTER_V1);
-          if (allowance < usdcAmount) {
-            cmUpdateStep(stepSwapId, 'active', 'Approving USDC for LFJ router…');
-            const approveTx = await usdcContract.approve(LFJ_ROUTER_V1, ethers.MaxUint256);
-            cmUpdateStep(stepSwapId, 'active', 'Waiting for USDC approval… tx: '+approveTx.hash);
-            await approveTx.wait();
-          }
+        // If USDC input, approve a large allowance for the aggregator spender
+        // The aggregator tx.to is the spender — approve before sending
+        if (cmCurrency === 'USDC') {
+          const usdcC = new ethers.Contract(USDC_ADDR, ERC20_ABI, cmSigner);
+          // Pre-check quote to find spender
+          let spenderAddr = null;
+          try {
+            const testRoute = await lfjGetBestRoute(USDC_ADDR, m.meta.tokenAddr, amountInWei, cmAddress, 100);
+            spenderAddr = testRoute?.txData?.to || null;
+          } catch(e) {}
 
-          // Get quote — try USDC→WAVAX→TOKEN, fallback to direct USDC→TOKEN
-          let path = [USDC_ADDR, WAVAX_ADDR, m.meta.tokenAddr];
-          let amountsOut;
-          try { amountsOut = await router.getAmountsOut(usdcAmount, path); }
-          catch(e) {
-            // Try direct path
-            try {
-              path = [USDC_ADDR, m.meta.tokenAddr];
-              amountsOut = await router.getAmountsOut(usdcAmount, path);
-            } catch(e2) {
-              const aggUrl = m.meta.aggregatorUrl || ('https://traderjoexyz.com/avalanche/trade?outputCurrency=' + m.meta.tokenAddr);
-              throw new Error('✕ Swap ' + cmCurrency + ' → ' + m.meta.ticker + ' (' + m.meta.short + ') ❌ No liquidity path found on LFJ V1. Buy manually via aggregator: ' + aggUrl);
+          if (spenderAddr) {
+            const allowance = await usdcC.allowance(cmAddress, spenderAddr);
+            if (allowance < amountInWei) {
+              cmUpdateStep(stepSwapId, 'active', `Approving USDC for ${spenderAddr.slice(0,10)}…`);
+              const appTx = await usdcC.approve(spenderAddr, ethers.MaxUint256);
+              cmUpdateStep(stepSwapId, 'active', `Approval sent: ${appTx.hash}`);
+              await appTx.wait();
             }
           }
-
-          const minOut = amountsOut[amountsOut.length-1] * 95n / 100n; // 5% slippage
-          cmUpdateStep(stepSwapId, 'active', `Quote: ~${fmtP(Number(ethers.formatUnits(amountsOut[amountsOut.length-1],decimals)))} ${m.meta.ticker}. Confirm swap in wallet…`);
-
-          const swapTx = await router.swapExactTokensForTokens(usdcAmount, minOut, path, cmAddress, deadline);
-          cmUpdateStep(stepSwapId, 'active', 'Swap tx sent: ' + swapTx.hash + '\nWaiting for confirmation…');
-          const swapReceipt = await swapTx.wait();
-          tokenAmountReceived = minOut; // conservative estimate; real amount from receipt
-          cmUpdateStep(stepSwapId, 'done', `✓ Swapped! tx: ${swapTx.hash}`);
-
-        } else { // AVAX
-          const avaxAmount = ethers.parseEther(moatUsd.toFixed(18));
-          const path = [WAVAX_ADDR, m.meta.tokenAddr];
-          let amountsOut;
-          try { amountsOut = await router.getAmountsOut(avaxAmount, path); }
-          catch(e) {
-            const aggUrl = m.meta.aggregatorUrl || ('https://traderjoexyz.com/avalanche/trade?outputCurrency=' + m.meta.tokenAddr);
-            throw new Error('✕ Swap AVAX → ' + m.meta.ticker + ' (' + m.meta.short + ') ❌ No liquidity path found on LFJ V1. Open aggregator: ' + aggUrl);
-          }
-          const minOut = amountsOut[amountsOut.length-1] * 95n / 100n;
-          cmUpdateStep(stepSwapId, 'active', `Quote: ~${fmtP(Number(ethers.formatUnits(amountsOut[amountsOut.length-1],decimals)))} ${m.meta.ticker}. Confirm swap in wallet…`);
-          const swapTx = await router.swapExactAVAXForTokens(minOut, path, cmAddress, deadline, {value: avaxAmount});
-          cmUpdateStep(stepSwapId, 'active', 'Swap tx sent: ' + swapTx.hash + '\nWaiting for confirmation…');
-          await swapTx.wait();
-          tokenAmountReceived = minOut;
-          cmUpdateStep(stepSwapId, 'done', `✓ Swapped! tx: ${swapTx.hash}`);
         }
 
-        // ── STEP 2: APPROVE MOAT ──
-        const stepApproveId = `approve_${i}`;
-        cmAddStep(stepApproveId, `Approve ${m.meta.short} Moat Contract`, 'Checking token allowance…', 'active');
-        const tokenBalance = await tokenContract.balanceOf(cmAddress);
-        const currentAllowance = await tokenContract.allowance(cmAddress, m.addr);
-        if (currentAllowance < tokenBalance) {
-          cmUpdateStep(stepApproveId, 'active', 'Approving tokens for moat contract. Confirm in wallet…');
-          const approveTx2 = await tokenContract.approve(m.addr, ethers.MaxUint256);
-          cmUpdateStep(stepApproveId, 'active', 'Approval tx: ' + approveTx2.hash + '\nWaiting…');
-          await approveTx2.wait();
-        }
-        cmUpdateStep(stepApproveId, 'done', '✓ Moat contract approved');
-
-        // ── STEP 3: STAKE / LOCK / BURN ──
-        const stepMoatId = `moat_${i}`;
-        const amountToDeposit = tokenBalance; // use all received tokens
-        let moatTx;
-        if (method === 'burn') {
-          cmAddStep(stepMoatId, `Burn ${m.meta.ticker} in ${m.meta.short} Moat`, `Burning ${fmtP(Number(ethers.formatUnits(amountToDeposit,decimals)))} ${m.meta.ticker} for 10×. PERMANENT. Confirm in wallet…`, 'active');
-          moatTx = await moatContract.burn(amountToDeposit);
-        } else if (method === 'lock' || method.startsWith('lock')) {
-          cmAddStep(stepMoatId, `Lock ${m.meta.ticker} in ${m.meta.short} Moat`, `Locking ${fmtP(Number(ethers.formatUnits(amountToDeposit,decimals)))} ${m.meta.ticker} for ${lockDays} days. Confirm in wallet…`, 'active');
-          moatTx = await moatContract.lock(amountToDeposit, BigInt(lockSecs));
-        } else {
-          cmAddStep(stepMoatId, `Stake ${m.meta.ticker} in ${m.meta.short} Moat`, `Staking ${fmtP(Number(ethers.formatUnits(amountToDeposit,decimals)))} ${m.meta.ticker}. Confirm in wallet…`, 'active');
-          moatTx = await moatContract.stake(amountToDeposit);
-        }
-        cmUpdateStep(stepMoatId, 'active', 'Transaction sent: ' + moatTx.hash + '\nWaiting for confirmation…');
-        await moatTx.wait();
-        cmUpdateStep(stepMoatId, 'done', `✓ ${method==='burn'?'Burned':method==='stake'?'Staked':'Locked'}! tx: ${moatTx.hash} · <a href="https://snowtrace.io/tx/${moatTx.hash}" target="_blank" class="tx-hash-link">View on Snowtrace ↗</a>`);
+        const swapResult = await cmSmartSwap(cmSigner, tokenInAddr, m.meta.tokenAddr, amountInWei, cmAddress, decimals, m.meta.ticker, stepSwapId);
+        cmUpdateStep(stepSwapId, 'active', `Swap via ${swapResult.dex} sent: ${swapResult.tx.hash} — waiting…`);
+        await swapResult.tx.wait();
+        tokenAmountReceived = swapResult.amtOut || await tokenContract.balanceOf(cmAddress);
+        cmUpdateStep(stepSwapId, 'done', `✓ Swapped via ${swapResult.dex}! tx: ${swapResult.tx.hash}`);
 
       } catch(err) {
         const msg = err.reason || err.shortMessage || err.message || String(err);
-        cmUpdateStep(cmSteps[cmSteps.length-1]?.id, 'error', '❌ ' + msg);
-        cmShowTxResult(false, 'Step failed: ' + msg + '\nCompleted ' + cmSteps.filter(s=>s.state==='done').length + '/' + (selected.length*3) + ' steps.');
+        cmUpdateStep(stepSwapId, 'error', '❌ ' + msg);
+        // Offer manual link
+        cmShowTxResult(false, `Swap failed for ${m.meta.ticker}.\n\n${msg}\n\nYou can buy ${m.meta.ticker} manually at:\n• lfj.gg → Trade\n• swap.avax.network\n• pharaoh.exchange\n\nThen return here and stake directly.`);
         cmExecuting = false;
         document.getElementById('cmExecuteBtn').disabled = false;
         document.getElementById('cmTxSpinner').style.display = 'none';
         return;
+      }
+
+      // ── STEP B: APPROVE MOAT ──
+      const stepApproveId = `approve_${i}`;
+      cmAddStep(stepApproveId, `${i+1}. Approve ${m.meta.short} Moat`, 'Checking token allowance…', 'active');
+      try {
+        const tokenBal = await tokenContract.balanceOf(cmAddress);
+        const currentAllowance = await tokenContract.allowance(cmAddress, m.addr);
+        if (currentAllowance < tokenBal && tokenBal > 0n) {
+          cmUpdateStep(stepApproveId, 'active', 'Approve tokens for moat contract. Confirm in wallet…');
+          const appTx2 = await tokenContract.approve(m.addr, ethers.MaxUint256);
+          cmUpdateStep(stepApproveId, 'active', `Approval tx: ${appTx2.hash} — waiting…`);
+          await appTx2.wait();
+        }
+        cmUpdateStep(stepApproveId, 'done', '✓ Approved');
+      } catch(err) {
+        cmUpdateStep(stepApproveId, 'error', '❌ Approve failed: ' + (err.reason||err.message));
+        cmShowTxResult(false, 'Approval failed: ' + (err.reason||err.message));
+        cmExecuting = false; document.getElementById('cmExecuteBtn').disabled = false;
+        document.getElementById('cmTxSpinner').style.display = 'none'; return;
+      }
+
+      // ── STEP C: STAKE / LOCK / BURN ──
+      const stepMoatId = `moat_${i}`;
+      try {
+        const tokenBal = await tokenContract.balanceOf(cmAddress);
+        if (tokenBal === 0n) {
+          cmAddStep(stepMoatId, `${i+1}. ${method==='burn'?'Burn':method==='lock'?'Lock':'Stake'} in ${m.meta.short}`, 'Warning: token balance is 0 — swap may not have settled', 'error');
+          continue;
+        }
+        let moatTx;
+        if (method === 'burn') {
+          cmAddStep(stepMoatId, `${i+1}. Burn ${m.meta.ticker} in ${m.meta.short}`,
+            `Burning ${fmtP(Number(ethers.formatUnits(tokenBal,decimals)))} ${m.meta.ticker} for 10×. PERMANENT. Confirm in wallet…`, 'active');
+          moatTx = await moatContract.burn(tokenBal);
+        } else if (method === 'lock') {
+          cmAddStep(stepMoatId, `${i+1}. Lock ${m.meta.ticker} in ${m.meta.short}`,
+            `Locking ${fmtP(Number(ethers.formatUnits(tokenBal,decimals)))} ${m.meta.ticker} for ${lockDaysKey}d. Confirm in wallet…`, 'active');
+          moatTx = await moatContract.lock(tokenBal, BigInt(lockSecs));
+        } else {
+          cmAddStep(stepMoatId, `${i+1}. Stake ${m.meta.ticker} in ${m.meta.short}`,
+            `Staking ${fmtP(Number(ethers.formatUnits(tokenBal,decimals)))} ${m.meta.ticker}. Confirm in wallet…`, 'active');
+          moatTx = await moatContract.stake(tokenBal);
+        }
+        cmUpdateStep(stepMoatId, 'active', `Tx sent: ${moatTx.hash} — waiting…`);
+        await moatTx.wait();
+        cmUpdateStep(stepMoatId, 'done', `✓ ${method==='burn'?'Burned':method==='lock'?'Locked':'Staked'}! tx: ${moatTx.hash}`);
+      } catch(err) {
+        const msg = err.reason || err.shortMessage || err.message || String(err);
+        if (cmSteps.find(s=>s.id===stepMoatId)) cmUpdateStep(stepMoatId, 'error', '❌ ' + msg);
+        else cmAddStep(stepMoatId, `Moat: ${m.meta.short}`, '❌ ' + msg, 'error');
+        cmShowTxResult(false, `Stake/lock failed for ${m.meta.short}: ${msg}`);
+        cmExecuting = false; document.getElementById('cmExecuteBtn').disabled = false;
+        document.getElementById('cmTxSpinner').style.display = 'none'; return;
       }
     }
 
     // All done!
     document.getElementById('cmTxTitle').textContent = '✅ Copy Strategy Complete!';
     document.getElementById('cmTxSpinner').style.display = 'none';
-    cmShowTxResult(true, 'All '+selected.length+' moat positions copied successfully! Your positions will appear in the leaderboard after the next data refresh.');
-    setTimeout(loadAll, 3000); // refresh data
+    cmShowTxResult(true, `All ${selected.length} moat position${selected.length>1?'s':''} copied successfully! Your position will appear in the leaderboard after the next data refresh.`);
+    setTimeout(loadAll, 4000);
 
   } catch(e) {
     const msg = e.reason || e.shortMessage || e.message || String(e);
@@ -5187,24 +5246,121 @@ async function cmExecute() {
 }
 
 function cmShowTxResult(success, msg) {
-  const el = document.getElementById('cmTxResult');
-  if (!el) return;
+  const el = document.getElementById('cmTxResult'); if (!el) return;
   el.style.display = 'block';
   const col = success ? 'var(--grn)' : 'var(--red)';
-  const icon = success ? '🎉' : '⚠️';
-  el.innerHTML = `<div style="background:${success?'rgba(109,184,122,.1)':'rgba(224,82,82,.1)'};border:1px solid ${col};border-radius:10px;padding:.9rem;font-size:.75rem;line-height:1.6">
-    <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;color:${col};margin-bottom:.3rem">${icon} ${success?'Success!':'Error'}</div>
-    <div style="color:var(--dim);white-space:pre-wrap">${msg}</div>
-    ${success?'<button class="btn btn-sm" style="margin-top:.6rem" onclick="gotoW(\''+cmAddress+'\')">View My Wallet Profile →</button>':''}
+  const manualLinks = success ? '' : `
+    <div style="margin-top:.7rem;display:flex;gap:6px;flex-wrap:wrap">
+      <a href="https://lfj.gg/avalanche/trade" target="_blank" class="btn btn-sm btn-g" style="text-decoration:none;font-size:.62rem">lfj.gg ↗</a>
+      <a href="https://swap.avax.network" target="_blank" class="btn btn-sm btn-g" style="text-decoration:none;font-size:.62rem">swap.avax.network ↗</a>
+      <a href="https://pharaoh.exchange" target="_blank" class="btn btn-sm btn-g" style="text-decoration:none;font-size:.62rem">pharaoh.exchange ↗</a>
+    </div>`;
+  el.innerHTML = `<div style="background:${success?'rgba(109,184,122,.1)':'rgba(224,82,82,.08)'};border:1px solid ${col};border-radius:10px;padding:.9rem">
+    <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;color:${col};margin-bottom:.4rem">${success?'🎉 Success!':'⚠️ Error'}</div>
+    <div style="color:var(--dim);font-size:.73rem;line-height:1.6;white-space:pre-wrap">${msg}</div>
+    ${success?`<button class="btn btn-sm" style="margin-top:.6rem" onclick="gotoW('${cmAddress}')">View My Profile →</button>`:manualLinks}
   </div>`;
 }
 
-function cmShowError(msg) {
-  cmShowTxResult(false, msg);
+function cmShowInlineError(msg) {
   document.getElementById('cmTxProgress').style.display = 'block';
+  cmShowTxResult(false, msg);
 }
 
-// ── INIT: called when Copy Moat tab is opened ──
+// ── ROUTE CHECKER ──
+async function cmCheckRoutes() {
+  const amtRaw = parseFloat(document.getElementById('cmAmount')?.value) || 0;
+  const selected = cmTargetMoats.filter(m => cmSelectedMoats.has(m.addr));
+  const resultEl = document.getElementById('cmRouteCheckResult');
+  if (!resultEl || !selected.length || !amtRaw) return;
+
+  const btn = document.getElementById('cmCheckRoutesBtn');
+  if (btn) { btn.disabled=true; btn.textContent='🔍 Checking…'; }
+  resultEl.style.display = 'block';
+  resultEl.innerHTML = '<div style="color:var(--mut);font-size:.7rem"><span class="spin"></span> Querying Odos, KyberSwap, Jar, OKX DEX, FlyTrade…</div>';
+
+  const totalPts = selected.reduce((s,m)=>s+m.pts, 0);
+  const results = [];
+
+  for (const m of selected) {
+    const allocPct = totalPts ? m.pts/totalPts : 1/selected.length;
+    const moatUsd  = amtRaw * allocPct;
+    let decimals   = 18;
+
+    try {
+      const tokC = new ethers.Contract(m.meta.tokenAddr, ERC20_ABI, cmProvider || new ethers.JsonRpcProvider(AVAX_RPC));
+      decimals = Number(await tokC.decimals());
+    } catch(e) {}
+
+    let amountInWei;
+    let tokenInAddr;
+    if (cmCurrency === 'USDC') {
+      amountInWei = ethers.parseUnits(moatUsd.toFixed(6), 6);
+      tokenInAddr = USDC_ADDR;
+    } else {
+      amountInWei = ethers.parseEther(moatUsd.toFixed(18).slice(0,20));
+      tokenInAddr = NATIVE_AVAX;
+    }
+
+    // Query all aggregators
+    const aggResults = [];
+    const jobs = LFJ_AGGREGATORS.map(async agg => {
+      try {
+        const url = `${LFJ_ROUTER_API}/${agg}/quote?tokenIn=${tokenInAddr}&tokenOut=${m.meta.tokenAddr}&amountIn=${amountInWei.toString()}`;
+        const r = await fetch(url, {headers:{'Accept':'application/json'}});
+        if (!r.ok) return;
+        const data = await r.json();
+        const amtOut = BigInt(data.amountOut || '0');
+        if (amtOut > 0n) {
+          aggResults.push({
+            agg,
+            dex: {odos:'Odos',kyber:'KyberSwap',jar:'Jar',flytrade:'FlyTrade',okx:'OKX DEX'}[agg]||agg,
+            amtOut,
+            amtOutHuman: Number(amtOut) / Math.pow(10, decimals),
+          });
+        }
+      } catch(e) {}
+    });
+    await Promise.all(jobs);
+    aggResults.sort((a,b) => a.amtOut > b.amtOut ? -1 : 1);
+    results.push({ m, moatUsd, aggResults, decimals });
+  }
+
+  if (btn) { btn.disabled=false; btn.textContent='🔀 Check Routes'; }
+
+  if (!results.length) { resultEl.innerHTML='<div style="color:var(--red);font-size:.72rem">No results found.</div>'; return; }
+
+  resultEl.innerHTML = results.map(r => {
+    const best = r.aggResults[0];
+    const hasRoute = r.aggResults.length > 0;
+    const col = hasRoute ? 'var(--grn)' : 'var(--red)';
+    const icon = hasRoute ? '✅' : '❌';
+    return `<div style="background:var(--card);border:1px solid ${col}44;border-left:3px solid ${col};border-radius:8px;padding:.65rem .8rem;margin-bottom:.4rem">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:${hasRoute?'.35rem':'0'}">
+        ${logoImg(r.m.meta.logo,'moat-logo-sm',r.m.meta.emoji,r.m.meta.color)}
+        <span style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.78rem">${r.m.meta.short}</span>
+        <span style="font-size:.85rem">${icon}</span>
+        <span style="font-family:'DM Mono',monospace;font-size:.6rem;color:var(--mut);margin-left:auto">$${f2(r.moatUsd)}</span>
+      </div>
+      ${hasRoute ? `
+        <div style="display:flex;gap:.35rem;flex-wrap:wrap">
+          ${r.aggResults.map((a,i) => `
+            <span style="font-family:'DM Mono',monospace;font-size:.58rem;padding:2px 7px;border-radius:4px;
+              background:${i===0?'rgba(109,184,122,.12)':'var(--sur)'};
+              border:1px solid ${i===0?'var(--grn)':'var(--bor)'};
+              color:${i===0?'var(--grn)':'var(--mut)'}">
+              ${i===0?'★ ':''}${a.dex}: ${fmtP(a.amtOutHuman)} ${r.m.meta.ticker}
+            </span>`).join('')}
+        </div>` : `<div style="font-family:'DM Mono',monospace;font-size:.62rem;color:var(--red)">
+          No route found. Buy ${r.m.meta.ticker} manually:
+          <a href="https://lfj.gg/avalanche/trade" target="_blank" style="color:var(--acc)">lfj.gg ↗</a>
+          · <a href="https://pharaoh.exchange" target="_blank" style="color:var(--acc)">pharaoh.exchange ↗</a>
+        </div>`}
+    </div>`;
+  }).join('');
+}
+
+// ── INIT ──
 function initCopyMoat() {
   cmRenderLeaderboard();
   if (cmAddress) cmUpdateWalletUI();
