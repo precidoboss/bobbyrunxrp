@@ -5727,6 +5727,15 @@ async function posLoadPositions() {
 
   const moatAddrs = Object.keys(MOATS);
 
+  // Trigger price fetches for moats that don't have cached price yet
+  moatAddrs.forEach(addr => {
+    if (!priceCache[addr]) {
+      fetchPairData(MOATS[addr]).then(p => {
+        if (p) priceCache[addr] = {price:Number(p.priceUsd||0), ch24:Number(p.priceChange?.h24||0), liq:Number(p.liquidity?.usd||0), vol24:Number(p.volume?.h24||0)};
+      }).catch(()=>{});
+    }
+  });
+
   // Fetch all positions in parallel
   const jobs = moatAddrs.map(async moatAddr => {
     const meta = MOATS[moatAddr];
@@ -5744,11 +5753,13 @@ async function posLoadPositions() {
       const dec = decimalsR.status==='fulfilled' ? Number(decimalsR.value) : 18;
       const div = Math.pow(10, dec);
       const ui  = userInfo.status==='fulfilled' ? userInfo.value : null;
-      const pts = points.status==='fulfilled' ? Number(points.value) : 0;
+      // getCurrentPoints returns uint256 scaled by 1e18 — divide to get human-readable points
+      const ptsRaw = points.status==='fulfilled' ? points.value : 0n;
+      const ptsChain = ptsRaw ? Number(BigInt(ptsRaw.toString())) / 1e18 : 0;
       const staked = ui ? Number(ui[0]) / div : 0;
       const burned = ui ? Number(ui[1]) / div : 0;
       const wBal   = walletBal.status==='fulfilled' ? Number(walletBal.value) / div : 0;
-      // Locks
+      // Locks — lock pts also in 1e18 scale
       let locks = [];
       try {
         const ld = await moatC.getUserAllLocks(addr);
@@ -5757,7 +5768,7 @@ async function posLoadPositions() {
           if (!actv[i]) continue;
           locks.push({ idx:i, amt:Number(amts[i])/div, endTs:Number(ends[i]),
             daysLeft:Math.max(0,Math.ceil((Number(ends[i])-Date.now()/1000)/86400)),
-            pts:Number(lpts[i]), origDurDays:Math.ceil(Number(odur[i])/86400) });
+            pts:Number(BigInt(lpts[i].toString()))/1e18, origDurDays:Math.ceil(Number(odur[i])/86400) });
         }
       } catch(e) {}
       // Rewards
@@ -5770,10 +5781,11 @@ async function posLoadPositions() {
           if (amt > 0.000001) rewards.push({ addr:a.toLowerCase(), symbol:info.symbol, amount:amt });
         });
       }
-      const hasPosition = staked>0 || burned>0 || pts>0 || locks.length>0;
-      // From API data too
+      // API points are already human-readable (from the Moats API) — use as primary source
       const apiPts = allPts.find(p=>getWallet(p)===addr.toLowerCase()&&p.contractAddress===moatAddr)?.points||0;
-      return { moatAddr, meta, hasPosition, pts: Math.max(pts, apiPts), staked, burned, wBal, locks, rewards, dec };
+      const finalPts = apiPts > 0 ? apiPts : ptsChain;
+      const hasPosition = staked>0 || burned>0 || finalPts>0 || locks.length>0;
+      return { moatAddr, meta, hasPosition, pts: finalPts, staked, burned, wBal, locks, rewards, dec };
     } catch(e) {
       const apiPts = allPts.find(p=>getWallet(p)===addr.toLowerCase()&&p.contractAddress===moatAddr)?.points||0;
       return { moatAddr, meta, hasPosition: apiPts>0, pts:apiPts, staked:0, burned:0, wBal:0, locks:[], rewards:[], dec:18 };
@@ -5933,9 +5945,11 @@ async function posOpenDetail(moatAddr) {
           if(amt>0.000001)rewards.push({addr:a.toLowerCase(),symbol:info.symbol,amount:amt});
         });
       }
+      // getCurrentPoints returns uint256 in 1e18 scale
+      const onChainPts = pts.status==='fulfilled' ? Number(BigInt(pts.value.toString()))/1e18 : 0;
       data = {
         moatAddr, meta,
-        pts: Math.max(pts.status==='fulfilled'?Number(pts.value):0, r?.pts||0),
+        pts: Math.max(onChainPts, r?.pts||0),
         staked: uiv?Number(uiv[0])/div:0,
         burned: uiv?Number(uiv[1])/div:0,
         wBal: wBal.status==='fulfilled'?Number(wBal.value)/div:0,
@@ -6044,12 +6058,20 @@ async function posOpenDetail(moatAddr) {
         </div>
         <div style="display:flex;align-items:center;gap:8px">
           <input id="posSwapAmt" type="number" placeholder="0.00" style="flex:1;background:transparent;border:none;outline:none;font-family:'Chakra Petch',sans-serif;font-size:1.4rem;font-weight:700;color:var(--txt);min-width:0" oninput="posSwapQuote()">
-          <div style="display:flex;flex-direction:column;gap:3px;flex-shrink:0">
-            <select id="posSwapToken" onchange="posUpdateSwapBal()" style="background:var(--card);border:1px solid var(--bor);border-radius:7px;color:var(--txt);font-family:'DM Mono',monospace;font-size:.7rem;padding:5px 8px;cursor:pointer;outline:none">
-              <option value="usdc">💵 USDC</option>
-              <option value="avax">🔺 AVAX</option>
-            </select>
-            <button onclick="posSwapMax()" style="background:rgba(249,115,22,.1);border:1px solid rgba(249,115,22,.25);border-radius:5px;color:var(--acc);font-family:'DM Mono',monospace;font-size:.54rem;padding:2px 7px;cursor:pointer">MAX</button>
+          <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0;align-items:center">
+            <!-- Token toggle buttons with logos -->
+            <div style="display:flex;gap:4px">
+              <div id="posSwapBtn_usdc" onclick="posSwapSetToken('usdc')" style="display:flex;align-items:center;gap:5px;background:rgba(249,115,22,.15);border:1.5px solid var(--acc);border-radius:8px;padding:5px 9px;cursor:pointer;transition:all .15s">
+                <img src="https://cryptologos.cc/logos/usd-coin-usdc-logo.png" onerror="this.style.display='none';this.nextSibling&&(this.nextSibling.style.display='inline')" style="width:18px;height:18px;border-radius:50%;object-fit:cover" onerror="this.src='';this.style.display='none'">
+                <span style="font-family:'DM Mono',monospace;font-size:.65rem;font-weight:600;color:var(--acc)">USDC</span>
+              </div>
+              <div id="posSwapBtn_avax" onclick="posSwapSetToken('avax')" style="display:flex;align-items:center;gap:5px;background:var(--sur);border:1.5px solid var(--bor);border-radius:8px;padding:5px 9px;cursor:pointer;transition:all .15s">
+                <img src="https://raw.githubusercontent.com/precidoboss/my-game-sprites/main/image-removebg-preview%20(8).png" style="width:18px;height:18px;border-radius:50%;object-fit:cover" onerror="this.style.display='none'">
+                <span style="font-family:'DM Mono',monospace;font-size:.65rem;font-weight:600;color:var(--mut)">AVAX</span>
+              </div>
+            </div>
+            <input type="hidden" id="posSwapToken" value="usdc">
+            <button onclick="posSwapMax()" style="background:rgba(249,115,22,.1);border:1px solid rgba(249,115,22,.25);border-radius:5px;color:var(--acc);font-family:'DM Mono',monospace;font-size:.54rem;padding:2px 10px;cursor:pointer;width:100%">MAX</button>
           </div>
         </div>
       </div>
@@ -6233,6 +6255,26 @@ function posSetSlippage(val, btn) {
   posSwapSlippage = val;
   document.querySelectorAll('[id^="posSlip_"]').forEach(b=>{ b.style.background=''; b.style.color='var(--mut)'; b.style.borderColor='var(--bor)'; });
   if (btn) { btn.style.background='rgba(249,115,22,.15)'; btn.style.color='var(--acc)'; btn.style.borderColor='var(--acc)'; }
+  posSwapQuote();
+}
+
+function posSwapSetToken(tok) {
+  const hiddenInp = document.getElementById('posSwapToken');
+  if (hiddenInp) hiddenInp.value = tok;
+  // Update button styles
+  const usdcBtn = document.getElementById('posSwapBtn_usdc');
+  const avaxBtn = document.getElementById('posSwapBtn_avax');
+  if (usdcBtn) {
+    usdcBtn.style.background = tok==='usdc' ? 'rgba(249,115,22,.15)' : 'var(--sur)';
+    usdcBtn.style.borderColor = tok==='usdc' ? 'var(--acc)' : 'var(--bor)';
+    usdcBtn.querySelector('span').style.color = tok==='usdc' ? 'var(--acc)' : 'var(--mut)';
+  }
+  if (avaxBtn) {
+    avaxBtn.style.background = tok==='avax' ? 'rgba(249,115,22,.15)' : 'var(--sur)';
+    avaxBtn.style.borderColor = tok==='avax' ? 'var(--acc)' : 'var(--bor)';
+    avaxBtn.querySelector('span').style.color = tok==='avax' ? 'var(--acc)' : 'var(--mut)';
+  }
+  posUpdateSwapBal();
   posSwapQuote();
 }
 
