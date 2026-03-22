@@ -6936,72 +6936,76 @@ async function hcashQuoteLP() {
 
 async function hcashAddLiquidity() {
   if (!posSigner) return;
-  let avaxAmt  = parseFloat(document.getElementById('hcashAvaxAmt')?.value)||0;
+  const avaxAmt  = parseFloat(document.getElementById('hcashAvaxAmt')?.value)||0;
   const hcashAmt = parseFloat(document.getElementById('hcashTokenAmt')?.value)||0;
-  if (!avaxAmt || !hcashAmt) { showAppNotif('Enter amount first', 'warn'); return; }
+  if (!avaxAmt || !hcashAmt) { showAppNotif('Enter AVAX amount first', 'warn'); return; }
 
+  // phar.gg uses addLiquidityAVAX — sends native AVAX as msg.value,
+  // router wraps it to WAVAX internally. We match that exact flow.
   const statusEl = document.getElementById('hcashAddStatus');
-  await posRunTx('hcashAddStatus', async () => {
-    const hcashTokenAddr = await resolveHcashToken();
-    const router    = new ethers.Contract(PHARAOH_ROUTER_ADDR, PHARAOH_ROUTER_ABI, posSigner);
-    const hcashTok  = new ethers.Contract(hcashTokenAddr, ERC20_ABI, posSigner);
-    const wavaxTok  = new ethers.Contract(WAVAX_ADDR, WAVAX_ABI, posSigner);
-    const hcashDec  = Number(await hcashTok.decimals().catch(()=>18));
-    const avaxWei   = ethers.parseEther(String(parseFloat(avaxAmt.toFixed(6))));
-    const hcashWei  = ethers.parseUnits(String(parseFloat(hcashAmt.toFixed(Math.min(hcashDec,6)))), hcashDec);
-    const minAvax   = avaxWei  * 97n / 100n; // 3% slippage
-    const minHcash  = hcashWei * 97n / 100n;
-    const deadline  = Math.floor(Date.now()/1000) + 1800;
-    console.log('[hCASH LP] hcashTokenAddr:', hcashTokenAddr, 'hcashDec:', hcashDec);
-    console.log('[hCASH LP] avaxWei:', avaxWei.toString(), 'hcashWei:', hcashWei.toString());
 
-    // Strategy: Try addLiquidityAVAX first (native AVAX), fall back to WAVAX + addLiquidity
-    try {
-      // Step 1: Approve hCASH for router
-      const hcashAllowed = await hcashTok.allowance(posAddress, PHARAOH_ROUTER_ADDR);
-      if (hcashAllowed < hcashWei) {
-        if (statusEl) statusEl.textContent = 'Approving hCASH…';
-        const appTx = await hcashTok.approve(PHARAOH_ROUTER_ADDR, ethers.MaxUint256);
-        await appTx.wait();
-      }
-      if (statusEl) statusEl.textContent = 'Adding liquidity (AVAX + hCASH)… confirm in wallet';
-      // Try addLiquidityAVAX (router wraps AVAX internally)
-      return await router.addLiquidityAVAX(
-        hcashTokenAddr, false, hcashWei, minHcash, minAvax, posAddress, deadline,
-        { value: avaxWei, gasLimit: 500000n }
-      );
-    } catch(e1) {
-      console.warn('[hCASH LP] addLiquidityAVAX failed, trying WAVAX route:', e1.message);
-      // Fallback: wrap AVAX to WAVAX, then use addLiquidity(WAVAX, hCASH)
-      if (statusEl) statusEl.textContent = 'Wrapping AVAX to WAVAX…';
-      const wrapTx = await wavaxTok.deposit({ value: avaxWei });
-      await wrapTx.wait();
-      // Approve WAVAX for router
-      const wavaxAllowed = await wavaxTok.allowance(posAddress, PHARAOH_ROUTER_ADDR);
-      if (wavaxAllowed < avaxWei) {
-        const wAppTx = await wavaxTok.approve(PHARAOH_ROUTER_ADDR, ethers.MaxUint256);
-        await wAppTx.wait();
-      }
-      // Approve hCASH for router (may already be done above)
-      const hcashAllowed2 = await hcashTok.allowance(posAddress, PHARAOH_ROUTER_ADDR);
-      if (hcashAllowed2 < hcashWei) {
-        const hAppTx = await hcashTok.approve(PHARAOH_ROUTER_ADDR, ethers.MaxUint256);
-        await hAppTx.wait();
-      }
-      if (statusEl) statusEl.textContent = 'Adding liquidity (WAVAX + hCASH)… confirm in wallet';
-      return await router.addLiquidity(
-        WAVAX_ADDR, hcashTokenAddr, false,
-        avaxWei, hcashWei, minAvax, minHcash,
-        posAddress, deadline, { gasLimit: 500000n }
-      );
+  try {
+    const hcashTokenAddr = await resolveHcashToken();
+    const hcashTok = new ethers.Contract(hcashTokenAddr, ERC20_ABI, posSigner);
+    const hcashDec = Number(await hcashTok.decimals().catch(()=>18));
+    const avaxWei  = ethers.parseEther(String(parseFloat(avaxAmt.toFixed(6))));
+    const hcashWei = ethers.parseUnits(
+      String(parseFloat(hcashAmt.toFixed(Math.min(hcashDec, 6)))), hcashDec
+    );
+    const minAvax  = avaxWei  * 97n / 100n; // 3% slippage
+    const minHcash = hcashWei * 97n / 100n;
+    const deadline = Math.floor(Date.now()/1000) + 1800;
+
+    console.log('[hCASH LP] token:', hcashTokenAddr, 'dec:', hcashDec,
+      'avax:', ethers.formatEther(avaxWei), 'hcash:', ethers.formatUnits(hcashWei, hcashDec));
+
+    // ── Step 1: Approve hCASH for router ──
+    const hcashAllowed = await hcashTok.allowance(posAddress, PHARAOH_ROUTER_ADDR);
+    if (hcashAllowed < hcashWei) {
+      if (statusEl) statusEl.innerHTML = '<span class="spin"></span> Step 1/2: Approving hCASH for Pharaoh…';
+      const appTx = await hcashTok.approve(PHARAOH_ROUTER_ADDR, ethers.MaxUint256);
+      await appTx.wait();
     }
-  }, '✅ LP tokens minted! Switching to Stake LP tab…');
-  setTimeout(() => {
-    hcashLoadBalances();
-    // Auto-switch to stake tab so user can stake immediately
-    const stakeTabEl = document.getElementById('hcashTab_stakelp');
-    if (stakeTabEl) hcashTab('stakelp', stakeTabEl);
-  }, 3200);
+
+    // ── Step 2: addLiquidityAVAX (native AVAX as msg.value) ──
+    if (statusEl) statusEl.innerHTML = '<span class="spin"></span> Step 2/2: Confirm in wallet…';
+    const router = new ethers.Contract(PHARAOH_ROUTER_ADDR, PHARAOH_ROUTER_ABI, posSigner);
+    const tx = await router.addLiquidityAVAX(
+      hcashTokenAddr,   // token = hCASH
+      false,            // volatile pair
+      hcashWei,         // amountTokenDesired
+      minHcash,         // amountTokenMin (3% slippage)
+      minAvax,          // amountAVAXMin  (3% slippage)
+      posAddress,       // recipient
+      deadline,
+      { value: avaxWei, gasLimit: 500000n }
+    );
+    if (statusEl) statusEl.innerHTML = `<span class="spin"></span> Confirming… <a href="https://snowtrace.io/tx/${tx.hash}" target="_blank" style="color:var(--acc)">${shortA(tx.hash)} ↗</a>`;
+    await tx.wait();
+
+    const quip = SUCCESS_QUIPS[Math.floor(Math.random()*SUCCESS_QUIPS.length)];
+    if (statusEl) statusEl.innerHTML = `<span style="color:var(--grn)">✅ LP tokens minted! ${quip} <a href="https://snowtrace.io/tx/${tx.hash}" target="_blank" style="color:var(--acc)">${shortA(tx.hash)} ↗</a></span>`;
+    showTxToast(true, '💧 Liquidity added!', 'WAVAX/hCASH LP tokens are in your wallet.', tx.hash);
+
+    setTimeout(() => {
+      hcashLoadBalances();
+      const stakeTabEl = document.getElementById('hcashTab_stakelp');
+      if (stakeTabEl) hcashTab('stakelp', stakeTabEl);
+    }, 2500);
+
+  } catch(e) {
+    let msg = e.reason || e.shortMessage || e.message || String(e);
+    const isReject = msg.includes('user rejected') || msg.includes('ACTION_REJECTED');
+    if (isReject) {
+      msg = REJECT_QUIPS[Math.floor(Math.random()*REJECT_QUIPS.length)];
+      showAppNotif(msg, 'info');
+    } else {
+      // Strip giant JSON blobs
+      if (msg.length > 200) msg = msg.slice(0, msg.indexOf('(action') > 0 ? msg.indexOf('(action') : 180) + '…';
+      showTxToast(false, FAIL_QUIPS[Math.floor(Math.random()*FAIL_QUIPS.length)], msg);
+    }
+    if (statusEl) statusEl.innerHTML = `<span style="color:${isReject?'var(--gld)':'var(--red)'}">${msg} — <button onclick="document.getElementById('hcashAddStatus').innerHTML=''" style="background:none;border:none;color:var(--acc);cursor:pointer;font-family:'DM Mono',monospace;font-size:.65rem">Dismiss</button></span>`;
+  }
 }
 
 function hcashCalcLpPts() {
@@ -7057,21 +7061,35 @@ async function hcashRemoveLiquidity() {
   if (!posSigner) return;
   const amt = parseFloat(document.getElementById('hcashRemoveAmt')?.value)||0;
   if (!amt) { showAppNotif('Enter LP amount to remove', 'warn'); return; }
-  await posRunTx('hcashRemoveStatus', async () => {
+  const statusEl = document.getElementById('hcashRemoveStatus');
+  try {
+    const hcashTokAddrRm = await resolveHcashToken();
     const router = new ethers.Contract(PHARAOH_ROUTER_ADDR, PHARAOH_ROUTER_ABI, posSigner);
     const lp     = new ethers.Contract(HCASH_LP_ADDR, ERC20_ABI, posSigner);
     const lpWei  = ethers.parseUnits(amt.toFixed(6), 18);
     const allowed = await lp.allowance(posAddress, PHARAOH_ROUTER_ADDR);
     if (allowed < lpWei) {
-      document.getElementById('hcashRemoveStatus').textContent = 'Approving LP…';
+      if (statusEl) statusEl.innerHTML = '<span class="spin"></span> Approving LP tokens…';
       const appTx = await lp.approve(PHARAOH_ROUTER_ADDR, ethers.MaxUint256);
       await appTx.wait();
     }
     const deadline = Math.floor(Date.now()/1000) + 1800;
-    const hcashTokAddrRm = await resolveHcashToken();
-    return router.removeLiquidityAVAX(hcashTokAddrRm, false, lpWei, 0n, 0n, posAddress, deadline);
-  }, '✅ Liquidity removed — AVAX and hCASH returned to wallet.');
-  setTimeout(hcashLoadBalances, 3000);
+    if (statusEl) statusEl.innerHTML = '<span class="spin"></span> Confirm remove liquidity in wallet…';
+    const tx = await router.removeLiquidityAVAX(
+      hcashTokAddrRm, false, lpWei, 0n, 0n, posAddress, deadline, { gasLimit: 400000n }
+    );
+    if (statusEl) statusEl.innerHTML = '<span class="spin"></span> Confirming… <a href="https://snowtrace.io/tx/' + tx.hash + '" target="_blank" style="color:var(--acc)">' + shortA(tx.hash) + ' ↗</a>';
+    await tx.wait();
+    if (statusEl) statusEl.innerHTML = '<span style="color:var(--grn)">✅ AVAX & hCASH returned to wallet. <a href="https://snowtrace.io/tx/' + tx.hash + '" target="_blank" style="color:var(--acc)">' + shortA(tx.hash) + ' ↗</a></span>';
+    showTxToast(true, '↩ Liquidity removed!', 'AVAX and hCASH back in your wallet.', tx.hash);
+    setTimeout(hcashLoadBalances, 2500);
+  } catch(e) {
+    let msg = e.reason || e.shortMessage || e.message || String(e);
+    const isReject = msg.includes('user rejected') || msg.includes('ACTION_REJECTED');
+    if (isReject) { msg = REJECT_QUIPS[Math.floor(Math.random()*REJECT_QUIPS.length)]; showAppNotif(msg,'info'); }
+    else { if(msg.length>200) msg=msg.slice(0,180)+'…'; showTxToast(false,FAIL_QUIPS[Math.floor(Math.random()*FAIL_QUIPS.length)],msg); }
+    if (statusEl) statusEl.innerHTML = '<span style="color:' + (isReject?'var(--gld)':'var(--red)') + '">' + msg + '</span>';
+  }
 }
 
 // ════════════ hCASH SWAP ENGINE ════════════
