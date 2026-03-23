@@ -6970,54 +6970,59 @@ async function hcashAddLiquidity() {
   const statusEl = document.getElementById('hcashAddStatus');
 
   try {
-    const hcashTokenAddr = await resolveHcashToken();
-    const hcashTok = new ethers.Contract(hcashTokenAddr, ERC20_ABI, posSigner);
-    const router   = new ethers.Contract(PHARAOH_ROUTER_ADDR, PHARAOH_ROUTER_ABI, posSigner);
-    const avaxWei  = ethers.parseEther(String(parseFloat(avaxAmt.toFixed(6))));
+    const hcashAddr = await resolveHcashToken();
+    const PAIR_ABI = [
+      'function mint(address to) returns (uint256 liquidity)',
+      'function getReserves() view returns (uint256 r0, uint256 r1, uint256 ts)',
+      'function token0() view returns (address)',
+    ];
+    const pair    = new ethers.Contract(HCASH_LP_ADDR, PAIR_ABI, posSigner);
+    const wavaxC  = new ethers.Contract(WAVAX_ADDR, WAVAX_ABI, posSigner);
+    const hcashC  = new ethers.Contract(hcashAddr, ERC20_ABI, posSigner);
 
-    // Get user's full hCASH balance — we'll approve all of it and let the router
-    // take only what the pool ratio requires. This is the most reliable approach.
-    const hcashBal = await hcashTok.balanceOf(posAddress);
-    if (hcashBal === 0n) {
-      showAppNotif('You need hCASH tokens. Swap some in the Swap tab first.', 'warn');
+    // Get reserves to calculate exact hCASH ratio
+    const [res, t0] = await Promise.all([pair.getReserves(), pair.token0()]);
+    const isWavaxT0 = t0.toLowerCase() === WAVAX_ADDR.toLowerCase();
+    const wavaxRes  = isWavaxT0 ? res[0] : res[1];
+    const hcashRes  = isWavaxT0 ? res[1] : res[0];
+    const avaxWei   = ethers.parseEther(String(parseFloat(avaxAmt.toFixed(6))));
+    const hcashWei  = avaxWei * hcashRes / wavaxRes;
+
+    const hcashDec  = 18;
+    console.log('[hCASH LP direct] avax:', ethers.formatEther(avaxWei),
+      'hcash:', ethers.formatUnits(hcashWei, hcashDec),
+      'ratio:', (Number(hcashRes)/Number(wavaxRes)).toFixed(4));
+
+    // Check balance
+    const hcashBal = await hcashC.balanceOf(posAddress);
+    if (hcashBal < hcashWei) {
+      showAppNotif(`Need ${ethers.formatUnits(hcashWei,hcashDec)} hCASH but you only have ${ethers.formatUnits(hcashBal,hcashDec)}. Swap more first.`, 'warn');
       return;
     }
 
-    console.log('[hCASH LP] token:', hcashTokenAddr,
-      'avax:', ethers.formatEther(avaxWei),
-      'hcash balance:', ethers.formatEther(hcashBal));
+    // Step 1: Wrap AVAX → WAVAX
+    if (statusEl) statusEl.innerHTML = '<span class="spin"></span> 1/4 — Wrapping AVAX → WAVAX… confirm';
+    const wrapTx = await wavaxC.deposit({ value: avaxWei, gasLimit: 60000n });
+    await wrapTx.wait();
 
-    // Step 1: Approve full hCASH balance for the router
-    const allowed = await hcashTok.allowance(posAddress, PHARAOH_ROUTER_ADDR);
-    if (allowed < hcashBal) {
-      if (statusEl) statusEl.innerHTML = '<span class="spin"></span> 1/2 — Approving hCASH… confirm in wallet';
-      const appTx = await hcashTok.approve(PHARAOH_ROUTER_ADDR, ethers.MaxUint256);
-      if (statusEl) statusEl.innerHTML = `<span class="spin"></span> Approving… <a href="https://snowtrace.io/tx/${appTx.hash}" target="_blank" style="color:var(--acc)">${shortA(appTx.hash)} ↗</a>`;
-      await appTx.wait();
-    }
+    // Step 2: Send WAVAX to pair contract
+    if (statusEl) statusEl.innerHTML = '<span class="spin"></span> 2/4 — Sending WAVAX to pool… confirm';
+    const wavaxTransferTx = await wavaxC.transfer(HCASH_LP_ADDR, avaxWei, { gasLimit: 80000n });
+    await wavaxTransferTx.wait();
 
-    // Step 2: addLiquidityAVAX
-    // Pass the user's FULL hCASH balance as amountTokenDesired.
-    // The router internally calculates the exact optimal amount from pool reserves
-    // and only transfers that much — the rest stays in the user's wallet.
-    // amountTokenMin=0 and amountAVAXMin=0 allow any slippage (safe for small amounts).
-    if (statusEl) statusEl.innerHTML = '<span class="spin"></span> 2/2 — Confirm add liquidity in wallet…';
-    const deadline = Math.floor(Date.now()/1000) + 1800;
-    const tx = await router.addLiquidityAVAX(
-      hcashTokenAddr,   // token
-      false,            // volatile (not stable)
-      hcashBal,         // amountTokenDesired = full balance (router uses only what it needs)
-      0n,               // amountTokenMin = 0 (accept any)
-      0n,               // amountAVAXMin  = 0 (accept any)
-      posAddress,       // recipient
-      deadline,
-      { value: avaxWei, gasLimit: 500000n }
-    );
-    if (statusEl) statusEl.innerHTML = `<span class="spin"></span> Confirming… <a href="https://snowtrace.io/tx/${tx.hash}" target="_blank" style="color:var(--acc)">${shortA(tx.hash)} ↗</a>`;
+    // Step 3: Send hCASH to pair contract
+    if (statusEl) statusEl.innerHTML = '<span class="spin"></span> 3/4 — Sending hCASH to pool… confirm';
+    const hcashTransferTx = await hcashC.transfer(HCASH_LP_ADDR, hcashWei, { gasLimit: 80000n });
+    await hcashTransferTx.wait();
+
+    // Step 4: Call pair.mint() to receive LP tokens
+    if (statusEl) statusEl.innerHTML = '<span class="spin"></span> 4/4 — Minting LP tokens… confirm';
+    const tx = await pair.mint(posAddress, { gasLimit: 300000n });
+    if (statusEl) statusEl.innerHTML = `<span class="spin"></span> Minting… <a href="https://snowtrace.io/tx/${tx.hash}" target="_blank" style="color:var(--acc)">${shortA(tx.hash)} ↗</a>`;
     await tx.wait();
 
     const quip = SUCCESS_QUIPS[Math.floor(Math.random()*SUCCESS_QUIPS.length)];
-    if (statusEl) statusEl.innerHTML = `<span style="color:var(--grn)">✅ ${quip} LP tokens in wallet! <a href="https://snowtrace.io/tx/${tx.hash}" target="_blank" style="color:var(--acc)">${shortA(tx.hash)} ↗</a></span>`;
+    if (statusEl) statusEl.innerHTML = `<span style="color:var(--grn)">✅ ${quip} LP tokens minted! <a href="https://snowtrace.io/tx/${tx.hash}" target="_blank" style="color:var(--acc)">${shortA(tx.hash)} ↗</a></span>`;
     showTxToast(true, '💧 Liquidity added!', 'WAVAX/hCASH LP tokens are in your wallet.', tx.hash);
 
     setTimeout(() => {
@@ -7033,7 +7038,7 @@ async function hcashAddLiquidity() {
       msg = REJECT_QUIPS[Math.floor(Math.random()*REJECT_QUIPS.length)];
       showAppNotif(msg, 'info');
     } else {
-      if (msg.length > 200) msg = msg.slice(0, msg.indexOf('(action')>0 ? msg.indexOf('(action') : 180) + '…';
+      if (msg.length > 200) msg = msg.slice(0, 180) + '…';
       showTxToast(false, FAIL_QUIPS[Math.floor(Math.random()*FAIL_QUIPS.length)], msg);
     }
     if (statusEl) statusEl.innerHTML = `<span style="color:${isReject?'var(--gld)':'var(--red)'}">${msg} — <button onclick="document.getElementById('hcashAddStatus').innerHTML=''" style="background:none;border:none;color:var(--acc);cursor:pointer;font-family:'DM Mono',monospace;font-size:.65rem">Dismiss</button></span>`;
