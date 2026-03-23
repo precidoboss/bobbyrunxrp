@@ -5722,21 +5722,20 @@ const PHARAOH_FACTORY_ABI = [
   'function getPair(address tokenA, address tokenB, bool stable) view returns (address)',
 ];
 let HCASH_POOL_STABLE = null; // auto-detected on first use
+// Pharaoh Router is Velodrome V1 style — NO factory param in quote/liquidity functions
 const PHARAOH_ROUTER_ABI = [
-  // Quote functions (Velodrome/Solidly style — factory is 4th param)
-  'function quoteAddLiquidity(address tokenA, address tokenB, bool stable, address _factory, uint256 amountADesired, uint256 amountBDesired) view returns (uint256 amountA, uint256 amountB, uint256 liquidity)',
-  'function quoteRemoveLiquidity(address tokenA, address tokenB, bool stable, address _factory, uint256 liquidity) view returns (uint256 amountA, uint256 amountB)',
-  // Add/remove with native AVAX
+  // V1 style: no factory param
+  'function quoteAddLiquidity(address tokenA, address tokenB, bool stable, uint256 amountADesired, uint256 amountBDesired) view returns (uint256 amountA, uint256 amountB, uint256 liquidity)',
+  'function quoteRemoveLiquidity(address tokenA, address tokenB, bool stable, uint256 liquidity) view returns (uint256 amountA, uint256 amountB)',
   'function addLiquidityAVAX(address token, bool stable, uint256 amountTokenDesired, uint256 amountTokenMin, uint256 amountAVAXMin, address to, uint256 deadline) payable returns (uint256 amountToken, uint256 amountAVAX, uint256 liquidity)',
   'function removeLiquidityAVAX(address token, bool stable, uint256 liquidity, uint256 amountTokenMin, uint256 amountAVAXMin, address to, uint256 deadline) returns (uint256 amountToken, uint256 amountAVAX)',
-  // Add/remove with ERC20 tokens (WAVAX + token)
   'function addLiquidity(address tokenA, address tokenB, bool stable, uint256 amountADesired, uint256 amountBDesired, uint256 amountAMin, uint256 amountBMin, address to, uint256 deadline) returns (uint256 amountA, uint256 amountB, uint256 liquidity)',
   'function removeLiquidity(address tokenA, address tokenB, bool stable, uint256 liquidity, uint256 amountAMin, uint256 amountBMin, address to, uint256 deadline) returns (uint256 amountA, uint256 amountB)',
-  // Swap
-  'function getAmountsOut(uint256 amountIn, tuple(address from, address to, bool stable, address factory)[] routes) view returns (uint256[] amounts)',
-  'function swapExactAVAXForTokens(uint256 amountOutMin, tuple(address from, address to, bool stable, address factory)[] routes, address to, uint256 deadline) payable returns (uint256[] amounts)',
-  'function swapExactTokensForAVAX(uint256 amountIn, uint256 amountOutMin, tuple(address from, address to, bool stable, address factory)[] routes, address to, uint256 deadline) returns (uint256[] amounts)',
-  'function swapExactTokensForTokens(uint256 amountIn, uint256 amountOutMin, tuple(address from, address to, bool stable, address factory)[] routes, address to, uint256 deadline) returns (uint256[] amounts)',
+  // Swaps — V1 route struct (no factory field)
+  'function getAmountsOut(uint256 amountIn, tuple(address from, address to, bool stable)[] routes) view returns (uint256[] amounts)',
+  'function swapExactAVAXForTokens(uint256 amountOutMin, tuple(address from, address to, bool stable)[] routes, address to, uint256 deadline) payable returns (uint256[] amounts)',
+  'function swapExactTokensForAVAX(uint256 amountIn, uint256 amountOutMin, tuple(address from, address to, bool stable)[] routes, address to, uint256 deadline) returns (uint256[] amounts)',
+  'function swapExactTokensForTokens(uint256 amountIn, uint256 amountOutMin, tuple(address from, address to, bool stable)[] routes, address to, uint256 deadline) returns (uint256[] amounts)',
 ];
 
 // WAVAX ABI for deposit (wrap native AVAX)
@@ -6529,9 +6528,9 @@ async function posOpenDetail(moatAddr) {
   // Init swap UI or hCASH balances
   if (!isLP && addr) posUpdateSwapBal();
   if (isLP && moatAddr === HCASH_MOAT_ADDR) {
-    // Load balances immediately and again after 1s to ensure wallet is ready
     hcashLoadBalances();
-    setTimeout(hcashLoadBalances, 1000);
+    setTimeout(hcashLoadBalances, 800);
+    setTimeout(()=>hcashUpdateLpBals(document.getElementById('hcashLpInputMode')?.value||'avax'), 900);
   }
 }
 
@@ -6838,7 +6837,7 @@ function hcashLpSetMode(mode, el) {
 }
 
 async function hcashUpdateLpBals(mode) {
-  const addr = posAddress || posViewAddr;
+  const addr = posAddress || posViewAddr || cmAddress;
   if (!addr) return;
   const prov = posProvider || new ethers.JsonRpcProvider(AVAX_RPC);
   const avaxEl  = document.getElementById('hcashAvaxBal');
@@ -6886,9 +6885,9 @@ function hcashStakeMethodSet(method, el) {
 }
 
 async function hcashLoadBalances() {
-  const addr = posAddress || posViewAddr;
+  const addr = posAddress || posViewAddr || cmAddress;
   if (!addr) return;
-  const prov = posProvider || new ethers.JsonRpcProvider(AVAX_RPC);
+  const prov = posProvider || cmProvider || new ethers.JsonRpcProvider(AVAX_RPC);
   try {
     const hcashAddr = await resolveHcashToken();
     const lp = new ethers.Contract(HCASH_LP_ADDR, ERC20_ABI, prov);
@@ -6963,9 +6962,9 @@ async function hcashQuoteLP() {
     // Supply a very large hCASH desired so router returns exact pool ratio
     const bigDes = ethers.parseUnits('9999999999', hcashDec);
 
-    // PRIMARY: router quoteAddLiquidity (authoritative — uses same math as addLiquidityAVAX)
+    // PRIMARY: router quoteAddLiquidity — V1 style, no factory param
     const q = await router.quoteAddLiquidity(
-      WAVAX_ADDR, hcashAddr, false, PHARAOH_FACTORY_ADDR, avaxWei, bigDes
+      WAVAX_ADDR, hcashAddr, false, avaxWei, bigDes
     );
     const wavaxUsed   = parseFloat(ethers.formatEther(q[0]));
     const hcashNeeded = parseFloat(ethers.formatUnits(q[1], hcashDec));
@@ -7051,7 +7050,8 @@ async function hcashAddLiquidity() {
     if (statusEl) statusEl.innerHTML = '<span class="spin"></span> Quoting optimal ratio…';
     try {
       const big = ethers.parseUnits('999999999', hcashDec);
-      const q   = await router.quoteAddLiquidity(WAVAX, hcashAddr, stable, FACTORY, avaxWei, big);
+      // V1 router: no factory param
+      const q   = await router.quoteAddLiquidity(WAVAX, hcashAddr, stable, avaxWei, big);
       hcashWei  = q[1] * 101n / 100n; // +1% buffer
     } catch(e) {
       console.warn('[Quote failed] fallback to reserves:', e.message);
@@ -7222,7 +7222,7 @@ function hswapFlip() {
 }
 
 async function hswapUpdateFromBal() {
-  const addr = posAddress || posViewAddr;
+  const addr = posAddress || posViewAddr || cmAddress;
   const el   = document.getElementById('hswapFromBal');
   if (!el || !addr) return;
   const prov = posProvider || new ethers.JsonRpcProvider(AVAX_RPC);
