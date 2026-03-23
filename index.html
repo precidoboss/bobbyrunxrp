@@ -4592,8 +4592,8 @@ function copyCopyMoatToAllocator() {
 // ── CONSTANTS ──
 const AVAX_CHAIN_ID  = 43114;
 const AVAX_RPC       = 'https://api.avax.network/ext/bc/C/rpc';
-const USDC_ADDR      = '0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E';
-const WAVAX_ADDR     = '0xB31f66AA3C1e785363F0875a1b74E27b85FD66c7';
+const USDC_ADDR      = ethers.getAddress('0xb97ef9ef8734c71904d8002f8b6bc66dd9c48a6e');
+const WAVAX_ADDR     = ethers.getAddress('0xb31f66aa3c1e785363f0875a1b74e27b85fd66c7');
 const DEAD_ADDR_CM   = '0x000000000000000000000000000000000000dEaD';
 const NATIVE_AVAX    = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE'; // sentinel for native
 
@@ -4608,7 +4608,7 @@ const KYBER_SWAP_URL  = 'https://aggregator-api.kyberswap.com/avalanche/api/v1/r
 const PARASWAP_PRICE  = 'https://apiv5.paraswap.io/prices';
 const PARASWAP_TX     = 'https://apiv5.paraswap.io/transactions/43114';
 // LFJ V1 on-chain AMM router (no API, direct contract — always available)
-const LFJ_V1_ROUTER   = '0x60aE616a2155Ee3d9A68541Ba4544862310933d4';
+const LFJ_V1_ROUTER   = ethers.getAddress('0x60ae616a2155ee3d9a68541ba4544862310933d4');
 const AVAX_CHAIN_ID_NUM = 43114;
 
 // Gas estimates — real Avalanche C-Chain costs (AVAX)
@@ -5697,7 +5697,7 @@ Object.values(MOATS).forEach(m => {
 });
 
 // ── PHARAOH (Avalanche DEX) — for hCASH LP ──
-const PHARAOH_ROUTER_ADDR = '0x9CEE04bDcE127DA7E448A333f006DEFb3d5e38cC';
+const PHARAOH_ROUTER_ADDR = ethers.getAddress('0x9cee04bdce127da7e448a333f006defb3d5e38cc');
 // hCASH token address resolved dynamically from LP contract (token0 or token1 that isn't WAVAX)
 // LP = 0x8F961980518BC9ab302948De7948580666dc35D9, contains WAVAX + hCASH
 let HCASH_TOKEN_ADDR = null; // resolved on first use
@@ -5712,18 +5712,18 @@ async function resolveHcashToken() {
   const prov = posProvider || new ethers.JsonRpcProvider(AVAX_RPC);
   const lp = new ethers.Contract(HCASH_LP_ADDR, ['function token0() view returns (address)','function token1() view returns (address)'], prov);
   const [t0, t1] = await Promise.all([lp.token0(), lp.token1()]);
-  HCASH_TOKEN_ADDR = t0.toLowerCase() === WAVAX_ADDR.toLowerCase() ? t1 : t0;
+  HCASH_TOKEN_ADDR = ethers.getAddress(t0.toLowerCase() === WAVAX_ADDR.toLowerCase() ? t1 : t0);
   console.log('hCASH token resolved:', HCASH_TOKEN_ADDR, '| t0:', t0, '| t1:', t1);
   // Update the display
   const resolvedEl = document.getElementById('hcashResolvedAddr');
   if (resolvedEl) resolvedEl.innerHTML = `Resolved: <span style="color:var(--acc)">${HCASH_TOKEN_ADDR}</span> (t0:${t0.slice(0,8)}… t1:${t1.slice(0,8)}…)`;
   return HCASH_TOKEN_ADDR;
 }
-const HCASH_LP_ADDR       = '0x8F961980518BC9ab302948De7948580666dc35D9'; // WAVAX/hCASH LP
-const HCASH_MOAT_ADDR     = '0x501f6e7bec3db63d8dacbc9fa0ce42d5d2329d53'; // hCASH moat contract
+const HCASH_LP_ADDR       = ethers.getAddress('0x8f961980518bc9ab302948de7948580666dc35d9'); // WAVAX/hCASH LP
+const HCASH_MOAT_ADDR     = ethers.getAddress('0x501f6e7bec3db63d8dacbc9fa0ce42d5d2329d53'); // hCASH moat
 
 // Pharaoh is a Velodrome/Solidly fork — ABI uses factory address in quoteAddLiquidity
-const PHARAOH_FACTORY_ADDR = '0x85448bF2F589ab1F56225DF5167c63f57758f8c1'; // PairFactory
+const PHARAOH_FACTORY_ADDR = ethers.getAddress('0x85448bf2f589ab1f56225df5167c63f57758f8c1'); // PairFactory
 const PHARAOH_FACTORY_ABI = [
   'function getPair(address tokenA, address tokenB, bool stable) view returns (address)',
 ];
