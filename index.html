@@ -6307,8 +6307,8 @@ async function posOpenDetail(moatAddr) {
           <button onclick="hcashStakeMethodSet('lock365',this)" id="hcashStakeM_lock365" style="padding:4px 11px;border-radius:7px;font-family:'DM Mono',monospace;font-size:.58rem;border:1px solid var(--bor);background:transparent;color:var(--mut);cursor:pointer">⏳ Lock 365d (4.00×)</button>
         </div>
         <div style="display:flex;gap:5px;margin-bottom:.5rem">
-          <input id="hcashStakeAmt" type="number" class="inp" placeholder="LP token amount" oninput="hcashCalcLpPts()">
-          <button onclick="document.getElementById('hcashStakeAmt').value=document.getElementById('hcashLpBal').textContent.replace(/[^0-9.]/g,'');hcashCalcLpPts()" class="btn btn-sm btn-g">MAX</button>
+          <input id="hcashStakeAmt" type="number" class="inp" placeholder="LP token amount" oninput="if(typeof hcashCalcLpPts==='function')hcashCalcLpPts()">
+          <button onclick="const v=document.getElementById('hcashLpBal')?.textContent?.replace(/[^0-9.]/g,'');if(v){document.getElementById('hcashStakeAmt').value=v;}if(typeof hcashCalcLpPts==='function')hcashCalcLpPts();" class="btn btn-sm btn-g">MAX</button>
         </div>
         <div id="hcashStakePreview" style="font-family:'DM Mono',monospace;font-size:.65rem;color:var(--acc);margin-bottom:.7rem"></div>
         ${canManage ? `<button class="btn" style="width:100%" onclick="hcashStakeLp()">🔒 Stake LP in Moat</button>` : `<div style="font-family:'DM Mono',monospace;font-size:.65rem;color:var(--mut);text-align:center">Connect wallet</div>`}
@@ -6882,7 +6882,7 @@ function hcashStakeMethodSet(method, el) {
     b.style.background='transparent'; b.style.color='var(--mut)'; b.style.borderColor='var(--bor)';
   });
   if (el) { el.style.background='rgba(249,115,22,.1)'; el.style.color='var(--acc)'; el.style.borderColor='rgba(249,115,22,.4)'; }
-  hcashCalcLpPts();
+  if (typeof hcashCalcLpPts === 'function') hcashCalcLpPts();
 }
 
 async function hcashLoadBalances() {
@@ -7013,122 +7013,113 @@ async function hcashQuoteLP() {
 
 async function hcashAddLiquidity() {
   if (!posSigner) return;
-  const inputMode = document.getElementById('hcashLpInputMode')?.value || 'avax';
-  const amtRaw    = parseFloat(document.getElementById('hcashAvaxAmt')?.value) || 0;
+
+  const amtRaw = parseFloat(document.getElementById('hcashAvaxAmt')?.value) || 0;
   if (!amtRaw) { showAppNotif('Enter an amount first', 'warn'); return; }
 
   const statusEl = document.getElementById('hcashAddStatus');
-  if (statusEl) statusEl.innerHTML = '<span class="spin"></span> Detecting pool…';
 
   try {
-    const hcashAddr = await resolveHcashToken();
-    const prov      = posProvider || new ethers.JsonRpcProvider(AVAX_RPC);
-    const factory   = new ethers.Contract(PHARAOH_FACTORY_ADDR, PHARAOH_FACTORY_ABI, prov);
-    const router    = new ethers.Contract(PHARAOH_ROUTER_ADDR, PHARAOH_ROUTER_ABI, posSigner);
-    const hcashTok  = new ethers.Contract(hcashAddr, ERC20_ABI, posSigner);
+    const addr    = (a) => ethers.getAddress(a);
+    const hcashAddr = addr(await resolveHcashToken());
+    const WAVAX   = addr(WAVAX_ADDR);
+    const FACTORY = addr(PHARAOH_FACTORY_ADDR);
+    const ROUTER  = addr(PHARAOH_ROUTER_ADDR);
 
-    // 1. Detect stable flag
-    const [pF, pT] = await Promise.all([
-      factory.getPair(WAVAX_ADDR, hcashAddr, false),
-      factory.getPair(WAVAX_ADDR, hcashAddr, true),
+    const prov    = posProvider || new ethers.JsonRpcProvider(AVAX_RPC);
+    const factory = new ethers.Contract(FACTORY, PHARAOH_FACTORY_ABI, prov);
+    const router  = new ethers.Contract(ROUTER, PHARAOH_ROUTER_ABI, posSigner);
+    const hcash   = new ethers.Contract(hcashAddr, ERC20_ABI, posSigner);
+
+    // 1. Detect pool
+    if (statusEl) statusEl.innerHTML = '<span class="spin"></span> Detecting pool…';
+    const [pairFalse, pairTrue] = await Promise.all([
+      factory.getPair(WAVAX, hcashAddr, false),
+      factory.getPair(WAVAX, hcashAddr, true),
     ]);
-    let stable, pairAddr;
-    if (pT.toLowerCase() === HCASH_LP_ADDR.toLowerCase())       { stable = true;  pairAddr = pT; }
-    else if (pF.toLowerCase() === HCASH_LP_ADDR.toLowerCase())  { stable = false; pairAddr = pF; }
-    else { throw new Error(`LP not found in factory. Got volatile:${pF.slice(0,10)} stable:${pT.slice(0,10)}`); }
-    console.log('[hCASH] stable:', stable, 'pair:', pairAddr);
+    let stable;
+    if (pairTrue !== ethers.ZeroAddress)       stable = true;
+    else if (pairFalse !== ethers.ZeroAddress) stable = false;
+    else throw new Error('No pool found for WAVAX/hCASH in Pharaoh factory');
+    console.log('[POOL]', { stable, pairFalse, pairTrue });
 
-    // 2. Calculate AVAX amount (handle WAVAX input mode)
-    let avaxWei;
-    const hcashDec = Number(await hcashTok.decimals().catch(()=>18));
-    if (inputMode === 'wavax') {
-      // User is using WAVAX directly — same wei amount
-      avaxWei = ethers.parseEther(String(amtRaw));
-    } else {
-      avaxWei = ethers.parseEther(String(amtRaw));
-    }
-
-    // 3. Get exact hCASH amount from router quote
+    // 2. Amounts
+    const avaxWei  = ethers.parseEther(String(amtRaw));
+    const hcashDec = Number(await hcash.decimals().catch(()=>18));
     let hcashWei;
-    try {
-      const bigDes = ethers.parseUnits('999999999', hcashDec);
-      const q = await router.quoteAddLiquidity(WAVAX_ADDR, hcashAddr, stable, PHARAOH_FACTORY_ADDR, avaxWei, bigDes);
-      hcashWei = q[1];
-      console.log('[hCASH] quote ok — hcash:', ethers.formatUnits(hcashWei, hcashDec));
-    } catch(qErr) {
-      // Fallback: reserve ratio
-      const lp = new ethers.Contract(HCASH_LP_ADDR, ['function getReserves() view returns (uint256,uint256,uint256)','function token0() view returns (address)'], prov);
-      const [res, t0] = await Promise.all([lp.getReserves(), lp.token0()]);
-      const isWavaxT0 = t0.toLowerCase() === WAVAX_ADDR.toLowerCase();
-      hcashWei = avaxWei * (isWavaxT0 ? res[1] : res[0]) / (isWavaxT0 ? res[0] : res[1]);
-      console.warn('[hCASH] quote fallback — hcash:', ethers.formatUnits(hcashWei, hcashDec));
-    }
 
-    // 4. Check hCASH balance
-    const hcashBal = await hcashTok.balanceOf(posAddress);
-    if (hcashBal < hcashWei) {
+    if (statusEl) statusEl.innerHTML = '<span class="spin"></span> Quoting optimal ratio…';
+    try {
+      const big = ethers.parseUnits('999999999', hcashDec);
+      const q   = await router.quoteAddLiquidity(WAVAX, hcashAddr, stable, FACTORY, avaxWei, big);
+      hcashWei  = q[1] * 101n / 100n; // +1% buffer
+    } catch(e) {
+      console.warn('[Quote failed] fallback to reserves:', e.message);
+      const lp = new ethers.Contract(addr(HCASH_LP_ADDR), [
+        'function getReserves() view returns (uint256,uint256,uint256)',
+        'function token0() view returns (address)',
+      ], prov);
+      const [res, t0] = await Promise.all([lp.getReserves(), lp.token0()]);
+      const isWavaxT0 = t0.toLowerCase() === WAVAX.toLowerCase();
+      const wavaxRes  = isWavaxT0 ? res[0] : res[1];
+      const hcashRes  = isWavaxT0 ? res[1] : res[0];
+      hcashWei = avaxWei * hcashRes / wavaxRes * 101n / 100n;
+    }
+    console.log('[AMOUNTS]', { avax: ethers.formatEther(avaxWei), hcash: ethers.formatUnits(hcashWei, hcashDec), stable });
+
+    // 3. Balance check
+    const bal = await hcash.balanceOf(posAddress);
+    if (bal < hcashWei) {
       const need = parseFloat(ethers.formatUnits(hcashWei, hcashDec)).toFixed(4);
-      const have = parseFloat(ethers.formatUnits(hcashBal, hcashDec)).toFixed(4);
-      showAppNotif(`Need ${need} hCASH, you have ${have}. Swap some in the Swap tab first.`, 'warn');
+      const have = parseFloat(ethers.formatUnits(bal, hcashDec)).toFixed(4);
+      showAppNotif(`Need ${need} hCASH, you have ${have}. Swap more first.`, 'warn');
       return;
     }
 
-    // 5. Approve hCASH
-    const allowed = await hcashTok.allowance(posAddress, PHARAOH_ROUTER_ADDR);
-    if (allowed < hcashWei) {
+    // 4. Approve
+    const allowance = await hcash.allowance(posAddress, ROUTER);
+    if (allowance < hcashWei) {
       if (statusEl) statusEl.innerHTML = '<span class="spin"></span> 1/2 — Approving hCASH… confirm in wallet';
-      const appTx = await hcashTok.approve(PHARAOH_ROUTER_ADDR, ethers.MaxUint256);
-      await appTx.wait();
+      await (await hcash.approve(ROUTER, ethers.MaxUint256)).wait();
     }
 
-    // 6. addLiquidityAVAX (WAVAX mode: wrap first then addLiquidity)
-    let tx;
-    if (inputMode === 'wavax') {
-      // User has WAVAX — approve WAVAX and use addLiquidity(WAVAX, hCASH)
-      const wavaxTok = new ethers.Contract(WAVAX_ADDR, WAVAX_ABI, posSigner);
-      const wAllowed = await wavaxTok.allowance(posAddress, PHARAOH_ROUTER_ADDR);
-      if (wAllowed < avaxWei) {
-        if (statusEl) statusEl.innerHTML = '<span class="spin"></span> 1/2 — Approving WAVAX… confirm in wallet';
-        await (await wavaxTok.approve(PHARAOH_ROUTER_ADDR, ethers.MaxUint256)).wait();
-      }
-      if (statusEl) statusEl.innerHTML = `<span class="spin"></span> 2/2 — Adding liquidity (WAVAX + hCASH, ${stable?'stable':'volatile'})… confirm`;
-      tx = await router.addLiquidity(
-        WAVAX_ADDR, hcashAddr, stable,
-        avaxWei, hcashWei, 0n, 0n,
-        posAddress, Math.floor(Date.now()/1000)+1800,
-        { gasLimit: 600000n }
-      );
-    } else {
-      // AVAX — router wraps internally
-      if (statusEl) statusEl.innerHTML = `<span class="spin"></span> 2/2 — Adding liquidity (AVAX + hCASH, ${stable?'stable':'volatile'})… confirm`;
-      tx = await router.addLiquidityAVAX(
-        hcashAddr, stable,
-        hcashWei, 0n, 0n,
-        posAddress, Math.floor(Date.now()/1000)+1800,
-        { value: avaxWei, gasLimit: 600000n }
-      );
-    }
-
+    // 5. addLiquidityAVAX (atomic — router handles everything internally)
+    if (statusEl) statusEl.innerHTML = '<span class="spin"></span> 2/2 — Adding liquidity… confirm in wallet';
+    const minToken = hcashWei * 99n / 100n;
+    const minAvax  = avaxWei  * 99n / 100n;
+    const tx = await router.addLiquidityAVAX(
+      hcashAddr, stable, hcashWei, minToken, minAvax,
+      posAddress, Math.floor(Date.now()/1000) + 1800,
+      { value: avaxWei }
+    );
     if (statusEl) statusEl.innerHTML = `<span class="spin"></span> Confirming… <a href="https://snowtrace.io/tx/${tx.hash}" target="_blank" style="color:var(--acc)">${shortA(tx.hash)} ↗</a>`;
     await tx.wait();
+
     const quip = SUCCESS_QUIPS[Math.floor(Math.random()*SUCCESS_QUIPS.length)];
     if (statusEl) statusEl.innerHTML = `<span style="color:var(--grn)">✅ ${quip} <a href="https://snowtrace.io/tx/${tx.hash}" target="_blank" style="color:var(--acc)">${shortA(tx.hash)} ↗</a></span>`;
     showTxToast(true, '💧 Liquidity added!', 'WAVAX/hCASH LP tokens in your wallet.', tx.hash);
     setTimeout(()=>{ hcashLoadBalances(); const el=document.getElementById('hcashTab_stakelp'); if(el)hcashTab('stakelp',el); }, 2500);
 
   } catch(e) {
+    console.error('[hcashAddLiquidity]', e);
     let msg = e.reason || e.shortMessage || e.message || String(e);
     const isReject = msg.includes('user rejected') || msg.includes('ACTION_REJECTED');
-    if (isReject) {
-      showAppNotif(REJECT_QUIPS[Math.floor(Math.random()*REJECT_QUIPS.length)], 'info');
-    } else {
-      if (msg.length > 220) msg = msg.slice(0, 220) + '…';
-      showTxToast(false, FAIL_QUIPS[Math.floor(Math.random()*FAIL_QUIPS.length)], msg);
-    }
+    if (isReject) { showAppNotif(REJECT_QUIPS[Math.floor(Math.random()*REJECT_QUIPS.length)], 'info'); }
+    else { if(msg.length>220) msg=msg.slice(0,220)+'…'; showTxToast(false, FAIL_QUIPS[Math.floor(Math.random()*FAIL_QUIPS.length)], msg); }
     if (statusEl) statusEl.innerHTML = `<span style="color:${isReject?'var(--gld)':'var(--red)'}">${isReject?REJECT_QUIPS[0]:msg} — <button onclick="document.getElementById('hcashAddStatus').innerHTML=''" style="background:none;border:none;color:var(--acc);cursor:pointer;font-family:'DM Mono',monospace;font-size:.65rem">Dismiss</button></span>`;
   }
 }
 
+
+function hcashCalcLpPts() {
+  const amt  = parseFloat(document.getElementById('hcashStakeAmt')?.value)||0;
+  const el   = document.getElementById('hcashStakePreview');
+  if (!el) return;
+  if (!amt)  { el.textContent=''; return; }
+  const days = {stake:0,lock90:90,lock180:180,lock365:365}[hcashStakeMethod||'stake']||0;
+  const mult = hcashStakeMethod==='stake' ? 1 : lockM(days);
+  el.textContent = `${mult}× multiplier · lock for ${days||'0'} days`;
+}
 
 async function hcashStakeLp() {
   if (!posSigner) return;
