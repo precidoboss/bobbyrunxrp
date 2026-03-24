@@ -2053,8 +2053,12 @@ function navToMoat(addr) {
 
 function backToMoats() {
   document.querySelectorAll('.view').forEach(x=>x.classList.remove('on'));
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));
   document.getElementById('view-moats').classList.add('on');
+  const moatsTab = document.querySelector('[data-v="moats"]');
+  if (moatsTab) moatsTab.classList.add('on');
   activeMoat = null;
+  window.scrollTo({top:0,behavior:'smooth'});
 }
 
 function closeMoatModal() {
@@ -2084,7 +2088,7 @@ function renderMoatDetail(addr,silent=false){
       </div>
       <div style="display:flex;gap:6px;flex-wrap:wrap">
         ${meta.url?`<a href="${meta.url}" target="_blank" class="btn btn-sm btn-g" style="text-decoration:none">View on Moats ↗</a>`:''}
-        <button class="btn btn-sm btn-p" onclick="hideMoatDetail()">✕ Close</button>
+        <button class="btn btn-sm btn-p" onclick="backToMoats()">✕ Close</button>
       </div>
     </div>`;
   const totPts=allPts.reduce((s,p)=>s+p.points,0);
@@ -2189,11 +2193,7 @@ function renderMoatDetail(addr,silent=false){
 }
 
 function hideMoatDetail(){
-  const detail = document.getElementById('moatDetail');
-  if(detail) detail.classList.add('hidden');
-  activeMoat = null;
-  // Re-render the moat grid so it's not blank
-  if(typeof renderMoats === 'function') renderMoats();
+  backToMoats();
 }
 
 function buildMoatDetailChart(addr){
@@ -6107,7 +6107,7 @@ async function posOpenDetail(moatAddr) {
   const myPts   = Math.max(data.pts, apiPts);
   const myRank  = mSorted.length ? mSorted.findIndex(w=>w.points<=myPts)+1 : '?';
   const myShare = m.totalPoints ? (myPts/m.totalPoints*100).toFixed(3) : '0';
-  const isLP    = meta?.lpOnly;
+  const isLP    = moatAddr === HCASH_MOAT_ADDR; // hCASH is the LP moat
 
   container.innerHTML = `
   <!-- Hero -->
@@ -6685,12 +6685,14 @@ async function posSwapQuote() {
     if(outEl) outEl.textContent = fmtFull(amtOut) + ' ' + meta.ticker;
     const minRec = (Number(route.amountOut) / Math.pow(10, decOut) * (1-posSwapSlippage/100));
     if(routeEl) routeEl.innerHTML = `via <b style="color:var(--acc)">${route.dex}</b> · min: ${fmtFull(minRec)} · ${posSwapSlippage}% slip`;
-    if(swapBtn) swapBtn.style.display = posAddress ? 'block' : 'none';
+    if(swapBtn) swapBtn.style.display = (posAddress || cmAddress) ? 'block' : 'none';
   }, 600);
 }
 
 async function posExecuteSwap(moatAddr) {
-  if (!posSigner || !posSwapRouteData) return;
+  const activeSigner  = posSigner || cmSigner;
+  const activeAddress = posAddress || cmAddress;
+  if (!activeSigner || !posSwapRouteData) return;
   const { route, amountInWei, tokenIn, decimalsOut, tok, meta } = posSwapRouteData;
   const statusEl = document.getElementById('posSwapStatus');
   const btn = document.getElementById('posSwapBtn');
@@ -6699,7 +6701,7 @@ async function posExecuteSwap(moatAddr) {
 
   try {
     const swapResult = await cmSmartSwap(
-      posSigner, tokenIn, meta.tokenAddr, amountInWei, posAddress,
+      activeSigner, tokenIn, meta.tokenAddr, amountInWei, activeAddress,
       tok==='avax'?18:6, decimalsOut, meta.ticker,
       '__posswap__' // dummy step id — we handle status ourselves
     );
