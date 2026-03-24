@@ -6107,7 +6107,7 @@ async function posOpenDetail(moatAddr) {
   const myPts   = Math.max(data.pts, apiPts);
   const myRank  = mSorted.length ? mSorted.findIndex(w=>w.points<=myPts)+1 : '?';
   const myShare = m.totalPoints ? (myPts/m.totalPoints*100).toFixed(3) : '0';
-  const isLP    = moatAddr === HCASH_MOAT_ADDR; // hCASH is the LP moat
+  const isLP    = moatAddr.toLowerCase() === '0x501f6e7bec3db63d8dacbc9fa0ce42d5d2329d53';
 
   container.innerHTML = `
   <!-- Hero -->
@@ -6554,7 +6554,7 @@ async function posOpenDetail(moatAddr) {
 
   // Init swap UI or hCASH balances
   if (!isLP && addr) posUpdateSwapBal();
-  if (isLP && moatAddr === HCASH_MOAT_ADDR) {
+  if (isLP) {
     hcashLoadBalances();
     setTimeout(hcashLoadBalances, 800);
     setTimeout(()=>hcashUpdateLpBals(document.getElementById('hcashLpInputMode')?.value||'avax'), 900);
@@ -6683,9 +6683,9 @@ async function posSwapQuote() {
     const amtOut = Number(route.amountOut) / Math.pow(10, decimalsOut);
     posSwapRouteData = { route, amountInWei, tokenIn, decimalsIn, decimalsOut, tok, meta };
     if(outEl) outEl.textContent = fmtFull(amtOut) + ' ' + meta.ticker;
-    const minRec = (Number(route.amountOut) / Math.pow(10, decOut) * (1-posSwapSlippage/100));
-    if(routeEl) routeEl.innerHTML = `via <b style="color:var(--acc)">${route.dex}</b> · min: ${fmtFull(minRec)} · ${posSwapSlippage}% slip`;
-    if(swapBtn) swapBtn.style.display = (posAddress || cmAddress) ? 'block' : 'none';
+    const minRec = (amtOut * (1 - posSwapSlippage/100));
+    if(routeEl) routeEl.innerHTML = `via <b style="color:var(--acc)">${route.dex}</b> · min: ${fmtFull(minRec)} ${meta.ticker} · ${posSwapSlippage}% slip`;
+    if(swapBtn) swapBtn.style.display = (posAddress || posViewAddr || cmAddress) ? 'block' : 'none';
   }, 600);
 }
 
