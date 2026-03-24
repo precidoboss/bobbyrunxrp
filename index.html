@@ -7019,18 +7019,19 @@ async function hcashAddLiquidity() {
   const statusEl = document.getElementById('hcashAddStatus');
 
   try {
-    const addr    = (a) => ethers.getAddress(a);
-    const hcashAddr = addr(await resolveHcashToken());
-    const WAVAX   = addr(WAVAX_ADDR);
-    const FACTORY = addr(PHARAOH_FACTORY_ADDR);
-    const ROUTER  = addr(PHARAOH_ROUTER_ADDR);
+    const ga      = (a) => ethers.getAddress(a);
+    const hcashAddr = ga(await resolveHcashToken());
+    const WAVAX   = ga(WAVAX_ADDR);
+    const FACTORY = ga(PHARAOH_FACTORY_ADDR);
+    const ROUTER  = ga(PHARAOH_ROUTER_ADDR);
 
-    const prov    = posProvider || new ethers.JsonRpcProvider(AVAX_RPC);
+    const prov    = posProvider || cmProvider || new ethers.JsonRpcProvider(AVAX_RPC);
     const factory = new ethers.Contract(FACTORY, PHARAOH_FACTORY_ABI, prov);
     const router  = new ethers.Contract(ROUTER, PHARAOH_ROUTER_ABI, posSigner);
     const hcash   = new ethers.Contract(hcashAddr, ERC20_ABI, posSigner);
+    const wavax   = new ethers.Contract(WAVAX, WAVAX_ABI, posSigner);
 
-    // 1. Detect pool
+    // 1. Detect pool stable flag
     if (statusEl) statusEl.innerHTML = '<span class="spin"></span> Detecting pool…';
     const [pairFalse, pairTrue] = await Promise.all([
       factory.getPair(WAVAX, hcashAddr, false),
@@ -7039,58 +7040,74 @@ async function hcashAddLiquidity() {
     let stable;
     if (pairTrue !== ethers.ZeroAddress)       stable = true;
     else if (pairFalse !== ethers.ZeroAddress) stable = false;
-    else throw new Error('No pool found for WAVAX/hCASH in Pharaoh factory');
+    else throw new Error('No WAVAX/hCASH pool found in Pharaoh factory');
     console.log('[POOL]', { stable, pairFalse, pairTrue });
 
-    // 2. Amounts
+    // 2. Amounts — use reserve ratio (same as phar.gg shows)
     const avaxWei  = ethers.parseEther(String(amtRaw));
     const hcashDec = Number(await hcash.decimals().catch(()=>18));
     let hcashWei;
 
-    if (statusEl) statusEl.innerHTML = '<span class="spin"></span> Quoting optimal ratio…';
+    if (statusEl) statusEl.innerHTML = '<span class="spin"></span> Getting pool ratio…';
     try {
       const big = ethers.parseUnits('999999999', hcashDec);
-      // V1 router: no factory param
       const q   = await router.quoteAddLiquidity(WAVAX, hcashAddr, stable, avaxWei, big);
-      hcashWei  = q[1] * 101n / 100n; // +1% buffer
+      hcashWei  = q[1];
+      console.log('[QUOTE]', ethers.formatEther(q[0]), 'WAVAX,', ethers.formatUnits(q[1], hcashDec), 'hCASH');
     } catch(e) {
-      console.warn('[Quote failed] fallback to reserves:', e.message);
-      const lp = new ethers.Contract(addr(HCASH_LP_ADDR), [
+      console.warn('[Quote failed] using reserves:', e.message);
+      const lp = new ethers.Contract(ga(HCASH_LP_ADDR), [
         'function getReserves() view returns (uint256,uint256,uint256)',
         'function token0() view returns (address)',
       ], prov);
       const [res, t0] = await Promise.all([lp.getReserves(), lp.token0()]);
       const isWavaxT0 = t0.toLowerCase() === WAVAX.toLowerCase();
-      const wavaxRes  = isWavaxT0 ? res[0] : res[1];
-      const hcashRes  = isWavaxT0 ? res[1] : res[0];
-      hcashWei = avaxWei * hcashRes / wavaxRes * 101n / 100n;
+      hcashWei = avaxWei * (isWavaxT0 ? res[1] : res[0]) / (isWavaxT0 ? res[0] : res[1]);
     }
-    console.log('[AMOUNTS]', { avax: ethers.formatEther(avaxWei), hcash: ethers.formatUnits(hcashWei, hcashDec), stable });
+    console.log('[AMOUNTS]', ethers.formatEther(avaxWei), 'WAVAX +', ethers.formatUnits(hcashWei, hcashDec), 'hCASH, stable:', stable);
 
-    // 3. Balance check
-    const bal = await hcash.balanceOf(posAddress);
-    if (bal < hcashWei) {
-      const need = parseFloat(ethers.formatUnits(hcashWei, hcashDec)).toFixed(4);
-      const have = parseFloat(ethers.formatUnits(bal, hcashDec)).toFixed(4);
-      showAppNotif(`Need ${need} hCASH, you have ${have}. Swap more first.`, 'warn');
+    // 3. Balance checks
+    const [wavaxBal, hcashBal] = await Promise.all([wavax.balanceOf(posAddress), hcash.balanceOf(posAddress)]);
+    if (hcashBal < hcashWei) {
+      showAppNotif(`Need ${parseFloat(ethers.formatUnits(hcashWei,hcashDec)).toFixed(4)} hCASH, have ${parseFloat(ethers.formatUnits(hcashBal,hcashDec)).toFixed(4)}. Swap more first.`, 'warn');
       return;
     }
 
-    // 4. Approve
-    const allowance = await hcash.allowance(posAddress, ROUTER);
-    if (allowance < hcashWei) {
-      if (statusEl) statusEl.innerHTML = '<span class="spin"></span> 1/2 — Approving hCASH… confirm in wallet';
+    // 4. Wrap AVAX → WAVAX if needed (phar.gg uses WAVAX, not native AVAX)
+    if (wavaxBal < avaxWei) {
+      const needed = avaxWei - wavaxBal;
+      if (statusEl) statusEl.innerHTML = '<span class="spin"></span> 1/4 — Wrapping AVAX → WAVAX… confirm';
+      await (await wavax.deposit({ value: needed, gasLimit: 60000n })).wait();
+    }
+
+    // 5. Approve WAVAX for router
+    const wavaxAllowance = await wavax.allowance(posAddress, ROUTER);
+    if (wavaxAllowance < avaxWei) {
+      if (statusEl) statusEl.innerHTML = '<span class="spin"></span> 2/4 — Approving WAVAX… confirm';
+      await (await wavax.approve(ROUTER, ethers.MaxUint256)).wait();
+    }
+
+    // 6. Approve hCASH for router
+    const hcashAllowance = await hcash.allowance(posAddress, ROUTER);
+    if (hcashAllowance < hcashWei) {
+      if (statusEl) statusEl.innerHTML = '<span class="spin"></span> 3/4 — Approving hCASH… confirm';
       await (await hcash.approve(ROUTER, ethers.MaxUint256)).wait();
     }
 
-    // 5. addLiquidityAVAX (atomic — router handles everything internally)
-    if (statusEl) statusEl.innerHTML = '<span class="spin"></span> 2/2 — Adding liquidity… confirm in wallet';
-    const minToken = hcashWei * 99n / 100n;
-    const minAvax  = avaxWei  * 99n / 100n;
-    const tx = await router.addLiquidityAVAX(
-      hcashAddr, stable, hcashWei, minToken, minAvax,
-      posAddress, Math.floor(Date.now()/1000) + 1800,
-      { value: avaxWei }
+    // 7. addLiquidity(WAVAX, hCASH) — exactly what phar.gg does
+    if (statusEl) statusEl.innerHTML = '<span class="spin"></span> 4/4 — Adding liquidity… confirm in wallet';
+    const minWavax = avaxWei  * 99n / 100n;
+    const minHcash = hcashWei * 99n / 100n;
+    const tx = await router.addLiquidity(
+      WAVAX,
+      hcashAddr,
+      stable,
+      avaxWei,
+      hcashWei,
+      minWavax,
+      minHcash,
+      posAddress,
+      Math.floor(Date.now()/1000) + 1800
     );
     if (statusEl) statusEl.innerHTML = `<span class="spin"></span> Confirming… <a href="https://snowtrace.io/tx/${tx.hash}" target="_blank" style="color:var(--acc)">${shortA(tx.hash)} ↗</a>`;
     await tx.wait();
