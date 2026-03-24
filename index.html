@@ -1423,7 +1423,7 @@ const DSC_PAIR = 'https://api.dexscreener.com/latest/dex/pairs/avalanche/';
 
 const MOATS = {
   '0xcf65744c955a292d11de2a4184e9fabedbfc7b40':{name:'HEFE Moat',         short:'HEFE',  ticker:'$hefe',    emoji:'🏔️',color:'#f97316',tokenAddr:'0xcf65744c955a292d11de2a4184e9fabedbfc7b40',  pairAddr:'0xe11e871d312cc9bae9eb24c7bdc2031f8453bf44', altPairAddr:'0xc4fa66b4839af7379a4fcbe5dd048b18fe99a2ac', url:'https://moats.app/moat/0xcf65744c955a292d11de2a4184e9fabedbfc7b40',   logo:'Hefelogo-new.png',              knownSupply:690420000},
-  '0x501f6e7bec3db63d8dacbc9fa0ce42d5d2329d53':{name:'hCASH LP Moat',     short:'hCASH', ticker:'$hcash',   emoji:'💧', color:'#d4a843',tokenAddr:'0x501f6e7bec3db63d8dacbc9fa0ce42d5d2329d53',  pairAddr:'0x8f961980518bc9ab302948de7948580666dc35d9',  url:'https://moats.app/moat/0x501f6e7bec3db63d8dacbc9fa0ce42d5d2329d53',   logo:'hashcashclub.png',   supplyType:'dynamic',knownSupply:21000000000,note:'LP NFT moat — Pharaoh liquidity positions are staked/locked, not raw tokens',lpOnly:true,lpUrl:'https://phar.gg'},
+  '0x501f6e7bec3db63d8dacbc9fa0ce42d5d2329d53':{name:'hCASH LP Moat',     short:'hCASH', ticker:'$hcash',   emoji:'💧', color:'#d4a843',tokenAddr:'0x8f961980518bc9ab302948de7948580666dc35d9',  pairAddr:'0x8f961980518bc9ab302948de7948580666dc35d9',  url:'https://moats.app/moat/0x501f6e7bec3db63d8dacbc9fa0ce42d5d2329d53',   logo:'hashcashclub.png',   supplyType:'dynamic',knownSupply:21000000000,note:'LP token moat — add AVAX+hCASH liquidity on Pharaoh, then stake LP here',lpOnly:false,lpUrl:'https://phar.gg'},
   '0x020c73b55d139d5e259bad89b126f2a446c22ac6':{name:'FREAK Anon Moat',   short:'FREAK', ticker:'$freak',   emoji:'👾', color:'#8c8074',tokenAddr:'0x020c73b55d139d5e259bad89b126f2a446c22ac6',  pairAddr:'0x90c2ea98d6389cc4eb05ec635ee82c493b2dfaf2', dexOverride:'pharaoh', pharaohPool:true, url:'https://moats.app/moat/0x020c73b55d139d5e259bad89b126f2a446c22ac6',   logo:'FREAK_Anon.png',                knownSupply:1000000000},
   '0x7e1f28c9622aa68001fe0b200f5e5f93f6b35cc9':{name:'Balln Chikn Moat', short:'BALLN', ticker:'$balln',   emoji:'🏀', color:'#f43f5e',tokenAddr:'0x4Afc7838167b77530278483c3d8c1fFe698a912E',  pairAddr:'0xa8f87e026481cf03dc9a68570584a664186b41c7', url:'https://moats.app/moat/0x7e1f28c9622aa68001fe0b200f5e5f93f6b35cc9',    logo:'balln-token.jpg',               knownSupply:100000},
   '0x464b2817f16f6117602ad05bae446c2fc5ba6fb7':{name:'Supercycle Moat',   short:'SUPER', ticker:'$super',   emoji:'🌀', color:'#818cf8',tokenAddr:'0xCA2e0f72653337d05B1ABceBEA5718A4A3E57a0b',  pairAddr:'0x017c5608a8ab29ab23093726cf7c64e5ef88e191', url:'https://moats.app/moat/0x464b2817f16f6117602ad05bae446c2fc5ba6fb7',    logo:'supercycle.jpg',                knownSupply:10000000000},
@@ -1455,6 +1455,18 @@ Object.values(MOATS).forEach(m => {
 
 // Zephyr username registry endpoint
 const ZEPHYR_API = 'https://zephyr.jankystudios.xyz/api/usernames';
+
+// Known profiles — wallet → {pic, twitter}
+// Add entries here: wallet address lowercase → profile data
+const KNOWN_PROFILES = {
+  // Format: '0xwallet...': { pic: 'https://...image.jpg', twitter: 'username' }
+  // Example (replace with real data when provided):
+  // '0xabc123...': { pic: 'https://pbs.twimg.com/profile_images/xxx/photo.jpg', twitter: 'cryptouser' },
+};
+
+function getKnownProfile(wallet) {
+  return KNOWN_PROFILES[wallet?.toLowerCase()] || null;
+}
 
 // ── STATE ──
 
@@ -2176,7 +2188,13 @@ function renderMoatDetail(addr,silent=false){
   if(!silent) window.scrollTo({top:0,behavior:'smooth'});
 }
 
-function hideMoatDetail(){document.getElementById('moatDetail').classList.add('hidden');activeMoat=null;}
+function hideMoatDetail(){
+  const detail = document.getElementById('moatDetail');
+  if(detail) detail.classList.add('hidden');
+  activeMoat = null;
+  // Re-render the moat grid so it's not blank
+  if(typeof renderMoats === 'function') renderMoats();
+}
 
 function buildMoatDetailChart(addr){
   const ctx=document.getElementById('cMoatDetail'); if(!ctx)return;
@@ -2200,6 +2218,7 @@ function buildMoatLB(addr){
   tb.innerHTML=m.sorted.map((p,i)=>{
     const w=getWallet(p),share=m.totalPoints?(p.points/m.totalPoints*100).toFixed(2):'0';
     const muname = zephyrNames[w] || '';
+    const mProf = getKnownProfile(w);
     return `<tr><td>${rb(i+1)}</td>
       <td>${muname ? '<div class=\"zname\">'+muname+'</div>' : ''}
       <span class="wa" onclick="gotoW('${w}')">${shortA(w)}</span></td>
@@ -2782,6 +2801,7 @@ function renderLB(){
   tb.innerHTML=sw.slice(0,100).map((w,i)=>{
     const mult=cMult(w.moatCount),cs=Math.round(w.totalPoints*mult),sh=tot?(w.totalPoints/tot*100).toFixed(3):'0';
     const uname = w.username || zephyrNames[w.wallet] || '';
+    const knownProf = getKnownProfile(w.wallet);
     const unameHtml = uname ? '<div class="zname">'+uname+'</div>' : '';
     return `<tr>
       <td>${rb(i+1)}</td>
@@ -4677,18 +4697,21 @@ const LFJ_V1_ABI = [
 // Comprehensive path list for Avalanche tokens
 function buildPaths(tokenIn, tokenOut, isNative) {
   const inp = isNative ? WAVAX_ADDR : tokenIn;
+  const tOut = tokenOut.toLowerCase();
+  const tIn  = inp.toLowerCase();
   // All meaningful paths — WAVAX is hub for most Avax small-caps
-  return [
+  const allPaths = [
     [inp, tokenOut],                           // direct
     [inp, WAVAX_ADDR, tokenOut],               // via WAVAX
     [inp, USDC_ADDR, WAVAX_ADDR, tokenOut],    // USDC→WAVAX→token
     [inp, USDC_ADDR, tokenOut],                // direct via USDC
     [inp, WAVAX_ADDR, USDC_ADDR, tokenOut],    // WAVAX→USDC→token
-  ].filter((p, i, arr) => {
-    // dedupe and remove paths where tokenIn === tokenOut in path
+  ];
+  return allPaths.filter((p, i, arr) => {
     const key = p.map(x=>x.toLowerCase()).join(',');
     return arr.findIndex(q=>q.map(x=>x.toLowerCase()).join(',')===key)===i
-      && !p.slice(1,-1).includes(tokenOut) && !p.slice(1,-1).includes(inp);
+      && !p.slice(1,-1).map(x=>x.toLowerCase()).includes(tOut)
+      && !p.slice(1,-1).map(x=>x.toLowerCase()).includes(tIn);
   });
 }
 
@@ -5157,6 +5180,7 @@ function cmRenderLeaderboard() {
   const ecoTot = allPts.reduce((s,p)=>s+p.points,0);
   el.innerHTML = sw.map((w,i) => {
     const uname = w.username || zephyrNames[w.wallet] || '';
+    const knownProf = getKnownProfile(w.wallet);
     const mult = cMult(w.moatCount), cs = Math.round(w.totalPoints*mult);
     return `<div class="cm-target-card" data-addr="${w.wallet}" onclick="cmLoadTarget('${w.wallet}')">
       <div style="display:flex;align-items:center;gap:5px;flex-shrink:0">
@@ -6384,7 +6408,10 @@ async function posOpenDetail(moatAddr) {
           <span style="font-family:'DM Mono',monospace;font-size:.58rem;color:var(--mut)" id="posSwapRoute">—</span>
         </div>
         <div style="display:flex;align-items:center;gap:8px">
-          <div id="posSwapOut" style="flex:1;font-family:'Chakra Petch',sans-serif;font-size:1.4rem;font-weight:700;color:var(--acc)">—</div>
+          <div>
+            <div id="posSwapOut" style="font-family:'Chakra Petch',sans-serif;font-size:1.4rem;font-weight:700;color:var(--acc)">—</div>
+            <div id="posSwapOutDetail" style="font-family:'DM Mono',monospace;font-size:.55rem;color:var(--dim);margin-top:2px"></div>
+          </div>
           <div style="background:var(--card);border:1px solid var(--bor);border-radius:7px;padding:5px 10px;font-family:'DM Mono',monospace;font-size:.7rem;color:${col};flex-shrink:0">
             ${logoImg(meta?.logo,'moat-logo-sm',meta?.emoji,col).replace(/style="[^"]*"/,'')} ${meta?.ticker}
           </div>
@@ -6656,7 +6683,8 @@ async function posSwapQuote() {
     const amtOut = Number(route.amountOut) / Math.pow(10, decimalsOut);
     posSwapRouteData = { route, amountInWei, tokenIn, decimalsIn, decimalsOut, tok, meta };
     if(outEl) outEl.textContent = fmtFull(amtOut) + ' ' + meta.ticker;
-    if(routeEl) routeEl.textContent = 'via ' + route.dex + ' · ' + posSwapSlippage + '% slippage';
+    const minRec = (Number(route.amountOut) / Math.pow(10, decOut) * (1-posSwapSlippage/100));
+    if(routeEl) routeEl.innerHTML = `via <b style="color:var(--acc)">${route.dex}</b> · min: ${fmtFull(minRec)} · ${posSwapSlippage}% slip`;
     if(swapBtn) swapBtn.style.display = posAddress ? 'block' : 'none';
   }, 600);
 }
@@ -7344,7 +7372,8 @@ async function hswapQuote() {
     const tokenOutName = isFromAvax ? 'hCASH' : 'AVAX';
 
     if(toAmtEl)  toAmtEl.textContent  = amtOutFmt + ' ' + tokenOutName;
-    if(routeEl)  routeEl.textContent  = 'via ' + route.dex;
+    const minRec2 = (amtOut * (1-hswapSlippage/100)).toFixed(6);
+    if(routeEl)  routeEl.innerHTML = `via <b style="color:var(--acc)">${route.dex}</b> · min: ${minRec2}`;
     if(detailEl) detailEl.style.display = 'block';
     setTxt('hswapDetailRoute', route.dex);
     setTxt('hswapDetailMin',   minReceived + ' ' + tokenOutName);
@@ -7527,8 +7556,16 @@ async function posRunTx(statusId, fn, successMsg) {
       const shortPart = msg.slice(0, msg.indexOf('(action') > 0 ? msg.indexOf('(action') : 200);
       msg = shortPart.trim() || 'Transaction failed';
     }
-    const isReject = msg.includes('user rejected') || msg.includes('ACTION_REJECTED') || msg.includes('User denied');
+    const isReject = msg.includes('user rejected') || msg.includes('ACTION_REJECTED') || msg.includes('User denied') || msg.includes('rejected the request');
+    const isAlreadyPending = msg.includes('already known') || msg.includes('nonce too low') || msg.includes('replacement transaction');
     const isRevert = msg.includes('execution reverted') || msg.includes('estimateGas') || msg.includes('CALL_EXCEPTION');
+    if (isAlreadyPending) {
+      // Tx was already submitted (e.g. Rabby reload) — just wait for it
+      msg = 'Transaction already submitted — check your wallet activity for status.';
+      showAppNotif(msg, 'info', 6000);
+      if (el) el.innerHTML = `<span style="color:var(--gld)">⏳ ${msg}</span>`;
+      return;
+    }
     if (isReject) {
       msg = REJECT_QUIPS[Math.floor(Math.random() * REJECT_QUIPS.length)];
       showAppNotif(msg, 'info', 3500);
