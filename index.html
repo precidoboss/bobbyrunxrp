@@ -6614,7 +6614,7 @@ async function posOpenDetail(moatAddr) {
           <button onclick="document.getElementById('stakeAmt').value='${data.wBal.toFixed(6)}';posCalcPoints('stake','${data.wBal}','${moatAddr}')" class="btn btn-sm btn-g">MAX</button>
         </div>
         <div id="stakePreview" style="font-family:'DM Mono',monospace;font-size:.65rem;color:var(--acc);margin-bottom:.7rem"></div>
-        ${canManage ? `<button class="btn" style="width:100%" onclick="posDoStake('${moatAddr}')">🔒 Stake Now</button>` : '<div style="font-family:'DM Mono',monospace;font-size:.65rem;color:var(--mut);text-align:center">Connect wallet to stake</div>'}
+        ${canManage ? `<button class="btn" style="width:100%" onclick="posDoStake('${moatAddr}')">🔒 Stake Now</button>` : `<div style="font-family:'DM Mono',monospace;font-size:.65rem;color:var(--mut);text-align:center">Connect wallet to stake</div>`}
         <div id="stakeStatus" style="font-family:'DM Mono',monospace;font-size:.65rem;color:var(--mut);text-align:center;margin-top:.4rem"></div>
       </div>
 
