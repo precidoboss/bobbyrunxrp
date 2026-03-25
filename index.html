@@ -1013,7 +1013,7 @@ main{position:relative;z-index:1;padding:.8rem;max-width:1440px;margin:0 auto}
   <div class="sh"><div class="sh-t">Features at a Glance</div></div>
   <div style="display:flex;flex-direction:column;gap:.55rem;margin-bottom:1rem">
     <div style="background:var(--card);border:1px solid var(--bor);border-radius:10px;padding:.85rem;display:flex;gap:11px"><div style="font-family:'DM Mono',monospace;font-size:.6rem;color:var(--acc);white-space:nowrap;min-width:105px">🏦 My Positions</div><div style="font-size:.75rem;color:var(--dim);line-height:1.6">Connect your wallet to see all your moat positions on-chain — staked, locked, burned amounts, active locks with countdowns, and pending rewards. Click any moat to manage it: swap tokens, stake, lock, burn, unstake, claim rewards. All moats shown even if you haven't joined.</div></div>
-    <div style="background:var(--card);border:1px solid var(--bor);border-radius:10px;padding:.85rem;display:flex;gap:11px"><div style="font-family:'DM Mono',monospace;font-size:.6rem;color:var(--acc);white-space:nowrap;min-width:105px">📋 Copy Moat</div><div style="font-size:.75rem;color:var(--dim);line-height:1.6">Mirror a top wallet's strategy with your own funds. Pick a wallet from the leaderboard, choose your budget (USDC or AVAX) and method (stake/lock/burn), and execute in one click. Smart routing via Odos, KyberSwap, Paraswap + LFJ V1 fallback — finds the best swap price automatically.</div></div>
+    <div style="background:var(--card);border:1px solid var(--bor);border-radius:10px;padding:.85rem;display:flex;gap:11px"><div style="font-family:'DM Mono',monospace;font-size:.6rem;color:var(--acc);white-space:nowrap;min-width:105px">📋 Copy Moat</div><div style="font-size:.75rem;color:var(--dim);line-height:1.6">Mirror a top wallet's strategy with your own funds. Pick a wallet from the leaderboard, choose your budget (USDC or AVAX) and method (stake/lock/burn), and execute in one click. Smart routing via Pharaoh · LFJ V1 · Odos · KyberSwap · Paraswap — finds the best swap price automatically.</div></div>
     <div style="background:var(--card);border:1px solid var(--bor);border-radius:10px;padding:.85rem;display:flex;gap:11px"><div style="font-family:'DM Mono',monospace;font-size:.6rem;color:var(--acc);white-space:nowrap;min-width:105px">💰 Invest</div><div style="font-size:.75rem;color:var(--dim);line-height:1.6">Enter your USDC budget and goal. The allocator picks moats, calculates token amounts to buy, and projects your points, rank, and ecosystem share. Auto Agent mode picks everything automatically.</div></div>
     <div style="background:var(--card);border:1px solid var(--bor);border-radius:10px;padding:.85rem;display:flex;gap:11px"><div style="font-family:'DM Mono',monospace;font-size:.6rem;color:var(--acc);white-space:nowrap;min-width:105px">🔬 Signals</div><div style="font-size:.75rem;color:var(--dim);line-height:1.6">12 auto-generated signals: whale concentration, low eco share, diversity bonus opportunities, price momentum, single-wallet dominance, LP liquidity warnings, hottest 7d activity, and more. Updated on every data refresh.</div></div>
     <div style="background:var(--card);border:1px solid var(--bor);border-radius:10px;padding:.85rem;display:flex;gap:11px"><div style="font-family:'DM Mono',monospace;font-size:.6rem;color:var(--acc);white-space:nowrap;min-width:105px">⬡ Moats</div><div style="font-size:.75rem;color:var(--dim);line-height:1.6">Tap any moat card for full detail — Overview (on-chain staked/locked/burned), Token & Price (live from DexScreener + GeckoTerminal), Leaderboard with usernames, and Rewards history.</div></div>
@@ -1367,7 +1367,7 @@ main{position:relative;z-index:1;padding:.8rem;max-width:1440px;margin:0 auto}
       </div>
       <!-- DEX Router info -->
       <div style="margin-top:.55rem;background:rgba(168,85,247,.06);border:1px solid rgba(168,85,247,.2);border-radius:8px;padding:.6rem .8rem;font-family:'DM Mono',monospace;font-size:.58rem;color:var(--mut);line-height:1.6">
-        🔀 <span style="color:var(--pur)">Smart routing:</span> Odos · KyberSwap · Jar · OKX DEX · FlyTrade — best price auto-selected
+        🔀 <span style="color:var(--pur)">Smart routing:</span> Pharaoh · LFJ V1 · Odos · KyberSwap · Paraswap — best price auto-selected
         <br>💡 Fallback to LFJ V1 (TraderJoe classic) if aggregators unavailable
       </div>
     </div>
@@ -4805,6 +4805,59 @@ async function lfjV1Swap(signer, tokenIn, tokenOut, amountIn, userAddr, deadline
   } catch(e) { return null; }
 }
 
+// ── PHARAOH LEGACY SWAP (Velodrome V1 style — direct on-chain, best for Pharaoh-native tokens) ──
+// Used for: FREAK (dexOverride:'pharaoh'), BENSI (swapViaWavax), HEFE, hCASH, and any token whose
+// pool lives on Pharaoh rather than LFJ V1.
+async function pharaohQuote(provider, tokenIn, tokenOut, amountIn) {
+  const isNative = tokenIn.toLowerCase() === 'avax';
+  const tIn  = isNative ? WAVAX_ADDR : tokenIn;
+  const tOut = tokenOut.toLowerCase() === 'avax' ? WAVAX_ADDR : tokenOut;
+  const router = new ethers.Contract(PHARAOH_ROUTER_ADDR, PHARAOH_ROUTER_ABI, provider);
+  // Try volatile then stable routes, direct and via WAVAX
+  const routeSets = [
+    [{from:tIn, to:tOut, stable:false}],
+    [{from:tIn, to:WAVAX_ADDR, stable:false},{from:WAVAX_ADDR, to:tOut, stable:false}],
+    [{from:tIn, to:tOut, stable:true}],
+    [{from:tIn, to:WAVAX_ADDR, stable:false},{from:WAVAX_ADDR, to:tOut, stable:true}],
+  ].filter(r => !(r.length===1 && r[0].from.toLowerCase()===r[0].to.toLowerCase()));
+  let best = null;
+  await Promise.allSettled(routeSets.map(async routes => {
+    try {
+      const amts = await router.getAmountsOut(amountIn, routes);
+      const out = amts[amts.length - 1];
+      if (out > 0n && (!best || out > best.out)) best = { out, routes };
+    } catch(e) {}
+  }));
+  return best ? { amountOut: best.out, routes: best.routes } : null;
+}
+
+async function pharaohSwap(signer, tokenIn, tokenOut, amountIn, userAddr, deadline) {
+  const isNativeIn  = tokenIn.toLowerCase()  === 'avax';
+  const isNativeOut = tokenOut.toLowerCase() === 'avax';
+  const prov = signer.provider;
+  const quote = await pharaohQuote(prov, tokenIn, tokenOut, amountIn);
+  if (!quote || quote.amountOut === 0n) return null;
+  const router = new ethers.Contract(PHARAOH_ROUTER_ADDR, PHARAOH_ROUTER_ABI, signer);
+  const minOut = quote.amountOut * 95n / 100n;
+  try {
+    let tx;
+    if (isNativeIn) {
+      tx = await router.swapExactAVAXForTokens(minOut, quote.routes, userAddr, deadline, {value: amountIn});
+    } else if (isNativeOut) {
+      const tokC = new ethers.Contract(tokenIn, ERC20_ABI, signer);
+      const allowed = await tokC.allowance(userAddr, PHARAOH_ROUTER_ADDR);
+      if (allowed < amountIn) { const a = await tokC.approve(PHARAOH_ROUTER_ADDR, ethers.MaxUint256); await a.wait(); }
+      tx = await router.swapExactTokensForAVAX(amountIn, minOut, quote.routes, userAddr, deadline);
+    } else {
+      const tokC = new ethers.Contract(tokenIn, ERC20_ABI, signer);
+      const allowed = await tokC.allowance(userAddr, PHARAOH_ROUTER_ADDR);
+      if (allowed < amountIn) { const a = await tokC.approve(PHARAOH_ROUTER_ADDR, ethers.MaxUint256); await a.wait(); }
+      tx = await router.swapExactTokensForTokens(amountIn, minOut, quote.routes, userAddr, deadline);
+    }
+    return { tx, dex: 'Pharaoh', amtOut: minOut };
+  } catch(e) { return null; }
+}
+
 // ── ODOS (public, good CORS, strong Avalanche coverage) ──
 async function odosGetRoute(tokenIn, tokenOut, amountInWei, userAddr, slippagePct=1) {
   const isNative = tokenIn.toLowerCase()==='avax';
@@ -4944,11 +4997,15 @@ async function paraswapGetRoute(tokenIn, tokenOut, amountInWei, userAddr, decima
   } catch(e) { return null; }
 }
 
-// ── BEST ROUTE — LFJ V1 first (reliable for Avax small-caps), then aggregators ──
+// ── BEST ROUTE — LFJ V1 + Pharaoh first (on-chain, reliable for Avax small-caps), then aggregators ──
 async function getBestRoute(tokenIn, tokenOut, amountInWei, userAddr, decimalsIn=18, decimalsOut=18, provider=null) {
-  // Step 1: get LFJ V1 quote (fast, on-chain, reliable)
   const prov = provider || (cmProvider || new ethers.JsonRpcProvider(AVAX_RPC));
-  const v1Quote = await lfjV1Quote(prov, tokenIn, tokenOut, amountInWei);
+
+  // Step 1: get on-chain quotes in parallel (LFJ V1 + Pharaoh)
+  const [v1Quote, pharaohQ] = await Promise.all([
+    lfjV1Quote(prov, tokenIn, tokenOut, amountInWei),
+    pharaohQuote(prov, tokenIn, tokenOut, amountInWei),
+  ]);
 
   // Step 2: try aggregators in parallel
   const [odosR, kyberR, paraR] = await Promise.all([
@@ -4957,16 +5014,31 @@ async function getBestRoute(tokenIn, tokenOut, amountInWei, userAddr, decimalsIn
     paraswapGetRoute(tokenIn, tokenOut, amountInWei, userAddr, decimalsIn, decimalsOut),
   ]);
 
-  // Step 3: pick best among valid routes
+  // Step 3: pick best among valid aggregator routes
   const candidates = [odosR, kyberR, paraR].filter(isValidRoute);
   candidates.sort((a,b) => a.amountOut > b.amountOut ? -1 : 1);
   const bestAgg = candidates[0] || null;
 
-  // If LFJ V1 gives better or equal output, or if aggregators failed → use V1
-  // (V1 is more reliable for small-cap tokens; aggregators sometimes return bad calldata)
-  if (v1Quote && (!bestAgg || v1Quote.amountOut >= bestAgg.amountOut * 98n / 100n)) {
-    // Return V1 quote marker — actual swap done in lfjV1Swap
-    return { dex: 'LFJ V1', amountOut: v1Quote.amountOut, _useV1: true, _v1Path: v1Quote.path };
+  // Step 4: pick best on-chain quote (LFJ V1 vs Pharaoh)
+  let bestOnChain = null;
+  if (v1Quote && pharaohQ) {
+    bestOnChain = v1Quote.amountOut >= pharaohQ.amountOut ? { quote: v1Quote, dex: 'LFJ V1' } : { quote: pharaohQ, dex: 'Pharaoh' };
+  } else if (v1Quote) {
+    bestOnChain = { quote: v1Quote, dex: 'LFJ V1' };
+  } else if (pharaohQ) {
+    bestOnChain = { quote: pharaohQ, dex: 'Pharaoh' };
+  }
+
+  // If best on-chain gives better or equal output vs aggregators → use on-chain
+  if (bestOnChain && (!bestAgg || bestOnChain.quote.amountOut >= bestAgg.amountOut * 98n / 100n)) {
+    return {
+      dex: bestOnChain.dex,
+      amountOut: bestOnChain.quote.amountOut,
+      _useV1: bestOnChain.dex === 'LFJ V1',
+      _usePharaoh: bestOnChain.dex === 'Pharaoh',
+      _v1Path: bestOnChain.quote.path,
+      _pharaohRoutes: bestOnChain.quote.routes,
+    };
   }
 
   return bestAgg; // may be null
@@ -4977,7 +5049,7 @@ async function cmSmartSwap(signer, tokenIn, tokenOut, amountIn, userAddr, decima
   const deadline = Math.floor(Date.now()/1000) + 1800;
   const isNative = tokenIn.toLowerCase()==='avax';
 
-  cmUpdateStep(stepId, 'active', `Checking LFJ V1 + Odos + KyberSwap + Paraswap…`);
+  cmUpdateStep(stepId, 'active', `Checking Pharaoh · LFJ V1 · Odos · KyberSwap · Paraswap…`);
 
   const route = await getBestRoute(tokenIn, tokenOut, amountIn, userAddr, decimalsIn, decimalsOut, signer.provider);
 
@@ -4985,7 +5057,6 @@ async function cmSmartSwap(signer, tokenIn, tokenOut, amountIn, userAddr, decima
     // ── LFJ V1 path ──
     const amtHuman = Number(route.amountOut) / Math.pow(10, decimalsOut);
     cmUpdateStep(stepId, 'active', `Route: LFJ V1 → ~${fmtP(amtHuman)} ${ticker}. Approving…`);
-    // Approve V1 router for ERC20 input
     if (!isNative) {
       const tokC = new ethers.Contract(tokenIn, ERC20_ABI, signer);
       const allowed = await tokC.allowance(userAddr, LFJ_V1_ROUTER);
@@ -4999,11 +5070,21 @@ async function cmSmartSwap(signer, tokenIn, tokenOut, amountIn, userAddr, decima
     cmUpdateStep(stepId, 'active', `Confirm swap in wallet (LFJ V1)…`);
     const v1Result = await lfjV1Swap(signer, tokenIn, tokenOut, amountIn, userAddr, deadline);
     if (v1Result) return v1Result;
-    // V1 failed unexpectedly — fall through to aggregators below
-    cmUpdateStep(stepId, 'active', `LFJ V1 failed, trying aggregators…`);
+    cmUpdateStep(stepId, 'active', `LFJ V1 failed, trying Pharaoh…`);
+    // fall through to Pharaoh / aggregators below
   }
 
-  if (route && !route._useV1 && isValidRoute(route)) {
+  if (route?._usePharaoh) {
+    // ── Pharaoh on-chain path ──
+    const amtHuman = Number(route.amountOut) / Math.pow(10, decimalsOut);
+    cmUpdateStep(stepId, 'active', `Route: Pharaoh → ~${fmtP(amtHuman)} ${ticker}. Confirm in wallet…`);
+    const pharResult = await pharaohSwap(signer, tokenIn, tokenOut, amountIn, userAddr, deadline);
+    if (pharResult) return pharResult;
+    cmUpdateStep(stepId, 'active', `Pharaoh swap failed, trying aggregators…`);
+    // fall through to aggregators below
+  }
+
+  if (route && !route._useV1 && !route._usePharaoh && isValidRoute(route)) {
     // ── Aggregator path ──
     const amtHuman = Number(route.amountOut) / Math.pow(10, decimalsOut);
     cmUpdateStep(stepId, 'active', `Route: ${route.dex} → ~${fmtP(amtHuman)} ${ticker}. Approving…`);
@@ -5026,20 +5107,25 @@ async function cmSmartSwap(signer, tokenIn, tokenOut, amountIn, userAddr, decima
     return { tx, dex: route.dex, amtOut: route.amountOut };
   }
 
-  // ── Last resort: brute-force LFJ V1 ──
-  cmUpdateStep(stepId, 'active', `No aggregator route — trying LFJ V1 fallback…`);
+  // ── Last resort: try both LFJ V1 and Pharaoh brute-force ──
+  cmUpdateStep(stepId, 'active', `Trying LFJ V1 + Pharaoh fallback…`);
   if (!isNative) {
     const tokC = new ethers.Contract(tokenIn, ERC20_ABI, signer);
-    const allowed = await tokC.allowance(userAddr, LFJ_V1_ROUTER);
-    if (allowed < amountIn) {
-      const appTx = await tokC.approve(LFJ_V1_ROUTER, ethers.MaxUint256);
-      await appTx.wait();
-    }
+    const [v1Allow, pharAllow] = await Promise.all([
+      tokC.allowance(userAddr, LFJ_V1_ROUTER),
+      tokC.allowance(userAddr, PHARAOH_ROUTER_ADDR),
+    ]);
+    if (v1Allow < amountIn) { const a = await tokC.approve(LFJ_V1_ROUTER, ethers.MaxUint256); await a.wait(); }
+    if (pharAllow < amountIn) { const a = await tokC.approve(PHARAOH_ROUTER_ADDR, ethers.MaxUint256); await a.wait(); }
   }
-  const v1 = await lfjV1Swap(signer, tokenIn, tokenOut, amountIn, userAddr, deadline);
-  if (v1) return v1;
+  const [v1, phar] = await Promise.allSettled([
+    lfjV1Swap(signer, tokenIn, tokenOut, amountIn, userAddr, deadline),
+    pharaohSwap(signer, tokenIn, tokenOut, amountIn, userAddr, deadline),
+  ]);
+  if (v1.status==='fulfilled' && v1.value) return v1.value;
+  if (phar.status==='fulfilled' && phar.value) return phar.value;
 
-  throw new Error(`No swap route found for ${ticker}. Buy manually at lfj.gg or pharaoh.exchange, then stake here.`);
+  throw new Error(`No swap route found for ${ticker}. Buy manually at phar.gg/trade or lfj.gg, then stake here.`);
 }
 
 
@@ -5441,7 +5527,7 @@ async function cmUpdatePreview() {
   if (checkBtn) checkBtn.style.display = 'block';
   if (gasEl) {
     gasEl.style.display = 'block';
-    gasEl.innerHTML = `⛽ Estimated gas: ~${gasEst} AVAX total &nbsp;·&nbsp; Swap routed via LFJ (Odos / KyberSwap / Jar / OKX DEX)`;
+    gasEl.innerHTML = `⛽ Estimated gas: ~${gasEst} AVAX total &nbsp;·&nbsp; Swap routed via Pharaoh · LFJ V1 · Odos / KyberSwap (best price auto-selected)`;
   }
 }
 
@@ -7422,7 +7508,7 @@ async function hswapQuote() {
     const execBtn   = document.getElementById('hswapExecBtn');
     if (!toAmtEl) return;
     if (!amt) { if(toAmtEl) toAmtEl.textContent='—'; hswapRouteData=null; if(execBtn)execBtn.style.display='none'; if(detailEl)detailEl.style.display='none'; return; }
-    if(toAmtEl) toAmtEl.textContent='…'; if(routeEl) routeEl.textContent='Quoting…';
+    if(toAmtEl) toAmtEl.textContent='…'; if(routeEl) routeEl.textContent='Quoting Pharaoh · LFJ · aggregators…';
 
     const addr   = posAddress || posViewAddr || '0x0000000000000000000000000000000000000001';
     const prov   = posProvider || new ethers.JsonRpcProvider(AVAX_RPC);
@@ -7445,8 +7531,8 @@ async function hswapQuote() {
 
     const route = await getBestRoute(tokenIn, tokenOut, amountInWei, addr, decIn, decOut, prov);
     if (!route) {
-      if(toAmtEl) toAmtEl.textContent = 'No route found';
-      if(routeEl) routeEl.textContent = 'Try smaller amount';
+      if(toAmtEl) toAmtEl.innerHTML = '<span style="color:var(--red)">No route found</span>';
+      if(routeEl) routeEl.innerHTML = 'Try smaller amount · or swap at <a href="https://www.phar.gg/trade" target="_blank" style="color:var(--acc)">phar.gg ↗</a>';
       if(execBtn) execBtn.style.display='none';
       hswapRouteData = null; return;
     }
