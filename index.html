@@ -1118,7 +1118,10 @@ main{position:relative;z-index:1;padding:.8rem;max-width:1440px;margin:0 auto}
   <div id="posGrid">
     <!-- Section: Active -->
     <div id="posActiveSec" style="display:none">
-      <div class="sh-t" style="margin-bottom:.6rem">✅ Your Active Positions</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.6rem;flex-wrap:wrap;gap:.4rem">
+        <div class="sh-t">✅ Your Active Positions</div>
+        <button onclick="posDownloadAllCards()" style="padding:4px 11px;background:rgba(249,115,22,.1);border:1px solid rgba(249,115,22,.28);border-radius:7px;color:var(--acc);font-family:'DM Mono',monospace;font-size:.55rem;cursor:pointer;display:flex;align-items:center;gap:5px">📸 Save All Position Cards</button>
+      </div>
       <div id="posActiveCards" style="display:grid;grid-template-columns:1fr;gap:.65rem;margin-bottom:1.2rem"></div>
     </div>
     <!-- Section: Other moats -->
@@ -6318,6 +6321,24 @@ async function posOpenDetail(moatAddr) {
     </div>
   </div>
 
+  <!-- Active locks summary (shown at top if locks exist) -->
+  ${data.locks.length ? `
+  <div style="background:rgba(212,168,67,.07);border:1px solid rgba(212,168,67,.3);border-radius:11px;padding:.75rem;margin-bottom:.9rem">
+    <div style="font-family:'Chakra Petch',sans-serif;font-size:.7rem;font-weight:700;color:var(--gld);margin-bottom:.55rem">🔐 Your Active Locks (${data.locks.length})</div>
+    <div style="display:flex;flex-wrap:wrap;gap:.4rem">
+      ${data.locks.map(l=>{
+        const done=l.daysLeft===0;
+        const dur=l.origDurDays;
+        const mult=dur>=730?'5.00x':dur>=540?'4.57x':dur>=365?'4.00x':dur>=180?'3.23x':dur>=90?'2.73x':dur>=30?'2.31x':dur>=7?'2.11x':'2.04x';
+        return '<div style="background:var(--sur);border:1px solid '+(done?'rgba(109,184,122,.35)':'rgba(212,168,67,.25)')+';border-radius:8px;padding:.45rem .65rem;min-width:120px">'
+          +'<div style="font-family:Chakra Petch,sans-serif;font-weight:700;font-size:.78rem;color:var(--gld)">'+fmtP(l.amt)+' '+(meta?.ticker||'')+'</div>'
+          +'<div style="font-family:DM Mono,monospace;font-size:.52rem;color:var(--mut);margin-top:2px">'+(done?'Matured':l.daysLeft+'d left')+' · '+mult+' · '+l.origDurDays+'d lock</div>'
+          +'</div>';
+      }).join('')}
+    </div>
+    <div style="font-family:'DM Mono',monospace;font-size:.56rem;color:var(--mut);margin-top:.5rem">Total locked: <b style="color:var(--gld)">${fmtP(lockedTotal)} ${meta?.ticker}</b> — manage in the <b>Lock</b> tab below</div>
+  </div>` : ''}
+
   <!-- Ecosystem context -->
   <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:.4rem;margin-bottom:.9rem">
     <div style="background:var(--sur);border:1px solid var(--bor);border-radius:8px;padding:.5rem;text-align:center">
@@ -7695,172 +7716,169 @@ async function hswapExecute() {
 
 // ── POSITION CARD DOWNLOAD ──
 async function posDownloadCard(moatAddr) {
-  const meta  = MOATS[moatAddr];
-  const data  = posLoadedData[moatAddr]||{staked:0,burned:0,locks:[],pts:0,wBal:0};
-  const addr  = posViewAddr||posAddress||cmAddress||'';
-  const knownP = getKnownProfile(addr);
-  const sw    = sortedWallets();
-  const rank  = sw.findIndex(w=>w.wallet===addr.toLowerCase())+1;
-  const m     = moatMap[moatAddr]||{};
-  const myPts = Math.max(data.pts, allPts.find(p=>getWallet(p)===addr.toLowerCase()&&p.contractAddress===moatAddr)?.points||0);
-  const share = m.totalPoints ? (myPts/m.totalPoints*100).toFixed(3) : '0';
-  const lockedTotal = data.locks.reduce((s,l)=>s+l.amt,0);
-  const col   = meta?.color||'#f97316';
-  const userName = (knownP && knownP.twitter) ? '@'+knownP.twitter : (addr ? addr.slice(0,6)+'…'+addr.slice(-4) : '');
-
-  const canvas = document.createElement('canvas');
-  canvas.width  = 900;
-  canvas.height = 520;
-  const ctx = canvas.getContext('2d');
-  const W = canvas.width, H = canvas.height;
-
-  // Background
-  ctx.fillStyle = '#141210';
-  ctx.fillRect(0,0,W,H);
-  // Subtle grain via noise pattern
-  ctx.fillStyle = 'rgba(255,255,255,0.015)';
-  for(let i=0;i<W*H*0.05;i++){ctx.fillRect(Math.random()*W,Math.random()*H,1,1);}
-  // Left accent bar
-  const grad = ctx.createLinearGradient(0,0,0,H);
-  grad.addColorStop(0, col);
-  grad.addColorStop(1, col+'44');
-  ctx.fillStyle = grad;
-  ctx.fillRect(0,0,5,H);
-  // Top glow
-  const radGrad = ctx.createRadialGradient(W*0.15,0,0,W*0.15,0,W*0.5);
-  radGrad.addColorStop(0, col+'22');
-  radGrad.addColorStop(1, 'transparent');
-  ctx.fillStyle = radGrad;
-  ctx.fillRect(0,0,W,H*0.55);
-  // Moats Intel logo text (top-right)
-  ctx.font = 'bold 14px monospace';
-  ctx.fillStyle = '#6b5f54';
-  ctx.textAlign = 'right';
-  ctx.fillText('MOATS INTEL', W-28, 32);
-  ctx.font = '10px monospace';
-  ctx.fillText('moats.app', W-28, 48);
-
-  // Moat logo (top-left)
-  ctx.textAlign = 'left';
-  const logoUrl = meta?.logo ? 'https://raw.githubusercontent.com/precidoboss/my-game-sprites/main/' + meta.logo : null;
-  let logoLoaded = false;
-  if (logoUrl) {
-    try {
-      const img = new Image(); img.crossOrigin='anonymous';
-      await new Promise((res,rej)=>{img.onload=res;img.onerror=rej;img.src=logoUrl;});
-      ctx.save();
-      ctx.beginPath();ctx.roundRect(28,28,64,64,12);ctx.clip();
-      ctx.drawImage(img,28,28,64,64);
-      ctx.restore();
-      logoLoaded = true;
-    } catch(e){}
-  }
-  if (!logoLoaded) {
-    ctx.fillStyle = col+'33'; ctx.beginPath(); ctx.roundRect(28,28,64,64,12); ctx.fill();
-    ctx.font = 'bold 28px sans-serif'; ctx.fillStyle = col; ctx.textAlign='center';
-    ctx.fillText(meta?.emoji||'⬡', 60, 72); ctx.textAlign='left';
-  }
-
-  // Moat name + ticker
-  ctx.font = 'bold 28px "Chakra Petch", sans-serif';
-  ctx.fillStyle = '#f0ebe4';
-  ctx.fillText(meta?.name||'Moat', 108, 60);
-  ctx.font = '13px monospace';
-  ctx.fillStyle = col;
-  ctx.fillText((meta?.ticker||'').toUpperCase(), 108, 80);
-
-  // Divider
-  ctx.strokeStyle = col+'44'; ctx.lineWidth=1;
-  ctx.beginPath(); ctx.moveTo(28,112); ctx.lineTo(W-28,112); ctx.stroke();
-
-  // Stats grid — 4 cards
-  const stats = [
-    {label:'MOAT POINTS', val: fmtP(myPts), col: col},
-    {label:'RANK', val: rank ? '#'+rank : '—', col: '#a78bfa'},
-    {label:'ECO SHARE', val: share+'%', col: '#22d3ee'},
-    {label:'STAKED', val: fmtP(data.staked), col: '#6db87a'},
-    {label:'LOCKED', val: fmtP(lockedTotal), col: '#d4a843'},
-    {label:'BURNED', val: fmtP(data.burned), col: '#e05252'},
-  ];
-  const colW = (W-56)/3, rowH = 100, startY = 128;
-  stats.forEach((s,i)=>{
-    const x = 28 + (i%3)*colW, y = startY + Math.floor(i/3)*rowH;
-    ctx.fillStyle = s.col+'14';
-    ctx.strokeStyle = s.col+'33'; ctx.lineWidth=1;
-    ctx.beginPath(); ctx.roundRect(x+2,y+2,colW-8,rowH-8,8); ctx.fill(); ctx.stroke();
-    ctx.font = 'bold 22px "Chakra Petch", sans-serif';
-    ctx.fillStyle = s.col;
-    ctx.textAlign='center';
-    ctx.fillText(s.val, x+colW/2-4, y+44);
-    ctx.font = '11px monospace';
-    ctx.fillStyle = '#8c8074';
-    ctx.fillText(s.label, x+colW/2-4, y+66);
-    ctx.textAlign='left';
-  });
-
-  // Active locks row
-  if (data.locks.length) {
-    const ly = startY + 2*rowH + 8;
-    ctx.font = '11px monospace'; ctx.fillStyle = '#6b5f54';
-    ctx.fillText('ACTIVE LOCKS', 28, ly);
-    data.locks.slice(0,5).forEach((l,i)=>{
-      const lx = 28 + i*172;
-      ctx.fillStyle = '#d4a84314'; ctx.strokeStyle='#d4a84333'; ctx.lineWidth=1;
-      ctx.beginPath(); ctx.roundRect(lx,ly+8,164,42,7); ctx.fill(); ctx.stroke();
-      ctx.font = 'bold 13px monospace'; ctx.fillStyle = '#d4a843';
-      ctx.fillText(fmtP(l.amt), lx+8, ly+26);
-      ctx.font = '10px monospace'; ctx.fillStyle = '#8c8074';
-      ctx.fillText(l.daysLeft+'d left', lx+8, ly+42);
-    });
-  }
-
-  // Bottom bar — user info
-  ctx.fillStyle = '#1c1916';
-  ctx.fillRect(0, H-64, W, 64);
-  ctx.strokeStyle = col+'33'; ctx.lineWidth=1;
-  ctx.beginPath(); ctx.moveTo(0,H-64); ctx.lineTo(W,H-64); ctx.stroke();
-
-  // User avatar
-  let avatarLoaded = false;
-  if (knownP?.pic) {
-    try {
-      const img = new Image(); img.crossOrigin='anonymous';
-      await new Promise((res,rej)=>{img.onload=res;img.onerror=rej;img.src=knownP.pic;});
-      ctx.save();
-      ctx.beginPath(); ctx.arc(52, H-32, 22, 0, Math.PI*2); ctx.clip();
-      ctx.drawImage(img, 30, H-54, 44, 44);
-      ctx.restore(); avatarLoaded = true;
-    } catch(e){}
-  }
-  if (!avatarLoaded) {
-    ctx.fillStyle = col+'33';
-    ctx.beginPath(); ctx.arc(52, H-32, 22, 0, Math.PI*2); ctx.fill();
-    ctx.font = 'bold 16px monospace'; ctx.fillStyle=col; ctx.textAlign='center';
-    ctx.fillText((addr||'?').slice(2,4).toUpperCase(), 52, H-26);
-    ctx.textAlign='left';
-  }
-
-  // Username / address
-  ctx.font = 'bold 15px "Chakra Petch", sans-serif';
-  ctx.fillStyle = '#f0ebe4';
-  ctx.fillText(userName || shortA(addr), 86, H-36);
-  ctx.font = '11px monospace'; ctx.fillStyle = '#6b5f54';
-  ctx.fillText(addr ? addr.slice(0,10)+'…'+addr.slice(-8) : '', 86, H-18);
-
-  // Bottom right badge
-  ctx.font = 'bold 12px "Chakra Petch", sans-serif';
-  ctx.fillStyle = col;
-  ctx.textAlign = 'right';
-  ctx.fillText('MOATS PROTOCOL', W-28, H-36);
-  ctx.font = '11px monospace'; ctx.fillStyle = '#6b5f54';
-  ctx.fillText('moats.app', W-28, H-18);
-
-  // Download
+  const meta = MOATS[moatAddr];
+  const addr = posViewAddr||posAddress||cmAddress||'';
+  const canvas = await posRenderCardCanvas(moatAddr);
+  if (!canvas) { showAppNotif('Failed to render card.', 'error', 3000); return; }
   const link = document.createElement('a');
-  link.download = 'moats-position-' + (meta?.short||'moat') + '-' + addr.slice(-6) + '.png';
+  link.download = 'moats-position-' + (meta?.short||'moat') + '-' + (addr?addr.slice(-6):'x') + '.png';
   link.href = canvas.toDataURL('image/png');
   link.click();
   showAppNotif('📸 Position card downloaded!', 'success', 3000);
+}
+
+// ── DOWNLOAD ALL POSITION CARDS ──
+async function posDownloadAllCards() {
+  const active = Object.values(posLoadedData).filter(r=>r.hasPosition);
+  if (!active.length) { showAppNotif('No active positions found.', 'error', 3000); return; }
+  showAppNotif('📸 Generating ' + active.length + ' cards…', 'success', 2000);
+  // Build a tall combined canvas: all cards stacked
+  const CW = 900, CH = 520, GAP = 20;
+  const totalH = active.length * CH + (active.length - 1) * GAP + 60;
+  const combo = document.createElement('canvas');
+  combo.width = CW; combo.height = totalH;
+  const cctx = combo.getContext('2d');
+  cctx.fillStyle = '#0e0c0a';
+  cctx.fillRect(0, 0, CW, totalH);
+  // Header
+  cctx.font = 'bold 18px "Chakra Petch", sans-serif';
+  cctx.fillStyle = '#f97316';
+  cctx.textAlign = 'center';
+  cctx.fillText('ALL ACTIVE POSITIONS', CW/2, 38);
+  cctx.font = '11px monospace'; cctx.fillStyle = '#6b5f54';
+  cctx.fillText('moats.app  ·  MOATS INTEL', CW/2, 54);
+  const MOATS_INTEL_LOGO = 'https://raw.githubusercontent.com/precidoboss/my-game-sprites/main/moatsintelloadingimage-removebg-preview.png';
+  try {
+    const miImg = new Image(); miImg.crossOrigin='anonymous';
+    await new Promise((res,rej)=>{miImg.onload=res;miImg.onerror=rej;miImg.src=MOATS_INTEL_LOGO;});
+    cctx.drawImage(miImg, CW/2 - 130, 8, 40, 40);
+  } catch(e){}
+
+  let offsetY = 64;
+  for (const r of active.sort((a,b)=>b.pts-a.pts)) {
+    // Render each card to its own canvas, then draw onto combo
+    const cardCanvas = await posRenderCardCanvas(r.moatAddr);
+    if (cardCanvas) { cctx.drawImage(cardCanvas, 0, offsetY); }
+    offsetY += CH + GAP;
+  }
+  const addr = posViewAddr || posAddress || '';
+  const link = document.createElement('a');
+  link.download = 'moats-all-positions-' + (addr ? addr.slice(-6) : 'export') + '.png';
+  link.href = combo.toDataURL('image/png');
+  link.click();
+  showAppNotif('📸 All ' + active.length + ' position cards downloaded!', 'success', 3500);
+}
+
+// ── RENDER A SINGLE CARD TO CANVAS (shared by single + all download) ──
+async function posRenderCardCanvas(moatAddr) {
+  const meta = MOATS[moatAddr];
+  const data = posLoadedData[moatAddr]||{staked:0,burned:0,locks:[],pts:0,wBal:0};
+  const addr = posViewAddr||posAddress||cmAddress||'';
+  const knownP = getKnownProfile(addr);
+  const sw = sortedWallets();
+  const rank = sw.findIndex(w=>w.wallet===addr.toLowerCase())+1;
+  const m = moatMap[moatAddr]||{};
+  const myPts = Math.max(data.pts, allPts.find(p=>getWallet(p)===addr.toLowerCase()&&p.contractAddress===moatAddr)?.points||0);
+  const share = m.totalPoints ? (myPts/m.totalPoints*100).toFixed(3) : '0';
+  const lockedTotal = data.locks.reduce((s,l)=>s+l.amt,0);
+  const col = meta?.color||'#f97316';
+  const userName = (knownP&&knownP.twitter)?'@'+knownP.twitter:(addr?addr.slice(0,6)+'…'+addr.slice(-4):'');
+
+  const canvas = document.createElement('canvas');
+  canvas.width = 900; canvas.height = 520;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+
+  ctx.fillStyle = '#141210'; ctx.fillRect(0,0,W,H);
+  ctx.fillStyle = 'rgba(255,255,255,0.015)';
+  for(let i=0;i<W*H*0.05;i++){ctx.fillRect(Math.random()*W,Math.random()*H,1,1);}
+  const grad = ctx.createLinearGradient(0,0,0,H);
+  grad.addColorStop(0,col); grad.addColorStop(1,col+'44');
+  ctx.fillStyle=grad; ctx.fillRect(0,0,5,H);
+  const radGrad = ctx.createRadialGradient(W*0.15,0,0,W*0.15,0,W*0.5);
+  radGrad.addColorStop(0,col+'22'); radGrad.addColorStop(1,'transparent');
+  ctx.fillStyle=radGrad; ctx.fillRect(0,0,W,H*0.55);
+
+  // Moats Intel logo top-right
+  const MOATS_INTEL_LOGO = 'https://raw.githubusercontent.com/precidoboss/my-game-sprites/main/moatsintelloadingimage-removebg-preview.png';
+  try {
+    const miImg = new Image(); miImg.crossOrigin='anonymous';
+    await new Promise((res,rej)=>{miImg.onload=res;miImg.onerror=rej;miImg.src=MOATS_INTEL_LOGO;});
+    ctx.drawImage(miImg, W-90, 14, 60, 60);
+  } catch(e){}
+  ctx.font='bold 11px monospace'; ctx.fillStyle='#8c8074'; ctx.textAlign='right';
+  ctx.fillText('MOATS INTEL', W-28, 84);
+  ctx.font='10px monospace'; ctx.fillStyle='#6b5f54';
+  ctx.fillText('moats.app', W-28, 98);
+
+  // Moat logo top-left
+  ctx.textAlign='left';
+  const logoUrl = meta?.logo ? 'https://raw.githubusercontent.com/precidoboss/my-game-sprites/main/'+meta.logo : null;
+  let logoLoaded=false;
+  if(logoUrl){try{const img=new Image();img.crossOrigin='anonymous';await new Promise((res,rej)=>{img.onload=res;img.onerror=rej;img.src=logoUrl;});ctx.save();ctx.beginPath();ctx.roundRect(28,28,64,64,12);ctx.clip();ctx.drawImage(img,28,28,64,64);ctx.restore();logoLoaded=true;}catch(e){}}
+  if(!logoLoaded){ctx.fillStyle=col+'33';ctx.beginPath();ctx.roundRect(28,28,64,64,12);ctx.fill();ctx.font='bold 28px sans-serif';ctx.fillStyle=col;ctx.textAlign='center';ctx.fillText(meta?.emoji||'⬡',60,72);ctx.textAlign='left';}
+
+  ctx.font='bold 28px "Chakra Petch",sans-serif'; ctx.fillStyle='#f0ebe4';
+  ctx.fillText(meta?.name||'Moat',108,60);
+  ctx.font='13px monospace'; ctx.fillStyle=col;
+  ctx.fillText((meta?.ticker||'').toUpperCase(),108,80);
+
+  ctx.strokeStyle=col+'44'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(28,112); ctx.lineTo(W-28,112); ctx.stroke();
+
+  const stats=[
+    {label:'MOAT POINTS',val:fmtP(myPts),col:col},
+    {label:'RANK',val:rank?'#'+rank:'—',col:'#a78bfa'},
+    {label:'ECO SHARE',val:share+'%',col:'#22d3ee'},
+    {label:'STAKED',val:fmtP(data.staked),col:'#6db87a'},
+    {label:'LOCKED',val:fmtP(lockedTotal),col:'#d4a843'},
+    {label:'BURNED',val:fmtP(data.burned),col:'#e05252'},
+  ];
+  const colW=(W-56)/3,rowH=100,startY=128;
+  stats.forEach((s,i)=>{
+    const x=28+(i%3)*colW,y=startY+Math.floor(i/3)*rowH;
+    ctx.fillStyle=s.col+'14'; ctx.strokeStyle=s.col+'33'; ctx.lineWidth=1;
+    ctx.beginPath();ctx.roundRect(x+2,y+2,colW-8,rowH-8,8);ctx.fill();ctx.stroke();
+    ctx.font='bold 22px "Chakra Petch",sans-serif'; ctx.fillStyle=s.col; ctx.textAlign='center';
+    ctx.fillText(s.val,x+colW/2-4,y+44);
+    ctx.font='11px monospace'; ctx.fillStyle='#8c8074';
+    ctx.fillText(s.label,x+colW/2-4,y+66); ctx.textAlign='left';
+  });
+
+  if(data.locks.length){
+    const ly=startY+2*rowH+8;
+    ctx.font='11px monospace'; ctx.fillStyle='#6b5f54';
+    ctx.fillText('ACTIVE LOCKS ('+data.locks.length+')',28,ly);
+    data.locks.slice(0,5).forEach((l,i)=>{
+      const lx=28+i*172;
+      ctx.fillStyle='#d4a84314'; ctx.strokeStyle='#d4a84333'; ctx.lineWidth=1;
+      ctx.beginPath();ctx.roundRect(lx,ly+8,164,42,7);ctx.fill();ctx.stroke();
+      ctx.font='bold 13px monospace'; ctx.fillStyle='#d4a843';
+      ctx.fillText(fmtP(l.amt),lx+8,ly+26);
+      ctx.font='10px monospace'; ctx.fillStyle='#8c8074';
+      ctx.fillText(l.daysLeft+'d left · '+l.origDurDays+'d lock',lx+8,ly+42);
+    });
+  }
+
+  ctx.fillStyle='#1c1916'; ctx.fillRect(0,H-64,W,64);
+  ctx.strokeStyle=col+'33'; ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(0,H-64);ctx.lineTo(W,H-64);ctx.stroke();
+
+  let avatarLoaded=false;
+  if(knownP?.pic){try{const img=new Image();img.crossOrigin='anonymous';await new Promise((res,rej)=>{img.onload=res;img.onerror=rej;img.src=knownP.pic;});ctx.save();ctx.beginPath();ctx.arc(52,H-32,22,0,Math.PI*2);ctx.clip();ctx.drawImage(img,30,H-54,44,44);ctx.restore();avatarLoaded=true;}catch(e){}}
+  if(!avatarLoaded){ctx.fillStyle=col+'33';ctx.beginPath();ctx.arc(52,H-32,22,0,Math.PI*2);ctx.fill();ctx.font='bold 16px monospace';ctx.fillStyle=col;ctx.textAlign='center';ctx.fillText((addr||'?').slice(2,4).toUpperCase(),52,H-26);ctx.textAlign='left';}
+
+  ctx.font='bold 15px "Chakra Petch",sans-serif'; ctx.fillStyle='#f0ebe4';
+  ctx.fillText(userName||shortA(addr),86,H-36);
+  ctx.font='11px monospace'; ctx.fillStyle='#6b5f54';
+  ctx.fillText(addr?addr.slice(0,10)+'…'+addr.slice(-8):'',86,H-18);
+
+  ctx.font='bold 12px "Chakra Petch",sans-serif'; ctx.fillStyle=col; ctx.textAlign='right';
+  ctx.fillText('MOATS PROTOCOL',W-28,H-36);
+  ctx.font='11px monospace'; ctx.fillStyle='#6b5f54';
+  ctx.fillText('moats.app',W-28,H-18);
+
+  return canvas;
 }
 
 // ── INIT ──
