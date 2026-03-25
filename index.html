@@ -4345,6 +4345,11 @@ function dopts(){return{responsive:true,maintainAspectRatio:false,plugins:{legen
 
 // ── INIT ──
 // Script is at bottom of <body> — DOM is already ready, run directly
+// Guaranteed loading screen dismiss after 3 seconds no matter what
+setTimeout(function(){
+  var ls=document.getElementById('appLoadScreen');
+  if(ls&&ls.style.display!=='none'){ls.style.opacity='0';setTimeout(function(){ls.style.display='none';},520);}
+},3000);
 (function init(){
   const wIn=document.getElementById('wIn');
   if(wIn) wIn.addEventListener('keydown',function(e){if(e.key==='Enter')analyzeW();});
@@ -6706,7 +6711,7 @@ async function posOpenDetail(moatAddr) {
             <button onclick="document.getElementById('burnAmt').value='${data.wBal.toFixed(6)}';posCalcPoints('burn','${data.wBal}','${moatAddr}')" class="btn btn-sm btn-g">MAX</button>
           </div>
           <div id="burnPreview" style="font-family:'DM Mono',monospace;font-size:.65rem;color:var(--red);margin-bottom:.7rem"></div>
-          ${canManage ? `<button class="btn" style="width:100%;background:var(--red)" onclick="posDoBurn('${moatAddr}')">🔥 Burn Forever</button>` : '<div style="font-family:'DM Mono',monospace;font-size:.65rem;color:var(--mut);text-align:center">Connect wallet</div>'}
+          ${canManage ? `<button class="btn" style="width:100%;background:var(--red)" onclick="posDoBurn('${moatAddr}')">🔥 Burn Forever</button>` : `<div style="font-family:'DM Mono',monospace;font-size:.65rem;color:var(--mut);text-align:center">Connect wallet</div>`}
           <div id="burnStatus" style="font-family:'DM Mono',monospace;font-size:.65rem;color:var(--mut);text-align:center;margin-top:.4rem"></div>
         `}
       </div>
