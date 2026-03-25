@@ -644,6 +644,7 @@ main{position:relative;z-index:1;padding:.8rem;max-width:1440px;margin:0 auto}
     <button class="btn" onclick="analyzeW()">Analyze →</button>
   </div>
   <div id="wRes" style="display:none">
+    <div id="wKnownProfile"></div>
     <div class="gsb">
       <div>
         <div class="panel"><div class="ph"><div class="ptitle">Points by Moat</div></div><div class="pb"><div class="ch"><canvas id="wChart"></canvas></div></div></div>
@@ -2837,12 +2838,15 @@ function renderLB(){
     const mult=cMult(w.moatCount),cs=Math.round(w.totalPoints*mult),sh=tot?(w.totalPoints/tot*100).toFixed(3):'0';
     const uname = w.username || zephyrNames[w.wallet] || '';
     const knownProf = getKnownProfile(w.wallet);
-    const unameHtml = uname ? '<div class="zname">'+uname+'</div>' : '';
+    const displayName = uname || shortA(w.wallet);
     return `<tr>
       <td>${rb(i+1)}</td>
       <td>
-        ${unameHtml}
-        <span class="wa" onclick="gotoW('${w.wallet}')">${shortA(w.wallet)}</span>
+        <span class="wa" onclick="gotoW('${w.wallet}')" style="display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap">
+          ${knownProf ? `<img src="${knownProf.pic}" style="width:22px;height:22px;border-radius:50%;object-fit:cover;border:1px solid var(--bor);flex-shrink:0" onerror="this.style.display='none'">` : ''}
+          <span>${displayName}</span>
+          ${knownProf ? `<a href="https://x.com/${knownProf.twitter}" target="_blank" style="color:var(--acc);font-size:.7em;text-decoration:none" onclick="event.stopPropagation()">@${knownProf.twitter}</a>` : ''}
+        </span>
       </td>
       <td style="font-family:'DM Mono',monospace;font-size:.64rem;color:var(--mut)">${w.moatCount}</td>
       <td><div class="bw"><div class="bt"><div class="bf" style="width:${sw[0].totalPoints?w.totalPoints/sw[0].totalPoints*100:0}%"></div></div><span class="bv">${fmtP(w.totalPoints)}</span></div></td>
@@ -3142,14 +3146,8 @@ async function gotoW(addr,silent=false){
 
   // Known profile: show avatar + X link
   const knownP = getKnownProfile(norm);
-  let wKnown = document.getElementById('wKnownProfile');
-  if (!wKnown) {
-    wKnown = document.createElement('div');
-    wKnown.id = 'wKnownProfile';
-    const wRes = document.getElementById('wRes');
-    wRes.insertBefore(wKnown, wRes.firstChild);
-  }
-  wKnown.innerHTML = knownP ? `
+  const wKnown = document.getElementById('wKnownProfile');
+  if (wKnown) wKnown.innerHTML = knownP ? `
     <div style="display:flex;align-items:center;gap:12px;background:rgba(249,115,22,.07);border:1px solid rgba(249,115,22,.25);border-radius:12px;padding:.85rem 1rem;margin-bottom:.75rem">
       <img src="${knownP.pic}" style="width:52px;height:52px;border-radius:50%;object-fit:cover;border:2px solid var(--acc);flex-shrink:0" onerror="this.style.display='none'">
       <div style="flex:1;min-width:0">
@@ -5101,6 +5099,12 @@ async function cmUpdateWalletUI() {
   document.getElementById('cmConnectBtn').style.display = 'none';
   document.getElementById('cmWalletConnected').style.display = 'block';
   document.getElementById('cmConnectedAddr').textContent = shortA(cmAddress);
+  // Show known profile pic if available
+  const cmProf = getKnownProfile(cmAddress);
+  const cmAvatarEl = document.querySelector('#cmWalletConnected .wallet-connect-btn.connected > div:first-child');
+  if (cmAvatarEl && cmProf) {
+    cmAvatarEl.innerHTML = `<img src="${cmProf.pic}" style="width:100%;height:100%;object-fit:cover" onerror="this.parentElement.innerHTML='🟢'">`;
+  }
 
   const [avaxBal, usdcBal] = await Promise.allSettled([
     cmProvider.getBalance(cmAddress),
