@@ -1790,12 +1790,12 @@ async function loadAll(){
     allEvs=newEvs; allPts=newPts;
     buildMaps();
     const cW=Object.keys(wMap).length,cP=allPts.reduce((s,p)=>s+p.points,0),cEv=allEvs.length;
-    if(!isFirstLoad){
-      showDeltas(cW,cP,cEv);
-      if(freshEids.length||cW!==prevData.wallets||cP!==prevData.points)showToast();
   // Dismiss loading screen on first successful data load
   const ls=document.getElementById('appLoadScreen');
   if(ls&&ls.style.opacity!=='0'){ls.style.opacity='0';setTimeout(()=>ls.style.display='none',520);}
+    if(!isFirstLoad){
+      showDeltas(cW,cP,cEv);
+      if(freshEids.length||cW!==prevData.wallets||cP!==prevData.points)showToast();
     }
     prevData={wallets:cW,points:cP,events:cEv};
     renderOverview(freshEids);
@@ -6641,7 +6641,7 @@ async function posOpenDetail(moatAddr) {
           </div>
           <input type="hidden" id="lockDays" value="180">
           <div id="lockPreview" style="font-family:'DM Mono',monospace;font-size:.65rem;color:var(--gld);margin-bottom:.7rem"></div>
-          ${canManage ? `<button class="btn" style="width:100%;background:var(--gld);color:#141210" onclick="posDoLock('${moatAddr}')">⏳ Lock Now</button>` : '<div style="font-family:'DM Mono',monospace;font-size:.65rem;color:var(--mut);text-align:center">Connect wallet to lock</div>'}
+          ${canManage ? `<button class="btn" style="width:100%;background:var(--gld);color:#141210" onclick="posDoLock('${moatAddr}')">⏳ Lock Now</button>` : `<div style="font-family:'DM Mono',monospace;font-size:.65rem;color:var(--mut);text-align:center">Connect wallet to lock</div>`}
           <div id="lockStatus" style="font-family:'DM Mono',monospace;font-size:.65rem;color:var(--mut);text-align:center;margin-top:.4rem"></div>
         </div>
 
