@@ -1459,13 +1459,38 @@ const ZEPHYR_API = 'https://zephyr.jankystudios.xyz/api/usernames';
 // Known profiles — wallet → {pic, twitter}
 // Add entries here: wallet address lowercase → profile data
 const KNOWN_PROFILES = {
-  // Format: '0xwallet...': { pic: 'https://...image.jpg', twitter: 'username' }
-  // Example (replace with real data when provided):
-  // '0xabc123...': { pic: 'https://pbs.twimg.com/profile_images/xxx/photo.jpg', twitter: 'cryptouser' },
+  '0x168e8d263634ef25ef84a643d231ae39ceb75909': { pic: 'https://raw.githubusercontent.com/precidoboss/my-game-sprites/main/VROSHI.png', twitter: 'vRoshi55' },
+  '0xa344c1401d8fdec5f842e07a488006c6ec6a26b9': { pic: 'https://raw.githubusercontent.com/precidoboss/my-game-sprites/main/Cryptowizard%20.png', twitter: 'Crypto__Wizzard' },
+  '0xc32c38aa716adebef9f15a6102cfdb1321df78cb': { pic: 'https://raw.githubusercontent.com/precidoboss/my-game-sprites/main/Wiki.png', twitter: 'Wikitiky1' },
+  '0x18bf4dd2ad70d0adec255a28fc8ad7e67cb1d3a9': { pic: 'https://raw.githubusercontent.com/precidoboss/my-game-sprites/main/Zedosuk.png', twitter: 'zedosuk' },
+  '0x95894a9da8596206545787300f2e77c5b68e5ac6': { pic: 'https://raw.githubusercontent.com/precidoboss/my-game-sprites/main/Tommy%20mag%20.png', twitter: 'onecalledthomas' },
+  '0x8b4a106521ae96a41b2ec405d3fcb05eaf4a7c4f': { pic: 'https://raw.githubusercontent.com/precidoboss/my-game-sprites/main/Piers.png', twitter: 'piweb_' },
+  '0xb0920227b49a43ec7259bf070a1fc3e52c56084d': { pic: 'https://raw.githubusercontent.com/precidoboss/my-game-sprites/main/Honeybear%20.png', twitter: 'HoneyBear9k' },
+  '0x98f4394ff55e453e221539e846b1ba5d0e767253': { pic: 'https://raw.githubusercontent.com/precidoboss/my-game-sprites/main/Miner%20miner%20.png', twitter: 'minerminer' },
+  '0xad1f64082b60560e04008fe125170b81fdb9a235': { pic: 'https://raw.githubusercontent.com/precidoboss/my-game-sprites/main/Artwolfie.png', twitter: 'artwolfien' },
+  '0x189d13b2c5fe9be080773400bef7376d0079354e': { pic: 'https://raw.githubusercontent.com/precidoboss/my-game-sprites/main/Balln%20chin.png', twitter: 'TheBallnChikn' },
+  '0x7de431d96068b48eb5a4e142ec3da6b251b7f2b6': { pic: 'https://raw.githubusercontent.com/precidoboss/my-game-sprites/main/Anej56.png', twitter: 'anej56' },
+  '0x77e1e30e3b86acbae504052a5f8a44bbd150bf50': { pic: 'https://raw.githubusercontent.com/precidoboss/my-game-sprites/main/Dimifw%20.png', twitter: 'DimiFW' },
+  '0x488be5ded711572f9fb8568f3013e6e907506b6f': { pic: 'https://raw.githubusercontent.com/precidoboss/my-game-sprites/main/Hax.png', twitter: 'EzHaxx' },
+  '0x785a9369cf7918c0a295809962eaf9d8fabde98d': { pic: 'https://raw.githubusercontent.com/precidoboss/my-game-sprites/main/Tigresa.png', twitter: 'LoveCrypto15' },
+  '0x0e898ba9e51bc267789747fade63ed57ea5b5431': { pic: 'https://raw.githubusercontent.com/precidoboss/my-game-sprites/main/Opmilo405.png', twitter: 'opmilo405' },
 };
 
 function getKnownProfile(wallet) {
   return KNOWN_PROFILES[wallet?.toLowerCase()] || null;
+}
+
+function profileAvatar(wallet, size=24) {
+  const p = getKnownProfile(wallet);
+  if (!p) return `<span style="display:inline-flex;align-items:center;justify-content:center;width:\${size}px;height:\${size}px;border-radius:50%;background:var(--bor);font-size:\${Math.floor(size*0.5)}px;flex-shrink:0">👤</span>`;
+  return `<img src="\${p.pic}" style="width:\${size}px;height:\${size}px;border-radius:50%;object-fit:cover;flex-shrink:0;border:1px solid var(--bor)" onerror="this.style.display='none'">`;
+}
+
+function profileName(wallet, fallbackName) {
+  const p = getKnownProfile(wallet);
+  const base = fallbackName || shortA(wallet);
+  if (!p) return base;
+  return `<span style="display:inline-flex;align-items:center;gap:5px">\${profileAvatar(wallet,18)}<span>\${base}</span><a href="https://x.com/\${p.twitter}" target="_blank" style="color:var(--acc);font-size:.6em;text-decoration:none" onclick="event.stopPropagation()">@\${p.twitter}</a></span>`;
 }
 
 // ── STATE ──
@@ -1849,7 +1874,13 @@ function renderOverview(freshEids=[]){
   const tb=document.querySelector('#ovLb tbody');
   if(tb)tb.innerHTML=sw.slice(0,15).map((w,i)=>`<tr>
     <td>${rb(i+1)}</td>
-    <td><span class="wa" onclick="gotoW('${w.wallet}')">${shortA(w.wallet)}</span></td>
+    <td>
+      <span class="wa" onclick="gotoW('${w.wallet}')" style="display:inline-flex;align-items:center;gap:6px">
+        ${(()=>{const p=getKnownProfile(w.wallet);return p?`<img src="${p.pic}" style="width:20px;height:20px;border-radius:50%;object-fit:cover;flex-shrink:0" onerror="this.style.display='none'">`:'';})()}
+        ${shortA(w.wallet)}
+        ${(()=>{const p=getKnownProfile(w.wallet);return p?`<a href="https://x.com/${p.twitter}" target="_blank" style="color:var(--acc);font-size:.7em;text-decoration:none" onclick="event.stopPropagation()">@${p.twitter}</a>`:'';})()}
+      </span>
+    </td>
     <td><div class="bw"><div class="bt"><div class="bf" style="width:${sw[0].totalPoints?w.totalPoints/sw[0].totalPoints*100:0}%"></div></div><span class="bv">${fmtP(w.totalPoints)}</span></div></td>
   </tr>`).join('');
   renderEvItems(allEvs.slice(0,8),'ovEvFd',freshEids);
@@ -2221,7 +2252,11 @@ function buildMoatLB(addr){
     const mProf = getKnownProfile(w);
     return `<tr><td>${rb(i+1)}</td>
       <td>${muname ? '<div class=\"zname\">'+muname+'</div>' : ''}
-      <span class="wa" onclick="gotoW('${w}')">${shortA(w)}</span></td>
+      <span class="wa" onclick="gotoW('${w}')" style="display:inline-flex;align-items:center;gap:5px">
+          ${(()=>{const p=getKnownProfile(w);return p?`<img src="${p.pic}" style="width:18px;height:18px;border-radius:50%;object-fit:cover;flex-shrink:0" onerror="this.style.display='none'">`:'';})()}
+          ${zephyrNames[w]||shortA(w)}
+          ${(()=>{const p=getKnownProfile(w);return p?`<a href="https://x.com/${p.twitter}" target="_blank" style="color:var(--acc);font-size:.7em;text-decoration:none" onclick="event.stopPropagation()">@${p.twitter}</a>`:'';})()}
+        </span></td>
       <td><div class="bw"><div class="bt"><div class="bf" style="width:${m.sorted[0]?.points?p.points/m.sorted[0].points*100:0}%"></div></div><span class="bv">${fmtP(p.points)}</span></div></td>
       <td style="font-family:'DM Mono',monospace;font-size:.64rem;color:var(--mut)">${p.weight?p.weight.toFixed(2)+'%':'—'}</td>
       <td style="font-family:'DM Mono',monospace;font-size:.63rem;color:var(--mut)">${share}%</td>
@@ -2322,7 +2357,7 @@ function renderEvItemsInline(evs){
     '0xb31f66aa3c1e785363f0875a1b74e27b85fd66c7':'WAVAX'};
   return evs.map(e=>{
     const ts=fmtTs(e.timestamp);
-    const w=e.wallet?`<span class="wa" onclick="gotoW('${e.wallet}')">${shortA(e.wallet)}</span>`:'';
+    const _ep=getKnownProfile(e.wallet);const w=e.wallet?`<span class="wa" onclick="gotoW('${e.wallet}')" style="display:inline-flex;align-items:center;gap:4px">${_ep?`<img src="${_ep.pic}" style="width:16px;height:16px;border-radius:50%;object-fit:cover" onerror="this.style.display='none'">`:''}${shortA(e.wallet)}</span>`:'';
     const rkRaw=(e.rewardToken||'').toLowerCase();
     const rkLabel=REWARD_TOKENS[rkRaw]||e.rewardToken||'tokens';
     const amt=e.rewardAmount>0?`<span style="font-family:'DM Mono',monospace;font-size:.6rem;color:var(--grn);background:rgba(109,184,122,.1);border-radius:4px;padding:1px 5px">💰 ${fmtP(e.rewardAmount)} ${rkLabel}</span>`:'';
@@ -2982,7 +3017,7 @@ function renderEvItems(evs,id,freshIds=[]){
     </span>`:'';
 
     // Wallet
-    const wallet=e.wallet?`<span class="wa" onclick="gotoW('${e.wallet}')">${shortA(e.wallet)}</span>`:'';
+    const _ep2=getKnownProfile(e.wallet);const wallet=e.wallet?`<span class="wa" onclick="gotoW('${e.wallet}')" style="display:inline-flex;align-items:center;gap:4px">${_ep2?`<img src="${_ep2.pic}" style="width:16px;height:16px;border-radius:50%;object-fit:cover" onerror="this.style.display='none'">`:''}${shortA(e.wallet)}</span>`:'';
 
     // Token amount chip
     let amtChip='';
@@ -3105,7 +3140,24 @@ async function gotoW(addr,silent=false){
     ${sr('Top Percentile',rank?'Top '+(100-pct)+'%':'—','var(--grn)')}
     ${sr('Eco Share',ecoTot?(totPts/ecoTot*100).toFixed(4)+'%':'—','var(--txt)')}`;
 
-  const tb=document.querySelector('#wMTbl tbody');
+  // Known profile: show avatar + X link
+  const knownP = getKnownProfile(norm);
+  let wKnown = document.getElementById('wKnownProfile');
+  if (!wKnown) {
+    wKnown = document.createElement('div');
+    wKnown.id = 'wKnownProfile';
+    const wRes = document.getElementById('wRes');
+    wRes.insertBefore(wKnown, wRes.firstChild);
+  }
+  wKnown.innerHTML = knownP ? `
+    <div style="display:flex;align-items:center;gap:12px;background:rgba(249,115,22,.07);border:1px solid rgba(249,115,22,.25);border-radius:12px;padding:.85rem 1rem;margin-bottom:.75rem">
+      <img src="${knownP.pic}" style="width:52px;height:52px;border-radius:50%;object-fit:cover;border:2px solid var(--acc);flex-shrink:0" onerror="this.style.display='none'">
+      <div style="flex:1;min-width:0">
+        <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:1rem">${username || shortA(norm)}</div>
+        <div style="font-family:'DM Mono',monospace;font-size:.6rem;color:var(--mut);margin-top:2px">${shortA(norm)}</div>
+        <a href="https://x.com/${knownP.twitter}" target="_blank" style="display:inline-flex;align-items:center;gap:4px;margin-top:4px;font-family:'DM Mono',monospace;font-size:.65rem;color:var(--acc);text-decoration:none">𝕏 @${knownP.twitter} ↗</a>
+      </div>
+    </div>` : '';
   tb.innerHTML=moatPts.sort((a,b)=>b.points-a.points).map(p=>{
     const meta=MOATS[p.contractAddress];
     const lbl=meta?`<div style="display:flex;align-items:center">${logoImg(meta.logo,'moat-logo-sm',meta.emoji,meta.color)}<span style="color:${meta.color}">${meta.name}</span></div>`:`<span class="wa">${shortA(p.contractAddress)}</span>`;
@@ -6804,19 +6856,61 @@ async function posDoExitLock(moatAddr,lockIdx,short,amt) {
   await posRunTx('unstakeStatus', async()=>{
     const moat=new ethers.Contract(moatAddr,MOAT_ABI,posSigner);
     return moat.exitLock(BigInt(lockIdx));
-  }, `✅ Lock exited — ${fmtP(amt)} ${short} returned`);
+  }, `✅ Lock exited — ${fmtP(amt)} ${short} returned to wallet`);
 }
 
-// ── EARLY EXIT ──
-async function posDoEarlyExit(moatAddr,lockIdx,short,amt,daysLeft,origDur) {
-  const donePct=Math.max(0,100-Math.round(daysLeft/Math.max(origDur,1)*100));
-  const penPct=donePct<10?95:donePct<20?90:donePct<30?80:donePct<40?70:donePct<60?60:donePct<70?50:donePct<80?40:donePct<90?30:20;
-  const recAmt=(amt*(1-penPct/100)*0.995).toFixed(4);
-  // confirm handled inline
-  await posRunTx('unstakeStatus', async()=>{
-    const moat=new ethers.Contract(moatAddr,MOAT_ABI,posSigner);
+// ── EARLY EXIT (EEL) — show full penalty breakdown first ──
+function posDoEarlyExit(moatAddr, lockIdx, short, amt, daysLeft, origDur) {
+  if (!posSigner) return;
+  // Exact EEL penalty table from Moats docs
+  const donePct = Math.max(0, Math.min(100, Math.round((1 - daysLeft / Math.max(origDur,1)) * 100)));
+  let penPct;
+  if      (donePct < 10) penPct = 95;
+  else if (donePct < 20) penPct = 90;
+  else if (donePct < 30) penPct = 80;
+  else if (donePct < 40) penPct = 70;
+  else if (donePct < 50) penPct = 60;
+  else if (donePct < 60) penPct = 50;
+  else if (donePct < 70) penPct = 40;
+  else if (donePct < 80) penPct = 30;
+  else if (donePct < 90) penPct = 20;
+  else                   penPct = 10;
+
+  const burnAmt    = (amt * penPct * 0.95 / 100).toFixed(4); // 95% of penalty burned
+  const protAmt    = (amt * penPct * 0.05 / 100).toFixed(4); // 5% to protocol
+  const receiveAmt = (amt * (1 - penPct/100)).toFixed(4);
+  const loseAmt    = (amt - parseFloat(receiveAmt)).toFixed(4);
+
+  // Show confirmation UI in the unstakeStatus element
+  const el = document.getElementById('unstakeStatus');
+  if (!el) return;
+
+  el.innerHTML = `
+    <div style="background:rgba(224,82,82,.08);border:2px solid rgba(224,82,82,.35);border-radius:12px;padding:1rem;text-align:left;margin-top:.5rem">
+      <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;color:var(--red);font-size:.88rem;margin-bottom:.65rem">⚠️ EEL Early Exit — ${short}</div>
+      <div style="font-family:'DM Mono',monospace;font-size:.62rem;line-height:1.8">
+        <div style="display:flex;justify-content:space-between"><span style="color:var(--mut)">Lock progress:</span><span>${donePct}% complete (${daysLeft} days left)</span></div>
+        <div style="display:flex;justify-content:space-between"><span style="color:var(--mut)">Penalty rate:</span><span style="color:var(--red);font-weight:700">${penPct}% of your tokens</span></div>
+        <div style="border-top:1px solid var(--bor);margin:.4rem 0"></div>
+        <div style="display:flex;justify-content:space-between"><span style="color:var(--mut)">Tokens you locked:</span><span>${fmtP(amt)} ${short}</span></div>
+        <div style="display:flex;justify-content:space-between"><span style="color:var(--red)">🔥 Burned (95% of penalty):</span><span style="color:var(--red)">−${burnAmt} ${short}</span></div>
+        <div style="display:flex;justify-content:space-between"><span style="color:var(--gld)">→ Protocol fee (5%):</span><span style="color:var(--gld)">−${protAmt} ${short}</span></div>
+        <div style="display:flex;justify-content:space-between;border-top:1px solid var(--bor);padding-top:.3rem;margin-top:.2rem"><span style="color:var(--grn);font-weight:700">✅ You receive:</span><span style="color:var(--grn);font-weight:700">${receiveAmt} ${short}</span></div>
+      </div>
+      <div style="margin-top:.75rem;font-family:'DM Mono',monospace;font-size:.58rem;color:var(--mut)">You are permanently losing <b style="color:var(--red)">${loseAmt} ${short}</b>. This cannot be undone.</div>
+      <div style="display:flex;gap:8px;margin-top:.75rem">
+        <button class="btn btn-sm btn-g" style="flex:1" onclick="document.getElementById('unstakeStatus').innerHTML=''">Cancel</button>
+        <button class="btn btn-sm" style="flex:2;background:var(--red)" onclick="posConfirmEarlyExit('${moatAddr}',${lockIdx},'${short}',${amt})">🔥 Confirm EEL Exit — Lose ${loseAmt} ${short}</button>
+      </div>
+    </div>`;
+}
+
+async function posConfirmEarlyExit(moatAddr, lockIdx, short, amt) {
+  if (!posSigner) return;
+  await posRunTx('unstakeStatus', async () => {
+    const moat = new ethers.Contract(moatAddr, MOAT_ABI, posSigner);
     return moat.earlyExitLock(BigInt(lockIdx));
-  });
+  }, `✅ Early exit complete — tokens returned to wallet`);
 }
 
 // ── CLAIM REWARDS ──
