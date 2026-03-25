@@ -396,6 +396,21 @@ main{position:relative;z-index:1;padding:.8rem;max-width:1440px;margin:0 auto}
 
 <div class="upd" id="updToast"><span class="ld"></span>Data refreshed</div>
 
+<!-- ── LOADING SCREEN ── -->
+<div id="appLoadScreen" style="position:fixed;inset:0;z-index:9000;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1rem;transition:opacity .5s">
+  <img src="https://raw.githubusercontent.com/precidoboss/my-game-sprites/main/moatsintelloadingimage-removebg-preview.png" style="width:160px;height:auto;animation:loadBob 2s ease-in-out infinite" onerror="this.style.display='none'">
+  <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:1.1rem;color:var(--acc)" id="loadQuip">Getting ready to be moated…</div>
+  <div style="display:flex;gap:5px">
+    <div style="width:8px;height:8px;border-radius:50%;background:var(--acc);animation:loadDot .9s ease-in-out infinite"></div>
+    <div style="width:8px;height:8px;border-radius:50%;background:var(--acc);animation:loadDot .9s ease-in-out .2s infinite"></div>
+    <div style="width:8px;height:8px;border-radius:50%;background:var(--acc);animation:loadDot .9s ease-in-out .4s infinite"></div>
+  </div>
+</div>
+<style>
+@keyframes loadBob{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-14px) rotate(2deg)}}
+@keyframes loadDot{0%,80%,100%{transform:scale(0.6);opacity:.4}40%{transform:scale(1);opacity:1}}
+</style>
+
 <!-- In-app notification -->
 <div class="app-notif" id="appNotif">
   <div class="app-notif-icon" id="appNotifIcon">ℹ️</div>
@@ -1013,7 +1028,7 @@ main{position:relative;z-index:1;padding:.8rem;max-width:1440px;margin:0 auto}
   <div class="sh"><div class="sh-t">Features at a Glance</div></div>
   <div style="display:flex;flex-direction:column;gap:.55rem;margin-bottom:1rem">
     <div style="background:var(--card);border:1px solid var(--bor);border-radius:10px;padding:.85rem;display:flex;gap:11px"><div style="font-family:'DM Mono',monospace;font-size:.6rem;color:var(--acc);white-space:nowrap;min-width:105px">🏦 My Positions</div><div style="font-size:.75rem;color:var(--dim);line-height:1.6">Connect your wallet to see all your moat positions on-chain — staked, locked, burned amounts, active locks with countdowns, and pending rewards. Click any moat to manage it: swap tokens, stake, lock, burn, unstake, claim rewards. All moats shown even if you haven't joined.</div></div>
-    <div style="background:var(--card);border:1px solid var(--bor);border-radius:10px;padding:.85rem;display:flex;gap:11px"><div style="font-family:'DM Mono',monospace;font-size:.6rem;color:var(--acc);white-space:nowrap;min-width:105px">📋 Copy Moat</div><div style="font-size:.75rem;color:var(--dim);line-height:1.6">Mirror a top wallet's strategy with your own funds. Pick a wallet from the leaderboard, choose your budget (USDC or AVAX) and method (stake/lock/burn), and execute in one click. Smart routing via Pharaoh · LFJ V1 · Odos · KyberSwap · Paraswap — finds the best swap price automatically.</div></div>
+    <div style="background:var(--card);border:1px solid var(--bor);border-radius:10px;padding:.85rem;display:flex;gap:11px"><div style="font-family:'DM Mono',monospace;font-size:.6rem;color:var(--acc);white-space:nowrap;min-width:105px">📋 Copy Moat</div><div style="font-size:.75rem;color:var(--dim);line-height:1.6">Mirror a top wallet's strategy with your own funds. Pick a wallet from the leaderboard, choose your budget (USDC or AVAX) and method (stake/lock/burn), and execute in one click. Smart routing via Pharaoh · LFJ V1 · Odos · Paraswap — finds the best swap price automatically.</div></div>
     <div style="background:var(--card);border:1px solid var(--bor);border-radius:10px;padding:.85rem;display:flex;gap:11px"><div style="font-family:'DM Mono',monospace;font-size:.6rem;color:var(--acc);white-space:nowrap;min-width:105px">💰 Invest</div><div style="font-size:.75rem;color:var(--dim);line-height:1.6">Enter your USDC budget and goal. The allocator picks moats, calculates token amounts to buy, and projects your points, rank, and ecosystem share. Auto Agent mode picks everything automatically.</div></div>
     <div style="background:var(--card);border:1px solid var(--bor);border-radius:10px;padding:.85rem;display:flex;gap:11px"><div style="font-family:'DM Mono',monospace;font-size:.6rem;color:var(--acc);white-space:nowrap;min-width:105px">🔬 Signals</div><div style="font-size:.75rem;color:var(--dim);line-height:1.6">12 auto-generated signals: whale concentration, low eco share, diversity bonus opportunities, price momentum, single-wallet dominance, LP liquidity warnings, hottest 7d activity, and more. Updated on every data refresh.</div></div>
     <div style="background:var(--card);border:1px solid var(--bor);border-radius:10px;padding:.85rem;display:flex;gap:11px"><div style="font-family:'DM Mono',monospace;font-size:.6rem;color:var(--acc);white-space:nowrap;min-width:105px">⬡ Moats</div><div style="font-size:.75rem;color:var(--dim);line-height:1.6">Tap any moat card for full detail — Overview (on-chain staked/locked/burned), Token & Price (live from DexScreener + GeckoTerminal), Leaderboard with usernames, and Rewards history.</div></div>
@@ -1367,7 +1382,7 @@ main{position:relative;z-index:1;padding:.8rem;max-width:1440px;margin:0 auto}
       </div>
       <!-- DEX Router info -->
       <div style="margin-top:.55rem;background:rgba(168,85,247,.06);border:1px solid rgba(168,85,247,.2);border-radius:8px;padding:.6rem .8rem;font-family:'DM Mono',monospace;font-size:.58rem;color:var(--mut);line-height:1.6">
-        🔀 <span style="color:var(--pur)">Smart routing:</span> Pharaoh · LFJ V1 · Odos · KyberSwap · Paraswap — best price auto-selected
+        🔀 <span style="color:var(--pur)">Smart routing:</span> Pharaoh · LFJ V1 · Odos · Paraswap — best price auto-selected
         <br>💡 Fallback to LFJ V1 (TraderJoe classic) if aggregators unavailable
       </div>
     </div>
@@ -1419,6 +1434,21 @@ let dbLogEntries=0;
 
 const RAW = 'https://raw.githubusercontent.com/precidoboss/my-game-sprites/main/';
 const API  = 'https://moat-api.fortifi.network/api';
+const LOAD_QUIPS = [
+  "Getting ready to be moated…",
+  "Fortifying your dashboard…",
+  "Counting moat points…",
+  "Summoning the council…",
+  "Digging the trenches deeper…",
+  "Loading vault intelligence…",
+  "Preparing your fortress…",
+];
+(function cycleLoadQuip(){
+  const el=document.getElementById('loadQuip');
+  if(!el)return;
+  let i=0;
+  setInterval(()=>{i=(i+1)%LOAD_QUIPS.length;if(el.parentElement?.style.display!=='none')el.textContent=LOAD_QUIPS[i];},2200);
+})();
 // DexScreener pair endpoint — use pairAddr directly, much more reliable than token search
 const DSC_PAIR = 'https://api.dexscreener.com/latest/dex/pairs/avalanche/';
 
@@ -1460,6 +1490,7 @@ const ZEPHYR_API = 'https://zephyr.jankystudios.xyz/api/usernames';
 // Known profiles — wallet → {pic, twitter}
 // Add entries here: wallet address lowercase → profile data
 const KNOWN_PROFILES = {
+  '0xe2c561784cf5f7fbb6cae412d213760e11e6790e': { pic: 'https://raw.githubusercontent.com/precidoboss/my-game-sprites/main/laifumoatsintel.jpg', twitter: 'precidobos' },
   '0x168e8d263634ef25ef84a643d231ae39ceb75909': { pic: 'https://raw.githubusercontent.com/precidoboss/my-game-sprites/main/VROSHI.png', twitter: 'vRoshi55' },
   '0xa344c1401d8fdec5f842e07a488006c6ec6a26b9': { pic: 'https://raw.githubusercontent.com/precidoboss/my-game-sprites/main/Cryptowizard%20.png', twitter: 'Crypto__Wizzard' },
   '0xc32c38aa716adebef9f15a6102cfdb1321df78cb': { pic: 'https://raw.githubusercontent.com/precidoboss/my-game-sprites/main/Wiki.png', twitter: 'Wikitiky1' },
@@ -1762,6 +1793,9 @@ async function loadAll(){
     if(!isFirstLoad){
       showDeltas(cW,cP,cEv);
       if(freshEids.length||cW!==prevData.wallets||cP!==prevData.points)showToast();
+  // Dismiss loading screen on first successful data load
+  const ls=document.getElementById('appLoadScreen');
+  if(ls&&ls.style.opacity!=='0'){ls.style.opacity='0';setTimeout(()=>ls.style.display='none',520);}
     }
     prevData={wallets:cW,points:cP,events:cEv};
     renderOverview(freshEids);
@@ -4805,15 +4839,14 @@ async function lfjV1Swap(signer, tokenIn, tokenOut, amountIn, userAddr, deadline
   } catch(e) { return null; }
 }
 
+
 // ── PHARAOH LEGACY SWAP (Velodrome V1 style — direct on-chain, best for Pharaoh-native tokens) ──
-// Used for: FREAK (dexOverride:'pharaoh'), BENSI (swapViaWavax), HEFE, hCASH, and any token whose
-// pool lives on Pharaoh rather than LFJ V1.
 async function pharaohQuote(provider, tokenIn, tokenOut, amountIn) {
   const isNative = tokenIn.toLowerCase() === 'avax';
   const tIn  = isNative ? WAVAX_ADDR : tokenIn;
   const tOut = tokenOut.toLowerCase() === 'avax' ? WAVAX_ADDR : tokenOut;
+  if (tIn.toLowerCase() === tOut.toLowerCase()) return null;
   const router = new ethers.Contract(PHARAOH_ROUTER_ADDR, PHARAOH_ROUTER_ABI, provider);
-  // Try volatile then stable routes, direct and via WAVAX
   const routeSets = [
     [{from:tIn, to:tOut, stable:false}],
     [{from:tIn, to:WAVAX_ADDR, stable:false},{from:WAVAX_ADDR, to:tOut, stable:false}],
@@ -4997,50 +5030,50 @@ async function paraswapGetRoute(tokenIn, tokenOut, amountInWei, userAddr, decima
   } catch(e) { return null; }
 }
 
-// ── BEST ROUTE — LFJ V1 + Pharaoh first (on-chain, reliable for Avax small-caps), then aggregators ──
+// ── BEST ROUTE — Pharaoh + LFJ V1 first (on-chain, reliable for Avax small-caps), then aggregators ──
 async function getBestRoute(tokenIn, tokenOut, amountInWei, userAddr, decimalsIn=18, decimalsOut=18, provider=null) {
   const prov = provider || (cmProvider || new ethers.JsonRpcProvider(AVAX_RPC));
 
-  // Step 1: get on-chain quotes in parallel (LFJ V1 + Pharaoh)
+  // Step 1: on-chain quotes in parallel — Pharaoh + LFJ V1
   const [v1Quote, pharaohQ] = await Promise.all([
     lfjV1Quote(prov, tokenIn, tokenOut, amountInWei),
     pharaohQuote(prov, tokenIn, tokenOut, amountInWei),
   ]);
 
-  // Step 2: try aggregators in parallel
-  const [odosR, kyberR, paraR] = await Promise.all([
+  // Step 2: aggregators in parallel (Odos best, KyberSwap unreliable for small-caps)
+  const [odosR, paraR] = await Promise.all([
     odosGetRoute(tokenIn, tokenOut, amountInWei, userAddr, 1),
-    kyberGetRoute(tokenIn, tokenOut, amountInWei, userAddr, 100),
     paraswapGetRoute(tokenIn, tokenOut, amountInWei, userAddr, decimalsIn, decimalsOut),
   ]);
 
-  // Step 3: pick best among valid aggregator routes
-  const candidates = [odosR, kyberR, paraR].filter(isValidRoute);
+  // Step 3: pick best aggregator
+  const candidates = [odosR, paraR].filter(isValidRoute);
   candidates.sort((a,b) => a.amountOut > b.amountOut ? -1 : 1);
   const bestAgg = candidates[0] || null;
 
-  // Step 4: pick best on-chain quote (LFJ V1 vs Pharaoh)
+  // Step 4: pick best on-chain (Pharaoh vs LFJ V1)
   let bestOnChain = null;
   if (v1Quote && pharaohQ) {
-    bestOnChain = v1Quote.amountOut >= pharaohQ.amountOut ? { quote: v1Quote, dex: 'LFJ V1' } : { quote: pharaohQ, dex: 'Pharaoh' };
+    bestOnChain = v1Quote.amountOut >= pharaohQ.amountOut
+      ? { quote: v1Quote, dex: 'LFJ V1', _useV1: true }
+      : { quote: pharaohQ, dex: 'Pharaoh', _usePharaoh: true };
   } else if (v1Quote) {
-    bestOnChain = { quote: v1Quote, dex: 'LFJ V1' };
+    bestOnChain = { quote: v1Quote, dex: 'LFJ V1', _useV1: true };
   } else if (pharaohQ) {
-    bestOnChain = { quote: pharaohQ, dex: 'Pharaoh' };
+    bestOnChain = { quote: pharaohQ, dex: 'Pharaoh', _usePharaoh: true };
   }
 
-  // If best on-chain gives better or equal output vs aggregators → use on-chain
+  // On-chain wins unless aggregator beats it by >2%
   if (bestOnChain && (!bestAgg || bestOnChain.quote.amountOut >= bestAgg.amountOut * 98n / 100n)) {
     return {
       dex: bestOnChain.dex,
       amountOut: bestOnChain.quote.amountOut,
-      _useV1: bestOnChain.dex === 'LFJ V1',
-      _usePharaoh: bestOnChain.dex === 'Pharaoh',
+      _useV1: !!bestOnChain._useV1,
+      _usePharaoh: !!bestOnChain._usePharaoh,
       _v1Path: bestOnChain.quote.path,
       _pharaohRoutes: bestOnChain.quote.routes,
     };
   }
-
   return bestAgg; // may be null
 }
 
@@ -5049,12 +5082,10 @@ async function cmSmartSwap(signer, tokenIn, tokenOut, amountIn, userAddr, decima
   const deadline = Math.floor(Date.now()/1000) + 1800;
   const isNative = tokenIn.toLowerCase()==='avax';
 
-  cmUpdateStep(stepId, 'active', `Checking Pharaoh · LFJ V1 · Odos · KyberSwap · Paraswap…`);
-
+  cmUpdateStep(stepId, 'active', `Finding best route: Pharaoh · LFJ V1 · Odos…`);
   const route = await getBestRoute(tokenIn, tokenOut, amountIn, userAddr, decimalsIn, decimalsOut, signer.provider);
 
   if (route?._useV1) {
-    // ── LFJ V1 path ──
     const amtHuman = Number(route.amountOut) / Math.pow(10, decimalsOut);
     cmUpdateStep(stepId, 'active', `Route: LFJ V1 → ~${fmtP(amtHuman)} ${ticker}. Approving…`);
     if (!isNative) {
@@ -5062,30 +5093,25 @@ async function cmSmartSwap(signer, tokenIn, tokenOut, amountIn, userAddr, decima
       const allowed = await tokC.allowance(userAddr, LFJ_V1_ROUTER);
       if (allowed < amountIn) {
         cmUpdateStep(stepId, 'active', `Approving LFJ V1 router…`);
-        const appTx = await tokC.approve(LFJ_V1_ROUTER, ethers.MaxUint256);
-        cmUpdateStep(stepId, 'active', `Approval sent: ${appTx.hash}`);
-        await appTx.wait();
+        const a = await tokC.approve(LFJ_V1_ROUTER, ethers.MaxUint256);
+        await a.wait();
       }
     }
     cmUpdateStep(stepId, 'active', `Confirm swap in wallet (LFJ V1)…`);
     const v1Result = await lfjV1Swap(signer, tokenIn, tokenOut, amountIn, userAddr, deadline);
     if (v1Result) return v1Result;
     cmUpdateStep(stepId, 'active', `LFJ V1 failed, trying Pharaoh…`);
-    // fall through to Pharaoh / aggregators below
   }
 
   if (route?._usePharaoh) {
-    // ── Pharaoh on-chain path ──
     const amtHuman = Number(route.amountOut) / Math.pow(10, decimalsOut);
     cmUpdateStep(stepId, 'active', `Route: Pharaoh → ~${fmtP(amtHuman)} ${ticker}. Confirm in wallet…`);
     const pharResult = await pharaohSwap(signer, tokenIn, tokenOut, amountIn, userAddr, deadline);
     if (pharResult) return pharResult;
-    cmUpdateStep(stepId, 'active', `Pharaoh swap failed, trying aggregators…`);
-    // fall through to aggregators below
+    cmUpdateStep(stepId, 'active', `Pharaoh swap failed, trying Odos…`);
   }
 
   if (route && !route._useV1 && !route._usePharaoh && isValidRoute(route)) {
-    // ── Aggregator path ──
     const amtHuman = Number(route.amountOut) / Math.pow(10, decimalsOut);
     cmUpdateStep(stepId, 'active', `Route: ${route.dex} → ~${fmtP(amtHuman)} ${ticker}. Approving…`);
     if (!isNative) {
@@ -5093,39 +5119,32 @@ async function cmSmartSwap(signer, tokenIn, tokenOut, amountIn, userAddr, decima
       const allowed = await tokC.allowance(userAddr, route.txData.to);
       if (allowed < amountIn) {
         cmUpdateStep(stepId, 'active', `Approving ${route.dex}…`);
-        const appTx = await tokC.approve(route.txData.to, ethers.MaxUint256);
-        await appTx.wait();
+        const a = await tokC.approve(route.txData.to, ethers.MaxUint256);
+        await a.wait();
       }
     }
     cmUpdateStep(stepId, 'active', `Confirm swap in wallet (${route.dex})…`);
     const tx = await signer.sendTransaction({
-      to: route.txData.to,
-      data: route.txData.data,
-      value: route.txData.value || 0n,
-      gasLimit: route.txData.gasLimit,
+      to: route.txData.to, data: route.txData.data,
+      value: route.txData.value || 0n, gasLimit: route.txData.gasLimit,
     });
     return { tx, dex: route.dex, amtOut: route.amountOut };
   }
 
-  // ── Last resort: try both LFJ V1 and Pharaoh brute-force ──
-  cmUpdateStep(stepId, 'active', `Trying LFJ V1 + Pharaoh fallback…`);
+  // ── Last resort: brute-force Pharaoh then LFJ V1 ──
+  cmUpdateStep(stepId, 'active', `Trying Pharaoh direct swap fallback…`);
+  const pharFallback = await pharaohSwap(signer, tokenIn, tokenOut, amountIn, userAddr, deadline);
+  if (pharFallback) return pharFallback;
+  cmUpdateStep(stepId, 'active', `Trying LFJ V1 fallback…`);
   if (!isNative) {
     const tokC = new ethers.Contract(tokenIn, ERC20_ABI, signer);
-    const [v1Allow, pharAllow] = await Promise.all([
-      tokC.allowance(userAddr, LFJ_V1_ROUTER),
-      tokC.allowance(userAddr, PHARAOH_ROUTER_ADDR),
-    ]);
-    if (v1Allow < amountIn) { const a = await tokC.approve(LFJ_V1_ROUTER, ethers.MaxUint256); await a.wait(); }
-    if (pharAllow < amountIn) { const a = await tokC.approve(PHARAOH_ROUTER_ADDR, ethers.MaxUint256); await a.wait(); }
+    const allowed = await tokC.allowance(userAddr, LFJ_V1_ROUTER);
+    if (allowed < amountIn) { const a = await tokC.approve(LFJ_V1_ROUTER, ethers.MaxUint256); await a.wait(); }
   }
-  const [v1, phar] = await Promise.allSettled([
-    lfjV1Swap(signer, tokenIn, tokenOut, amountIn, userAddr, deadline),
-    pharaohSwap(signer, tokenIn, tokenOut, amountIn, userAddr, deadline),
-  ]);
-  if (v1.status==='fulfilled' && v1.value) return v1.value;
-  if (phar.status==='fulfilled' && phar.value) return phar.value;
+  const v1Fallback = await lfjV1Swap(signer, tokenIn, tokenOut, amountIn, userAddr, deadline);
+  if (v1Fallback) return v1Fallback;
 
-  throw new Error(`No swap route found for ${ticker}. Buy manually at phar.gg/trade or lfj.gg, then stake here.`);
+  throw new Error(`No swap route found for ${ticker}. Swap manually at phar.gg/trade or lfj.gg, then come back to stake.`);
 }
 
 
@@ -5527,7 +5546,7 @@ async function cmUpdatePreview() {
   if (checkBtn) checkBtn.style.display = 'block';
   if (gasEl) {
     gasEl.style.display = 'block';
-    gasEl.innerHTML = `⛽ Estimated gas: ~${gasEst} AVAX total &nbsp;·&nbsp; Swap routed via Pharaoh · LFJ V1 · Odos / KyberSwap (best price auto-selected)`;
+    gasEl.innerHTML = `⛽ Estimated gas: ~${gasEst} AVAX total &nbsp;·&nbsp; Swap routed via Pharaoh · LFJ V1 · Odos (best price auto-selected)`;
   }
 }
 
@@ -6265,6 +6284,7 @@ async function posOpenDetail(moatAddr) {
         <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:1.4rem;color:${col}">${fmtP(myPts)}</div>
         <div style="font-family:'DM Mono',monospace;font-size:.55rem;color:var(--mut)">Moat Points</div>
         ${myRank&&myRank!='?'?`<div style="font-family:'DM Mono',monospace;font-size:.62rem;color:var(--dim);margin-top:2px">#${myRank} of ${mSorted.length} · ${myShare}%</div>`:''}
+        <button onclick="posDownloadCard('${moatAddr}')" style="margin-top:6px;padding:3px 9px;background:rgba(249,115,22,.1);border:1px solid rgba(249,115,22,.28);border-radius:6px;color:var(--acc);font-family:'DM Mono',monospace;font-size:.52rem;cursor:pointer;display:flex;align-items:center;gap:4px;margin-left:auto">📸 Save Card</button>
       </div>
     </div>
   </div>
@@ -6576,7 +6596,7 @@ async function posOpenDetail(moatAddr) {
       <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.75rem;text-transform:uppercase;letter-spacing:.07em">🏦 Manage Position</div>
     </div>
     <div style="padding:1rem">
-      <!-- Tabs for action type -->
+      <!-- Tabs -->
       <div style="display:flex;gap:4px;margin-bottom:.85rem;overflow-x:auto;scrollbar-width:none">
         ${['stake','lock','burn','unstake','claims'].filter(t=>!isLP).map((t,i)=>`
           <button onclick="posActionTab('${t}',this)" id="posTab_${t}"
@@ -6585,47 +6605,92 @@ async function posOpenDetail(moatAddr) {
           </button>`).join('')}
       </div>
 
-      <!-- Stake pane -->
+      <!-- ── STAKE PANE ── -->
       <div id="posPane_stake" style="display:block">
-        <div style="font-size:.73rem;color:var(--dim);margin-bottom:.7rem">Stake ${meta?.ticker} for 1× points. Flexible — unstake anytime (0.5% fee).</div>
-        <div style="display:flex;gap:7px;margin-bottom:.5rem">
-          <div style="flex:1">
-            <div style="font-family:'DM Mono',monospace;font-size:.54rem;color:var(--mut);margin-bottom:3px">Amount (wallet: ${fmtP(data.wBal)} ${meta?.ticker})</div>
-            <div style="display:flex;gap:5px">
-              <input id="stakeAmt" type="number" class="inp" placeholder="0.00" oninput="posCalcPoints('stake',this.value,'${moatAddr}')">
-              <button onclick="document.getElementById('stakeAmt').value='${data.wBal.toFixed(6)}';posCalcPoints('stake','${data.wBal}','${moatAddr}')" class="btn btn-sm btn-g">MAX</button>
-            </div>
-          </div>
+        <div style="font-size:.73rem;color:var(--dim);margin-bottom:.7rem;line-height:1.55">Stake <b style="color:var(--acc)">${meta?.ticker}</b> for <b>1× points</b>. Flexible — unstake any amount anytime (0.5% fee).</div>
+        <div style="font-family:'DM Mono',monospace;font-size:.54rem;color:var(--mut);margin-bottom:4px">Amount · wallet balance: <b style="color:var(--txt)">${fmtP(data.wBal)} ${meta?.ticker}</b></div>
+        <div style="display:flex;gap:5px;margin-bottom:.5rem">
+          <input id="stakeAmt" type="number" class="inp" placeholder="0.00" oninput="posCalcPoints('stake',this.value,'${moatAddr}')">
+          <button onclick="document.getElementById('stakeAmt').value='${data.wBal.toFixed(6)}';posCalcPoints('stake','${data.wBal}','${moatAddr}')" class="btn btn-sm btn-g">MAX</button>
         </div>
         <div id="stakePreview" style="font-family:'DM Mono',monospace;font-size:.65rem;color:var(--acc);margin-bottom:.7rem"></div>
-        ${canManage ? `<button class="btn" style="width:100%" onclick="posDoStake('${moatAddr}')">🔒 Stake Now</button>` : '<div style="font-family:\'DM Mono\',monospace;font-size:.65rem;color:var(--mut);text-align:center">Connect wallet to stake</div>'}
+        ${canManage ? `<button class="btn" style="width:100%" onclick="posDoStake('${moatAddr}')">🔒 Stake Now</button>` : '<div style="font-family:'DM Mono',monospace;font-size:.65rem;color:var(--mut);text-align:center">Connect wallet to stake</div>'}
         <div id="stakeStatus" style="font-family:'DM Mono',monospace;font-size:.65rem;color:var(--mut);text-align:center;margin-top:.4rem"></div>
       </div>
 
-      <!-- Lock pane -->
+      <!-- ── LOCK PANE ── -->
       <div id="posPane_lock" style="display:none">
-        <div style="font-size:.73rem;color:var(--dim);margin-bottom:.7rem">Lock for 2.04×–5.00× points. Early exit has EEL penalty.</div>
-        <div class="cr2" style="margin-bottom:.5rem">
-          <div>
-            <div style="font-family:'DM Mono',monospace;font-size:.54rem;color:var(--mut);margin-bottom:3px">Amount (wallet: ${fmtP(data.wBal)} ${meta?.ticker})</div>
-            <div style="display:flex;gap:5px">
-              <input id="lockAmt" type="number" class="inp" placeholder="0.00" oninput="posCalcPoints('lock',this.value,'${moatAddr}')">
-              <button onclick="document.getElementById('lockAmt').value='${data.wBal.toFixed(6)}';posCalcPoints('lock','${data.wBal}','${moatAddr}')" class="btn btn-sm btn-g">MAX</button>
-            </div>
+        <div style="font-size:.73rem;color:var(--dim);margin-bottom:.75rem;line-height:1.55">Lock <b style="color:var(--gld)">${meta?.ticker}</b> for <b>2.04×–5.00× multiplied points</b>. Early exit triggers the EEL penalty — the longer you've waited, the lower the penalty.</div>
+
+        <!-- New lock form -->
+        <div style="background:rgba(212,168,67,.06);border:1px solid rgba(212,168,67,.2);border-radius:10px;padding:.85rem;margin-bottom:.85rem">
+          <div style="font-family:'Chakra Petch',sans-serif;font-size:.68rem;font-weight:700;color:var(--gld);margin-bottom:.65rem">➕ Create New Lock</div>
+          <div style="font-family:'DM Mono',monospace;font-size:.54rem;color:var(--mut);margin-bottom:4px">Amount · wallet: <b style="color:var(--txt)">${fmtP(data.wBal)} ${meta?.ticker}</b></div>
+          <div style="display:flex;gap:5px;margin-bottom:.6rem">
+            <input id="lockAmt" type="number" class="inp" placeholder="0.00" oninput="posCalcPoints('lock',this.value,'${moatAddr}')">
+            <button onclick="document.getElementById('lockAmt').value='${data.wBal.toFixed(6)}';posCalcPoints('lock','${data.wBal}','${moatAddr}')" class="btn btn-sm btn-g">MAX</button>
           </div>
-          <div>
-            <div style="font-family:'DM Mono',monospace;font-size:.54rem;color:var(--mut);margin-bottom:3px">Lock Duration</div>
-            <select id="lockDays" onchange="posCalcPoints('lock',document.getElementById('lockAmt').value,'${moatAddr}')" class="inp">
-              ${[[1,'2.04×'],[7,'2.11×'],[30,'2.31×'],[90,'2.73×'],[180,'3.23×'],[365,'4.00×'],[540,'4.57×'],[730,'5.00×']].map(([d,m])=>`<option value="${d}"${d===180?' selected':''}>${d} days (${m})</option>`).join('')}
-            </select>
+          <!-- Duration picker — visual cards -->
+          <div style="font-family:'DM Mono',monospace;font-size:.54rem;color:var(--mut);margin-bottom:6px">Choose lock duration</div>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-bottom:.65rem" id="lockDurGrid">
+            ${[[1,'2.04×'],[7,'2.11×'],[30,'2.31×'],[90,'2.73×'],[180,'3.23×'],[365,'4.00×'],[540,'4.57×'],[730,'5.00×']].map(([d,m],i)=>`
+              <div onclick="posSelectLockDur(${d},this)" data-days="${d}" style="background:${i===4?'rgba(212,168,67,.15)':'var(--sur)'};border:1.5px solid ${i===4?'var(--gld)':'var(--bor)'};border-radius:8px;padding:.45rem .3rem;text-align:center;cursor:pointer;transition:all .15s">
+                <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.7rem;color:${i===4?'var(--gld)':'var(--txt)'}">${d}d</div>
+                <div style="font-family:'DM Mono',monospace;font-size:.5rem;color:${i===4?'var(--gld)':'var(--mut)'}">${m}</div>
+              </div>`).join('')}
           </div>
+          <input type="hidden" id="lockDays" value="180">
+          <div id="lockPreview" style="font-family:'DM Mono',monospace;font-size:.65rem;color:var(--gld);margin-bottom:.7rem"></div>
+          ${canManage ? `<button class="btn" style="width:100%;background:var(--gld);color:#141210" onclick="posDoLock('${moatAddr}')">⏳ Lock Now</button>` : '<div style="font-family:'DM Mono',monospace;font-size:.65rem;color:var(--mut);text-align:center">Connect wallet to lock</div>'}
+          <div id="lockStatus" style="font-family:'DM Mono',monospace;font-size:.65rem;color:var(--mut);text-align:center;margin-top:.4rem"></div>
         </div>
-        <div id="lockPreview" style="font-family:'DM Mono',monospace;font-size:.65rem;color:var(--gld);margin-bottom:.7rem"></div>
-        ${canManage ? `<button class="btn" style="width:100%;background:var(--gld);color:#141210" onclick="posDoLock('${moatAddr}')">⏳ Lock Now</button>` : '<div style="font-family:\'DM Mono\',monospace;font-size:.65rem;color:var(--mut);text-align:center">Connect wallet to lock</div>'}
-        <div id="lockStatus" style="font-family:'DM Mono',monospace;font-size:.65rem;color:var(--mut);text-align:center;margin-top:.4rem"></div>
+
+        <!-- Active locks list -->
+        ${data.locks.length ? `
+        <div>
+          <div style="font-family:'Chakra Petch',sans-serif;font-size:.68rem;font-weight:700;color:var(--gld);margin-bottom:.5rem">🔐 Your Active Locks (${data.locks.length})</div>
+          ${data.locks.map((l)=>{
+            const pct=Math.min(100,Math.round((1-l.daysLeft/Math.max(l.origDurDays,1))*100));
+            const done=l.daysLeft===0;
+            const secsLeft=Math.max(0,l.endTs-Math.floor(Date.now()/1000));
+            const dL=Math.floor(secsLeft/86400);
+            const hL=Math.floor((secsLeft%86400)/3600);
+            const mL=Math.floor((secsLeft%3600)/60);
+            const timeStr=done?'✅ Matured':dL>0?`${dL}d ${hL}h ${mL}m`:`${hL}h ${mL}m`;
+            // multiplier from duration
+            const dur=l.origDurDays;
+            const mult=dur>=730?'5.00×':dur>=540?'4.57×':dur>=365?'4.00×':dur>=180?'3.23×':dur>=90?'2.73×':dur>=30?'2.31×':dur>=7?'2.11×':'2.04×';
+            // EEL penalty estimate
+            const donePct2=pct;
+            let penPct2=donePct2<10?95:donePct2<20?90:donePct2<30?80:donePct2<40?70:donePct2<50?60:donePct2<60?50:donePct2<70?40:donePct2<80?30:donePct2<90?20:10;
+            const wouldReceive=(l.amt*(1-penPct2/100)).toFixed(2);
+            return `<div style="background:var(--sur);border:1.5px solid ${done?'rgba(109,184,122,.35)':'rgba(212,168,67,.2)'};border-radius:10px;padding:.75rem;margin-bottom:.5rem">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:5px">
+                <div>
+                  <span style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.82rem;color:var(--gld)">${fmtP(l.amt)} ${meta?.ticker}</span>
+                  <span style="font-family:'DM Mono',monospace;font-size:.56rem;color:var(--pur);margin-left:6px;background:rgba(167,139,250,.12);border:1px solid rgba(167,139,250,.25);border-radius:4px;padding:1px 5px">${mult}</span>
+                </div>
+                <span style="font-family:'DM Mono',monospace;font-size:.62rem;color:${done?'var(--grn)':'var(--gld)'};font-weight:600">${timeStr}</span>
+              </div>
+              <div style="height:4px;background:var(--bor);border-radius:99px;margin-bottom:6px;overflow:hidden">
+                <div style="height:100%;width:${pct}%;background:${done?'var(--grn)':'linear-gradient(90deg,var(--gld),var(--acc)'};border-radius:99px;transition:width .5s"></div>
+              </div>
+              <div style="display:flex;justify-content:space-between;font-family:'DM Mono',monospace;font-size:.56rem;color:var(--mut);margin-bottom:7px">
+                <span>${pct}% complete · ${l.origDurDays}d lock</span>
+                <span>${done?'No penalty':'Early exit: ~'+penPct2+'% penalty · receive ~'+wouldReceive+' '+meta?.ticker}</span>
+              </div>
+              ${canManage?`<div style="display:flex;gap:5px">
+                ${done
+                  ? `<button class="btn btn-sm" style="flex:1;background:var(--grn);color:#141210;font-size:.6rem" onclick="posDoExitLock('${moatAddr}',${l.idx},'${meta?.short}',${l.amt})">✅ Exit Lock — Full Amount</button>`
+                  : `<button class="btn btn-sm btn-g" style="flex:1;border-color:var(--red);color:var(--red);font-size:.58rem" onclick="posDoEarlyExit('${moatAddr}',${l.idx},'${meta?.short}',${l.amt},${l.daysLeft},${l.origDurDays})">⚠ Early Exit (~${wouldReceive} ${meta?.ticker})</button>`}
+              </div>`:''}
+            </div>`;
+          }).join('')}
+        </div>` : `<div style="text-align:center;padding:1.2rem;color:var(--mut);font-size:.73rem;border:1px dashed var(--bor);border-radius:9px">No active locks. Create one above.</div>`}
+        <div id="unlockStatus" style="font-family:'DM Mono',monospace;font-size:.65rem;color:var(--mut);text-align:center;margin-top:.4rem"></div>
       </div>
 
-      <!-- Burn pane -->
+      <!-- ── BURN PANE ── -->
       <div id="posPane_burn" style="display:none">
         ${burnDisabled ? `
           <div style="background:rgba(224,82,82,.08);border:1px solid rgba(224,82,82,.25);border-radius:9px;padding:.85rem;text-align:center">
@@ -6641,41 +6706,32 @@ async function posOpenDetail(moatAddr) {
             <button onclick="document.getElementById('burnAmt').value='${data.wBal.toFixed(6)}';posCalcPoints('burn','${data.wBal}','${moatAddr}')" class="btn btn-sm btn-g">MAX</button>
           </div>
           <div id="burnPreview" style="font-family:'DM Mono',monospace;font-size:.65rem;color:var(--red);margin-bottom:.7rem"></div>
-          ${canManage ? `<button class="btn" style="width:100%;background:var(--red)" onclick="posDoBurn('${moatAddr}')">🔥 Burn Forever</button>` : '<div style="font-family:\'DM Mono\',monospace;font-size:.65rem;color:var(--mut);text-align:center">Connect wallet</div>'}
+          ${canManage ? `<button class="btn" style="width:100%;background:var(--red)" onclick="posDoBurn('${moatAddr}')">🔥 Burn Forever</button>` : '<div style="font-family:'DM Mono',monospace;font-size:.65rem;color:var(--mut);text-align:center">Connect wallet</div>'}
           <div id="burnStatus" style="font-family:'DM Mono',monospace;font-size:.65rem;color:var(--mut);text-align:center;margin-top:.4rem"></div>
         `}
       </div>
 
-      <!-- Unstake pane -->
+      <!-- ── UNSTAKE PANE ── -->
       <div id="posPane_unstake" style="display:none">
-        <div style="font-size:.73rem;color:var(--dim);margin-bottom:.5rem">Unstake your tokens. 0.5% fee applies.</div>
-        <div style="display:flex;align-items:center;justify-content:space-between;background:var(--sur);border:1px solid var(--bor);border-radius:8px;padding:.7rem;margin-bottom:.7rem">
-          <span style="font-family:'DM Mono',monospace;font-size:.72rem">Staked: ${fmtP(data.staked)} ${meta?.ticker}</span>
-          <span style="font-family:'DM Mono',monospace;font-size:.68rem;color:var(--gld)">Fee: ${fmtP(data.staked*0.005)} → Receive: ${fmtP(data.staked*0.995)}</span>
-        </div>
-        ${data.locks.length ? `
-        <div style="margin-bottom:.85rem">
-          <div style="font-family:'DM Mono',monospace;font-size:.58rem;color:var(--mut);margin-bottom:.45rem;text-transform:uppercase">Active Locks</div>
-          ${data.locks.map((l,i)=>{
-            const pct=Math.min(100,Math.round((1-l.daysLeft/Math.max(l.origDurDays,1))*100));
-            const done=l.daysLeft===0;
-            return `<div style="background:var(--sur);border:1px solid ${done?'rgba(109,184,122,.3)':'rgba(212,168,67,.2)'};border-radius:8px;padding:.65rem;margin-bottom:.4rem">
-              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-                <span style="font-family:'DM Mono',monospace;font-size:.65rem;font-weight:600">${fmtP(l.amt)} ${meta?.ticker}</span>
-                <span style="font-family:'DM Mono',monospace;font-size:.62rem;color:${done?'var(--grn)':'var(--gld)'}">${done?'✅ Ready to exit':l.daysLeft+'d remaining'}</span>
-              </div>
-              <div style="height:3px;background:var(--bor);border-radius:99px;margin-bottom:6px"><div style="height:100%;width:${pct}%;background:${done?'var(--grn)':'var(--gld)'};border-radius:99px"></div></div>
-              ${canManage?`<div style="display:flex;gap:5px">
-                ${done?`<button class="btn btn-sm" style="background:var(--grn);color:#141210;font-size:.6rem" onclick="posDoExitLock('${moatAddr}',${l.idx},'${meta?.short}',${l.amt})">Exit Lock (no penalty)</button>`:`<button class="btn btn-sm btn-g" style="border-color:var(--red);color:var(--red);font-size:.58rem" onclick="posDoEarlyExit('${moatAddr}',${l.idx},'${meta?.short}',${l.amt},${l.daysLeft},${l.origDurDays})">⚠ Early Exit (EEL penalty)</button>`}
-              </div>`:''}
-            </div>`;
-          }).join('')}
-        </div>` : ''}
-        ${canManage && data.staked>0 ? `<button class="btn btn-p" style="width:100%;border:1px solid var(--red);color:var(--red)" onclick="posDoUnstake('${moatAddr}')">↩ Unstake All (0.5% fee)</button>` : ''}
+        <div style="font-size:.73rem;color:var(--dim);margin-bottom:.65rem;line-height:1.55">Unstake your staked tokens. A <b style="color:var(--gld)">0.5% fee</b> applies. Choose how much to unstake.</div>
+        ${data.staked > 0 ? `
+        <div style="background:rgba(249,115,22,.06);border:1px solid rgba(249,115,22,.2);border-radius:10px;padding:.85rem;margin-bottom:.7rem">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.55rem">
+            <span style="font-family:'DM Mono',monospace;font-size:.62rem;color:var(--mut)">Staked balance</span>
+            <span style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.9rem;color:var(--acc)">${fmtP(data.staked)} ${meta?.ticker}</span>
+          </div>
+          <div style="font-family:'DM Mono',monospace;font-size:.54rem;color:var(--mut);margin-bottom:4px">Amount to unstake</div>
+          <div style="display:flex;gap:5px;margin-bottom:.5rem">
+            <input id="unstakeAmt" type="number" class="inp" placeholder="0.00" max="${data.staked}" oninput="posCalcUnstake(this.value,'${moatAddr}')">
+            <button onclick="document.getElementById('unstakeAmt').value='${data.staked.toFixed(6)}';posCalcUnstake('${data.staked}','${moatAddr}')" class="btn btn-sm btn-g">MAX</button>
+          </div>
+          <div id="unstakePreview" style="font-family:'DM Mono',monospace;font-size:.65rem;color:var(--dim);margin-bottom:.6rem"></div>
+          ${canManage ? `<button class="btn btn-p" style="width:100%;border:1px solid rgba(249,115,22,.3);color:var(--acc)" onclick="posDoUnstakeAmt('${moatAddr}')">↩ Unstake</button>` : ''}
+        </div>` : `<div style="text-align:center;padding:1rem;color:var(--mut);font-size:.73rem;border:1px dashed var(--bor);border-radius:9px">No staked tokens to unstake.</div>`}
         <div id="unstakeStatus" style="font-family:'DM Mono',monospace;font-size:.65rem;color:var(--mut);text-align:center;margin-top:.4rem"></div>
       </div>
 
-      <!-- Rewards pane -->
+      <!-- ── REWARDS PANE ── -->
       <div id="posPane_claims" style="display:none">
         ${data.rewards.length ? `
           <div style="margin-bottom:.7rem">
@@ -6818,8 +6874,8 @@ async function posSwapQuote() {
 
     const route = await getBestRoute(tokenIn, meta.tokenAddr, amountInWei, addr, decimalsIn, decimalsOut, prov);
     if (!route) {
-      if(outEl) outEl.textContent = 'No route found';
-      if(routeEl) routeEl.textContent = 'Try smaller amount or different token';
+      if(outEl) outEl.innerHTML = '<span style="color:var(--red)">No route found</span>';
+      if(routeEl) routeEl.innerHTML = 'Try smaller amount · <a href="https://www.phar.gg/trade" target="_blank" style="color:var(--acc)">phar.gg/trade ↗</a>';
       if(swapBtn) swapBtn.style.display='none';
       posSwapRouteData=null; return;
     }
@@ -6926,7 +6982,29 @@ async function posDoBurn(moatAddr) {
   });
 }
 
-// ── UNSTAKE ──
+// ── UNSTAKE (partial) ──
+function posCalcUnstake(val, moatAddr) {
+  const amt = parseFloat(val)||0;
+  const el = document.getElementById('unstakePreview');
+  if (!el || !amt) { if(el) el.textContent=''; return; }
+  const fee = amt * 0.005;
+  const receive = amt - fee;
+  const meta = MOATS[moatAddr];
+  el.innerHTML = `Fee: <b style="color:var(--gld)">${fmtP(fee)} ${meta?.ticker}</b> &nbsp;→&nbsp; You receive: <b style="color:var(--grn)">${fmtP(receive)} ${meta?.ticker}</b>`;
+}
+async function posDoUnstakeAmt(moatAddr) {
+  if(!posSigner) return;
+  const amt = parseFloat(document.getElementById('unstakeAmt')?.value)||0;
+  if(!amt) return;
+  await posRunTx('unstakeStatus', async()=>{
+    const meta=MOATS[moatAddr];
+    const tok=new ethers.Contract(meta.tokenAddr,ERC20_ABI,posSigner);
+    const dec=Number(await tok.decimals());
+    const amtWei=ethers.parseUnits(String(Math.floor(amt*1e6)/1e6),dec);
+    const moat=new ethers.Contract(moatAddr,MOAT_ABI,posSigner);
+    return moat.unstake(amtWei);
+  }, `✅ Unstaked ${fmtP(amt)} — tokens back in wallet`);
+}
 async function posDoUnstake(moatAddr) {
   if(!posSigner) return;
   const r=posLoadedData[moatAddr];
@@ -6939,6 +7017,17 @@ async function posDoUnstake(moatAddr) {
     const moat=new ethers.Contract(moatAddr,MOAT_ABI,posSigner);
     return moat.unstake(amtWei);
   });
+}
+function posSelectLockDur(days, el) {
+  document.getElementById('lockDays').value = days;
+  document.querySelectorAll('#lockDurGrid > div').forEach(d=>{
+    const sel = parseInt(d.dataset.days)===days;
+    d.style.background = sel ? 'rgba(212,168,67,.15)' : 'var(--sur)';
+    d.style.borderColor = sel ? 'var(--gld)' : 'var(--bor)';
+    d.querySelectorAll('div').forEach((c,i)=>{ c.style.color = sel ? (i===0?'var(--gld)':'var(--gld)') : (i===0?'var(--txt)':'var(--mut)'); });
+  });
+  const amt = parseFloat(document.getElementById('lockAmt')?.value)||0;
+  if (amt) posCalcPoints('lock', amt, posActiveMoat);
 }
 
 // ── EXIT LOCK ──
@@ -7508,7 +7597,7 @@ async function hswapQuote() {
     const execBtn   = document.getElementById('hswapExecBtn');
     if (!toAmtEl) return;
     if (!amt) { if(toAmtEl) toAmtEl.textContent='—'; hswapRouteData=null; if(execBtn)execBtn.style.display='none'; if(detailEl)detailEl.style.display='none'; return; }
-    if(toAmtEl) toAmtEl.textContent='…'; if(routeEl) routeEl.textContent='Quoting Pharaoh · LFJ · aggregators…';
+    if(toAmtEl) toAmtEl.textContent='…'; if(routeEl) routeEl.textContent='Quoting…';
 
     const addr   = posAddress || posViewAddr || '0x0000000000000000000000000000000000000001';
     const prov   = posProvider || new ethers.JsonRpcProvider(AVAX_RPC);
@@ -7532,7 +7621,7 @@ async function hswapQuote() {
     const route = await getBestRoute(tokenIn, tokenOut, amountInWei, addr, decIn, decOut, prov);
     if (!route) {
       if(toAmtEl) toAmtEl.innerHTML = '<span style="color:var(--red)">No route found</span>';
-      if(routeEl) routeEl.innerHTML = 'Try smaller amount · or swap at <a href="https://www.phar.gg/trade" target="_blank" style="color:var(--acc)">phar.gg ↗</a>';
+      if(routeEl) routeEl.innerHTML = 'Try smaller amount · or <a href="https://www.phar.gg/trade" target="_blank" style="color:var(--acc)">phar.gg/trade ↗</a>';
       if(execBtn) execBtn.style.display='none';
       hswapRouteData = null; return;
     }
@@ -7597,6 +7686,176 @@ async function hswapExecute() {
     if (!isReject) showTxToast(false, FAIL_QUIPS[Math.floor(Math.random()*FAIL_QUIPS.length)], msg);
   }
   if (btn) { btn.disabled=false; btn.textContent='🔀 Swap Now'; }
+}
+
+// ── POSITION CARD DOWNLOAD ──
+async function posDownloadCard(moatAddr) {
+  const meta  = MOATS[moatAddr];
+  const data  = posLoadedData[moatAddr]||{staked:0,burned:0,locks:[],pts:0,wBal:0};
+  const addr  = posViewAddr||posAddress||cmAddress||'';
+  const knownP = getKnownProfile(addr);
+  const sw    = sortedWallets();
+  const rank  = sw.findIndex(w=>w.wallet===addr.toLowerCase())+1;
+  const m     = moatMap[moatAddr]||{};
+  const myPts = Math.max(data.pts, allPts.find(p=>getWallet(p)===addr.toLowerCase()&&p.contractAddress===moatAddr)?.points||0);
+  const share = m.totalPoints ? (myPts/m.totalPoints*100).toFixed(3) : '0';
+  const lockedTotal = data.locks.reduce((s,l)=>s+l.amt,0);
+  const col   = meta?.color||'#f97316';
+  const userName = (knownP && knownP.twitter) ? '@'+knownP.twitter : (addr ? addr.slice(0,6)+'…'+addr.slice(-4) : '');
+
+  const canvas = document.createElement('canvas');
+  canvas.width  = 900;
+  canvas.height = 520;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+
+  // Background
+  ctx.fillStyle = '#141210';
+  ctx.fillRect(0,0,W,H);
+  // Subtle grain via noise pattern
+  ctx.fillStyle = 'rgba(255,255,255,0.015)';
+  for(let i=0;i<W*H*0.05;i++){ctx.fillRect(Math.random()*W,Math.random()*H,1,1);}
+  // Left accent bar
+  const grad = ctx.createLinearGradient(0,0,0,H);
+  grad.addColorStop(0, col);
+  grad.addColorStop(1, col+'44');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0,0,5,H);
+  // Top glow
+  const radGrad = ctx.createRadialGradient(W*0.15,0,0,W*0.15,0,W*0.5);
+  radGrad.addColorStop(0, col+'22');
+  radGrad.addColorStop(1, 'transparent');
+  ctx.fillStyle = radGrad;
+  ctx.fillRect(0,0,W,H*0.55);
+  // Moats Intel logo text (top-right)
+  ctx.font = 'bold 14px monospace';
+  ctx.fillStyle = '#6b5f54';
+  ctx.textAlign = 'right';
+  ctx.fillText('MOATS INTEL', W-28, 32);
+  ctx.font = '10px monospace';
+  ctx.fillText('moats.app', W-28, 48);
+
+  // Moat logo (top-left)
+  ctx.textAlign = 'left';
+  const logoUrl = meta?.logo ? 'https://raw.githubusercontent.com/precidoboss/my-game-sprites/main/' + meta.logo : null;
+  let logoLoaded = false;
+  if (logoUrl) {
+    try {
+      const img = new Image(); img.crossOrigin='anonymous';
+      await new Promise((res,rej)=>{img.onload=res;img.onerror=rej;img.src=logoUrl;});
+      ctx.save();
+      ctx.beginPath();ctx.roundRect(28,28,64,64,12);ctx.clip();
+      ctx.drawImage(img,28,28,64,64);
+      ctx.restore();
+      logoLoaded = true;
+    } catch(e){}
+  }
+  if (!logoLoaded) {
+    ctx.fillStyle = col+'33'; ctx.beginPath(); ctx.roundRect(28,28,64,64,12); ctx.fill();
+    ctx.font = 'bold 28px sans-serif'; ctx.fillStyle = col; ctx.textAlign='center';
+    ctx.fillText(meta?.emoji||'⬡', 60, 72); ctx.textAlign='left';
+  }
+
+  // Moat name + ticker
+  ctx.font = 'bold 28px "Chakra Petch", sans-serif';
+  ctx.fillStyle = '#f0ebe4';
+  ctx.fillText(meta?.name||'Moat', 108, 60);
+  ctx.font = '13px monospace';
+  ctx.fillStyle = col;
+  ctx.fillText((meta?.ticker||'').toUpperCase(), 108, 80);
+
+  // Divider
+  ctx.strokeStyle = col+'44'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(28,112); ctx.lineTo(W-28,112); ctx.stroke();
+
+  // Stats grid — 4 cards
+  const stats = [
+    {label:'MOAT POINTS', val: fmtP(myPts), col: col},
+    {label:'RANK', val: rank ? '#'+rank : '—', col: '#a78bfa'},
+    {label:'ECO SHARE', val: share+'%', col: '#22d3ee'},
+    {label:'STAKED', val: fmtP(data.staked), col: '#6db87a'},
+    {label:'LOCKED', val: fmtP(lockedTotal), col: '#d4a843'},
+    {label:'BURNED', val: fmtP(data.burned), col: '#e05252'},
+  ];
+  const colW = (W-56)/3, rowH = 100, startY = 128;
+  stats.forEach((s,i)=>{
+    const x = 28 + (i%3)*colW, y = startY + Math.floor(i/3)*rowH;
+    ctx.fillStyle = s.col+'14';
+    ctx.strokeStyle = s.col+'33'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.roundRect(x+2,y+2,colW-8,rowH-8,8); ctx.fill(); ctx.stroke();
+    ctx.font = 'bold 22px "Chakra Petch", sans-serif';
+    ctx.fillStyle = s.col;
+    ctx.textAlign='center';
+    ctx.fillText(s.val, x+colW/2-4, y+44);
+    ctx.font = '11px monospace';
+    ctx.fillStyle = '#8c8074';
+    ctx.fillText(s.label, x+colW/2-4, y+66);
+    ctx.textAlign='left';
+  });
+
+  // Active locks row
+  if (data.locks.length) {
+    const ly = startY + 2*rowH + 8;
+    ctx.font = '11px monospace'; ctx.fillStyle = '#6b5f54';
+    ctx.fillText('ACTIVE LOCKS', 28, ly);
+    data.locks.slice(0,5).forEach((l,i)=>{
+      const lx = 28 + i*172;
+      ctx.fillStyle = '#d4a84314'; ctx.strokeStyle='#d4a84333'; ctx.lineWidth=1;
+      ctx.beginPath(); ctx.roundRect(lx,ly+8,164,42,7); ctx.fill(); ctx.stroke();
+      ctx.font = 'bold 13px monospace'; ctx.fillStyle = '#d4a843';
+      ctx.fillText(fmtP(l.amt), lx+8, ly+26);
+      ctx.font = '10px monospace'; ctx.fillStyle = '#8c8074';
+      ctx.fillText(l.daysLeft+'d left', lx+8, ly+42);
+    });
+  }
+
+  // Bottom bar — user info
+  ctx.fillStyle = '#1c1916';
+  ctx.fillRect(0, H-64, W, 64);
+  ctx.strokeStyle = col+'33'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(0,H-64); ctx.lineTo(W,H-64); ctx.stroke();
+
+  // User avatar
+  let avatarLoaded = false;
+  if (knownP?.pic) {
+    try {
+      const img = new Image(); img.crossOrigin='anonymous';
+      await new Promise((res,rej)=>{img.onload=res;img.onerror=rej;img.src=knownP.pic;});
+      ctx.save();
+      ctx.beginPath(); ctx.arc(52, H-32, 22, 0, Math.PI*2); ctx.clip();
+      ctx.drawImage(img, 30, H-54, 44, 44);
+      ctx.restore(); avatarLoaded = true;
+    } catch(e){}
+  }
+  if (!avatarLoaded) {
+    ctx.fillStyle = col+'33';
+    ctx.beginPath(); ctx.arc(52, H-32, 22, 0, Math.PI*2); ctx.fill();
+    ctx.font = 'bold 16px monospace'; ctx.fillStyle=col; ctx.textAlign='center';
+    ctx.fillText((addr||'?').slice(2,4).toUpperCase(), 52, H-26);
+    ctx.textAlign='left';
+  }
+
+  // Username / address
+  ctx.font = 'bold 15px "Chakra Petch", sans-serif';
+  ctx.fillStyle = '#f0ebe4';
+  ctx.fillText(userName || shortA(addr), 86, H-36);
+  ctx.font = '11px monospace'; ctx.fillStyle = '#6b5f54';
+  ctx.fillText(addr ? addr.slice(0,10)+'…'+addr.slice(-8) : '', 86, H-18);
+
+  // Bottom right badge
+  ctx.font = 'bold 12px "Chakra Petch", sans-serif';
+  ctx.fillStyle = col;
+  ctx.textAlign = 'right';
+  ctx.fillText('MOATS PROTOCOL', W-28, H-36);
+  ctx.font = '11px monospace'; ctx.fillStyle = '#6b5f54';
+  ctx.fillText('moats.app', W-28, H-18);
+
+  // Download
+  const link = document.createElement('a');
+  link.download = 'moats-position-' + (meta?.short||'moat') + '-' + addr.slice(-6) + '.png';
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+  showAppNotif('📸 Position card downloaded!', 'success', 3000);
 }
 
 // ── INIT ──
