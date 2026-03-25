@@ -1456,7 +1456,7 @@ const LOAD_QUIPS = [
 const DSC_PAIR = 'https://api.dexscreener.com/latest/dex/pairs/avalanche/';
 
 const MOATS = {
-  '0xcf65744c955a292d11de2a4184e9fabedbfc7b40':{name:'HEFE Moat',         short:'HEFE',  ticker:'$hefe',    emoji:'🏔️',color:'#f97316',tokenAddr:'0xcf65744c955a292d11de2a4184e9fabedbfc7b40',  pairAddr:'0xe11e871d312cc9bae9eb24c7bdc2031f8453bf44', altPairAddr:'0xc4fa66b4839af7379a4fcbe5dd048b18fe99a2ac', url:'https://moats.app/moat/0xcf65744c955a292d11de2a4184e9fabedbfc7b40',   logo:'Hefelogo-new.png',              knownSupply:690420000},
+  '0xcf65744c955a292d11de2a4184e9fabedbfc7b40':{name:'HEFE Moat',         short:'HEFE',  ticker:'$hefe',    emoji:'🏔️',color:'#f97316',tokenAddr:'0xcf65744c955a292d11de2a4184e9fabedbfc7b40',  pairAddr:'0xe11e871d312cc9bae9eb24c7bdc2031f8453bf44', altPairAddr:'0xc4fa66b4839af7379a4fcbe5dd048b18fe99a2ac', url:'https://moats.app/moat/0xcf65744c955a292d11de2a4184e9fabedbfc7b40',   logo:'Hefelogo-new.png',              knownSupply:690420000, pharaohPool:true, dexOverride:'pharaoh'},
   '0x501f6e7bec3db63d8dacbc9fa0ce42d5d2329d53':{name:'hCASH LP Moat',     short:'hCASH', ticker:'$hcash',   emoji:'💧', color:'#d4a843',tokenAddr:'0x8f961980518bc9ab302948de7948580666dc35d9',  pairAddr:'0x8f961980518bc9ab302948de7948580666dc35d9',  url:'https://moats.app/moat/0x501f6e7bec3db63d8dacbc9fa0ce42d5d2329d53',   logo:'hashcashclub.png',   supplyType:'dynamic',knownSupply:21000000000,note:'LP token moat — add AVAX+hCASH liquidity on Pharaoh, then stake LP here',lpOnly:false,lpUrl:'https://phar.gg'},
   '0x020c73b55d139d5e259bad89b126f2a446c22ac6':{name:'FREAK Anon Moat',   short:'FREAK', ticker:'$freak',   emoji:'👾', color:'#8c8074',tokenAddr:'0x020c73b55d139d5e259bad89b126f2a446c22ac6',  pairAddr:'0x90c2ea98d6389cc4eb05ec635ee82c493b2dfaf2', dexOverride:'pharaoh', pharaohPool:true, url:'https://moats.app/moat/0x020c73b55d139d5e259bad89b126f2a446c22ac6',   logo:'FREAK_Anon.png',                knownSupply:1000000000},
   '0x7e1f28c9622aa68001fe0b200f5e5f93f6b35cc9':{name:'Balln Chikn Moat', short:'BALLN', ticker:'$balln',   emoji:'🏀', color:'#f43f5e',tokenAddr:'0x4Afc7838167b77530278483c3d8c1fFe698a912E',  pairAddr:'0xa8f87e026481cf03dc9a68570584a664186b41c7', url:'https://moats.app/moat/0x7e1f28c9622aa68001fe0b200f5e5f93f6b35cc9',    logo:'balln-token.jpg',               knownSupply:100000},
@@ -4754,6 +4754,7 @@ const MOAT_ABI = [
   'function stakingEnabled() view returns (bool)',
   'function lockingEnabled() view returns (bool)',
   'function burningEnabled() view returns (bool)',
+  'function getUserAllLocks(address _user) view returns (uint256[] amounts, uint256[] endTimestamps, uint256[] lockPoints, uint256[] origDurations, uint256[] lockIndexes, bool[] active)',
 ];
 
 // ── WALLET STATE ──
@@ -4860,6 +4861,9 @@ async function pharaohQuote(provider, tokenIn, tokenOut, amountIn) {
     [{from:tIn, to:WAVAX_ADDR, stable:false},{from:WAVAX_ADDR, to:tOut, stable:false}],
     [{from:tIn, to:tOut, stable:true}],
     [{from:tIn, to:WAVAX_ADDR, stable:false},{from:WAVAX_ADDR, to:tOut, stable:true}],
+    [{from:tIn, to:USDC_ADDR, stable:true},{from:USDC_ADDR, to:WAVAX_ADDR, stable:false},{from:WAVAX_ADDR, to:tOut, stable:false}],
+    [{from:tIn, to:USDC_ADDR, stable:false},{from:USDC_ADDR, to:tOut, stable:false}],
+    [{from:tIn, to:WAVAX_ADDR, stable:false},{from:WAVAX_ADDR, to:USDC_ADDR, stable:true},{from:USDC_ADDR, to:tOut, stable:false}],
   ].filter(r => !(r.length===1 && r[0].from.toLowerCase()===r[0].to.toLowerCase()));
   let best = null;
   await Promise.allSettled(routeSets.map(async routes => {
@@ -5039,12 +5043,16 @@ async function paraswapGetRoute(tokenIn, tokenOut, amountInWei, userAddr, decima
 }
 
 // ── BEST ROUTE — Pharaoh + LFJ V1 first (on-chain, reliable for Avax small-caps), then aggregators ──
-async function getBestRoute(tokenIn, tokenOut, amountInWei, userAddr, decimalsIn=18, decimalsOut=18, provider=null) {
+async function getBestRoute(tokenIn, tokenOut, amountInWei, userAddr, decimalsIn=18, decimalsOut=18, provider=null, forcePharaoh=false) {
   const prov = provider || (cmProvider || new ethers.JsonRpcProvider(AVAX_RPC));
+
+  // Check if tokenOut is a Pharaoh-native token (pharaohPool flag)
+  const tokenOutMeta = Object.values(MOATS).find(m => m.tokenAddr?.toLowerCase() === tokenOut?.toLowerCase());
+  const isPharaohToken = forcePharaoh || tokenOutMeta?.pharaohPool || tokenOutMeta?.dexOverride === 'pharaoh';
 
   // Step 1: on-chain quotes in parallel — Pharaoh + LFJ V1
   const [v1Quote, pharaohQ] = await Promise.all([
-    lfjV1Quote(prov, tokenIn, tokenOut, amountInWei),
+    isPharaohToken ? Promise.resolve(null) : lfjV1Quote(prov, tokenIn, tokenOut, amountInWei),
     pharaohQuote(prov, tokenIn, tokenOut, amountInWei),
   ]);
 
@@ -5071,8 +5079,8 @@ async function getBestRoute(tokenIn, tokenOut, amountInWei, userAddr, decimalsIn
     bestOnChain = { quote: pharaohQ, dex: 'Pharaoh', _usePharaoh: true };
   }
 
-  // On-chain wins unless aggregator beats it by >2%
-  if (bestOnChain && (!bestAgg || bestOnChain.quote.amountOut >= bestAgg.amountOut * 98n / 100n)) {
+  // On-chain wins unless aggregator beats it by >2% (for Pharaoh tokens always prefer Pharaoh)
+  if (bestOnChain && (isPharaohToken || !bestAgg || bestOnChain.quote.amountOut >= bestAgg.amountOut * 98n / 100n)) {
     return {
       dex: bestOnChain.dex,
       amountOut: bestOnChain.quote.amountOut,
@@ -5091,7 +5099,9 @@ async function cmSmartSwap(signer, tokenIn, tokenOut, amountIn, userAddr, decima
   const isNative = tokenIn.toLowerCase()==='avax';
 
   cmUpdateStep(stepId, 'active', `Finding best route: Pharaoh · LFJ V1 · Odos…`);
-  const route = await getBestRoute(tokenIn, tokenOut, amountIn, userAddr, decimalsIn, decimalsOut, signer.provider);
+  const _outMeta = Object.values(MOATS).find(m=>m.tokenAddr?.toLowerCase()===tokenOut?.toLowerCase());
+  const _forcePhar = !!(_outMeta?.pharaohPool || _outMeta?.dexOverride==='pharaoh');
+  const route = await getBestRoute(tokenIn, tokenOut, amountIn, userAddr, decimalsIn, decimalsOut, signer.provider, _forcePhar);
 
   if (route?._useV1) {
     const amtHuman = Number(route.amountOut) / Math.pow(10, decimalsOut);
@@ -5621,6 +5631,98 @@ async function cmExecute() {
 
       let decimals = 18;
       try { decimals = Number(await tokenContract.decimals()); } catch(e) {}
+
+      // ── STEP A: hCASH LP MOAT SPECIAL HANDLING ──
+      if (m.addr.toLowerCase() === '0x501f6e7bec3db63d8dacbc9fa0ce42d5d2329d53') {
+        // hCASH LP moat: split input into AVAX + hCASH, add LP, stake LP
+        const stepLpId = `lp_${i}`;
+        cmAddStep(stepLpId, `${i+1}. hCASH LP Moat — Swap & Add Liquidity`, `Preparing $${f2(moatUsd)} → WAVAX+hCASH LP…`, 'active');
+        try {
+          const hcashAddr = ethers.getAddress('0x8f961980518bc9ab302948de7948580666dc35d9');
+          const lpAddr    = ethers.getAddress('0x501f6e7bec3db63d8dacbc9fa0ce42d5d2329d53'); // same as moat for LP
+          const halfUsd   = moatUsd / 2;
+          const deadline  = Math.floor(Date.now()/1000) + 1800;
+          const prov      = cmSigner.provider;
+
+          // Step i: Get AVAX (swap half of input to AVAX if USDC mode)
+          let avaxAmt; // in wei
+          if (cmCurrency === 'AVAX') {
+            avaxAmt = ethers.parseEther((moatUsd / 2).toFixed(8));
+          } else {
+            const usdcHalf = ethers.parseUnits(halfUsd.toFixed(6), 6);
+            cmUpdateStep(stepLpId, 'active', 'Swapping USDC → WAVAX (half)…');
+            const avaxResult = await cmSmartSwap(cmSigner, USDC_ADDR, WAVAX_ADDR, usdcHalf, cmAddress, 6, 18, 'WAVAX', stepLpId);
+            cmUpdateStep(stepLpId, 'active', `USDC→WAVAX tx sent: ${avaxResult.tx.hash} — waiting…`);
+            await avaxResult.tx.wait();
+            avaxAmt = avaxResult.amtOut || await (new ethers.Contract(WAVAX_ADDR, ERC20_ABI, prov)).balanceOf(cmAddress);
+          }
+
+          // Step ii: Swap other half to hCASH (via Pharaoh)
+          cmUpdateStep(stepLpId, 'active', 'Swapping → hCASH (other half via Pharaoh)…');
+          let hcashAmtIn;
+          if (cmCurrency === 'AVAX') {
+            hcashAmtIn = ethers.parseEther((moatUsd / 2).toFixed(8));
+          } else {
+            hcashAmtIn = ethers.parseUnits(halfUsd.toFixed(6), 6);
+          }
+          const hcashResult = await cmSmartSwap(
+            cmSigner,
+            cmCurrency === 'AVAX' ? 'avax' : USDC_ADDR,
+            hcashAddr, hcashAmtIn, cmAddress,
+            cmCurrency === 'AVAX' ? 18 : 6, 18, 'hCASH', stepLpId
+          );
+          cmUpdateStep(stepLpId, 'active', `→hCASH tx: ${hcashResult.tx.hash} — waiting…`);
+          await hcashResult.tx.wait();
+
+          // Step iii: Add LP on Pharaoh
+          cmUpdateStep(stepLpId, 'active', 'Adding WAVAX + hCASH liquidity on Pharaoh…');
+          const wavaxC  = new ethers.Contract(WAVAX_ADDR, ERC20_ABI, cmSigner);
+          const hcashC  = new ethers.Contract(hcashAddr, ERC20_ABI, cmSigner);
+          const wavaxBal = await wavaxC.balanceOf(cmAddress);
+          const hcashBal = await hcashC.balanceOf(cmAddress);
+          // Unwrap any WAVAX to AVAX for the addLiquidity call (Pharaoh uses AVAX native)
+          // Actually Pharaoh addLiquidity works with WAVAX tokens directly — approve both
+          const pharRouter = new ethers.Contract(PHARAOH_ROUTER_ADDR, PHARAOH_ROUTER_ABI, cmSigner);
+          const wAllow = await wavaxC.allowance(cmAddress, PHARAOH_ROUTER_ADDR);
+          if (wAllow < wavaxBal) { const a = await wavaxC.approve(PHARAOH_ROUTER_ADDR, ethers.MaxUint256); await a.wait(); }
+          const hAllow = await hcashC.allowance(cmAddress, PHARAOH_ROUTER_ADDR);
+          if (hAllow < hcashBal) { const a = await hcashC.approve(PHARAOH_ROUTER_ADDR, ethers.MaxUint256); await a.wait(); }
+          const min95w = wavaxBal * 95n / 100n;
+          const min95h = hcashBal * 95n / 100n;
+          const lpTx = await pharRouter.addLiquidity(
+            WAVAX_ADDR, hcashAddr, false,
+            wavaxBal, hcashBal, min95w, min95h,
+            cmAddress, deadline
+          );
+          cmUpdateStep(stepLpId, 'active', `Add LP tx: ${lpTx.hash} — waiting…`);
+          await lpTx.wait();
+
+          // Step iv: Stake LP into moat
+          cmUpdateStep(stepLpId, 'active', 'Staking LP into hCASH Moat…');
+          // Find the actual LP pair address
+          const PHARAOH_FACTORY_ABI_MIN = ['function getPair(address,address,bool) view returns (address)'];
+          const factory = new ethers.Contract(PHARAOH_FACTORY_ADDR, PHARAOH_FACTORY_ABI_MIN, prov);
+          const lpPairAddr = await factory.getPair(WAVAX_ADDR, hcashAddr, false);
+          const lpToken = new ethers.Contract(lpPairAddr, ERC20_ABI, cmSigner);
+          const lpBal   = await lpToken.balanceOf(cmAddress);
+          if (lpBal > 0n) {
+            const lpAllow = await lpToken.allowance(cmAddress, HCASH_MOAT_ADDR);
+            if (lpAllow < lpBal) { const a = await lpToken.approve(HCASH_MOAT_ADDR, ethers.MaxUint256); await a.wait(); }
+            const moatC2 = new ethers.Contract(HCASH_MOAT_ADDR, MOAT_ABI, cmSigner);
+            const stakeTx = await moatC2.stake(lpBal);
+            cmUpdateStep(stepLpId, 'active', `Stake LP tx: ${stakeTx.hash} — waiting…`);
+            await stakeTx.wait();
+            cmUpdateStep(stepLpId, 'done', `✓ hCASH LP staked in moat! tx: ${stakeTx.hash}`);
+          } else {
+            cmUpdateStep(stepLpId, 'error', '❌ No LP tokens received after adding liquidity');
+          }
+        } catch(err) {
+          let msg = err.reason || err.shortMessage || err.message || String(err);
+          if (msg.length > 300) msg = msg.slice(0, 300) + '…';
+          cmUpdateStep(stepLpId, 'error', `❌ hCASH LP failed — ${msg}`);
+        }
+        continue; // Skip regular swap/stake steps for this moat
+      }
 
       // ── STEP A: SWAP ──
       const stepSwapId = `swap_${i}`;
@@ -6898,7 +7000,9 @@ async function posSwapQuote() {
       amountInWei = tok==='avax' ? ethers.parseEther(String(Math.floor(amt*1e6)/1e6)) : ethers.parseUnits(amt.toFixed(6),6);
     } catch(e) { if(outEl)outEl.textContent='—'; return; }
 
-    const route = await getBestRoute(tokenIn, meta.tokenAddr, amountInWei, addr, decimalsIn, decimalsOut, prov);
+    const _posMeta = meta;
+    const _posForce = !!(_posMeta?.pharaohPool || _posMeta?.dexOverride==='pharaoh');
+    const route = await getBestRoute(tokenIn, meta.tokenAddr, amountInWei, addr, decimalsIn, decimalsOut, prov, _posForce);
     if (!route) {
       if(outEl) outEl.innerHTML = '<span style="color:var(--red)">No route found</span>';
       if(routeEl) routeEl.innerHTML = 'Try smaller amount · <a href="https://www.phar.gg/trade" target="_blank" style="color:var(--acc)">phar.gg/trade ↗</a>';
@@ -7731,155 +7835,303 @@ async function posDownloadCard(moatAddr) {
 async function posDownloadAllCards() {
   const active = Object.values(posLoadedData).filter(r=>r.hasPosition);
   if (!active.length) { showAppNotif('No active positions found.', 'error', 3000); return; }
-  showAppNotif('📸 Generating ' + active.length + ' cards…', 'success', 2000);
-  // Build a tall combined canvas: all cards stacked
-  const CW = 900, CH = 520, GAP = 20;
-  const totalH = active.length * CH + (active.length - 1) * GAP + 60;
-  const combo = document.createElement('canvas');
-  combo.width = CW; combo.height = totalH;
-  const cctx = combo.getContext('2d');
-  cctx.fillStyle = '#0e0c0a';
-  cctx.fillRect(0, 0, CW, totalH);
-  // Header
-  cctx.font = 'bold 18px "Chakra Petch", sans-serif';
-  cctx.fillStyle = '#f97316';
-  cctx.textAlign = 'center';
-  cctx.fillText('ALL ACTIVE POSITIONS', CW/2, 38);
-  cctx.font = '11px monospace'; cctx.fillStyle = '#6b5f54';
-  cctx.fillText('moats.app  ·  MOATS INTEL', CW/2, 54);
-  const MOATS_INTEL_LOGO = 'https://raw.githubusercontent.com/precidoboss/my-game-sprites/main/moatsintelloadingimage-removebg-preview.png';
-  try {
-    const miImg = new Image(); miImg.crossOrigin='anonymous';
-    await new Promise((res,rej)=>{miImg.onload=res;miImg.onerror=rej;miImg.src=MOATS_INTEL_LOGO;});
-    cctx.drawImage(miImg, CW/2 - 130, 8, 40, 40);
-  } catch(e){}
-
-  let offsetY = 64;
-  for (const r of active.sort((a,b)=>b.pts-a.pts)) {
-    // Render each card to its own canvas, then draw onto combo
-    const cardCanvas = await posRenderCardCanvas(r.moatAddr);
-    if (cardCanvas) { cctx.drawImage(cardCanvas, 0, offsetY); }
-    offsetY += CH + GAP;
-  }
+  showAppNotif('📸 Building all-positions card…', 'success', 2000);
+  const canvas = await posRenderAllInOneCard(active);
+  if (!canvas) { showAppNotif('Failed to render card.', 'error', 3000); return; }
   const addr = posViewAddr || posAddress || '';
   const link = document.createElement('a');
   link.download = 'moats-all-positions-' + (addr ? addr.slice(-6) : 'export') + '.png';
-  link.href = combo.toDataURL('image/png');
+  link.href = canvas.toDataURL('image/png');
   link.click();
-  showAppNotif('📸 All ' + active.length + ' position cards downloaded!', 'success', 3500);
+  showAppNotif('📸 All positions card downloaded!', 'success', 3500);
 }
 
-// ── RENDER A SINGLE CARD TO CANVAS (shared by single + all download) ──
-async function posRenderCardCanvas(moatAddr) {
-  const meta = MOATS[moatAddr];
-  const data = posLoadedData[moatAddr]||{staked:0,burned:0,locks:[],pts:0,wBal:0};
-  const addr = posViewAddr||posAddress||cmAddress||'';
+// ── ALL-IN-ONE POSITIONS CARD ──
+async function posRenderAllInOneCard(activePositions) {
+  const sorted = [...activePositions].sort((a,b)=>b.pts-a.pts);
+  const addr   = posViewAddr||posAddress||cmAddress||'';
   const knownP = getKnownProfile(addr);
-  const sw = sortedWallets();
-  const rank = sw.findIndex(w=>w.wallet===addr.toLowerCase())+1;
-  const m = moatMap[moatAddr]||{};
-  const myPts = Math.max(data.pts, allPts.find(p=>getWallet(p)===addr.toLowerCase()&&p.contractAddress===moatAddr)?.points||0);
-  const share = m.totalPoints ? (myPts/m.totalPoints*100).toFixed(3) : '0';
-  const lockedTotal = data.locks.reduce((s,l)=>s+l.amt,0);
-  const col = meta?.color||'#f97316';
-  const userName = (knownP&&knownP.twitter)?'@'+knownP.twitter:(addr?addr.slice(0,6)+'…'+addr.slice(-4):'');
+  const sw     = sortedWallets();
+  const globalRank = sw.findIndex(w=>w.wallet===addr.toLowerCase())+1;
+  const totalPts   = sorted.reduce((s,r)=>s+r.pts,0);
+  const totalLocked= sorted.reduce((s,r)=>s+r.locks.reduce((a,l)=>a+l.amt,0),0);
+  const totalStaked= sorted.reduce((s,r)=>s+r.staked,0);
+  const totalBurned= sorted.reduce((s,r)=>s+r.burned,0);
+  const userName   = (knownP&&knownP.twitter)?'@'+knownP.twitter:(addr?addr.slice(0,6)+'…'+addr.slice(-4):'');
 
+  const ROW_H = 52, HEADER = 260, FOOTER = 72, PAD = 28;
+  const W = 900, H = HEADER + sorted.length * ROW_H + FOOTER + 20;
   const canvas = document.createElement('canvas');
-  canvas.width = 900; canvas.height = 520;
+  canvas.width = W; canvas.height = H;
   const ctx = canvas.getContext('2d');
-  const W = canvas.width, H = canvas.height;
 
-  ctx.fillStyle = '#141210'; ctx.fillRect(0,0,W,H);
-  ctx.fillStyle = 'rgba(255,255,255,0.015)';
-  for(let i=0;i<W*H*0.05;i++){ctx.fillRect(Math.random()*W,Math.random()*H,1,1);}
-  const grad = ctx.createLinearGradient(0,0,0,H);
-  grad.addColorStop(0,col); grad.addColorStop(1,col+'44');
-  ctx.fillStyle=grad; ctx.fillRect(0,0,5,H);
-  const radGrad = ctx.createRadialGradient(W*0.15,0,0,W*0.15,0,W*0.5);
-  radGrad.addColorStop(0,col+'22'); radGrad.addColorStop(1,'transparent');
-  ctx.fillStyle=radGrad; ctx.fillRect(0,0,W,H*0.55);
+  // ── Background ──
+  const bgGrad = ctx.createLinearGradient(0,0,0,H);
+  bgGrad.addColorStop(0,'#1a1714'); bgGrad.addColorStop(1,'#0e0c0a');
+  ctx.fillStyle = bgGrad; ctx.fillRect(0,0,W,H);
+  // Noise
+  ctx.fillStyle='rgba(255,255,255,0.012)';
+  for(let i=0;i<W*H*0.04;i++){ctx.fillRect(Math.random()*W,Math.random()*H,1,1);}
+  // Orange glow top-left
+  const glow=ctx.createRadialGradient(0,0,0,0,0,W*0.6);
+  glow.addColorStop(0,'rgba(249,115,22,0.12)'); glow.addColorStop(1,'transparent');
+  ctx.fillStyle=glow; ctx.fillRect(0,0,W,H);
+  // Left accent bar
+  const barG=ctx.createLinearGradient(0,0,0,H);
+  barG.addColorStop(0,'#f97316'); barG.addColorStop(0.5,'#d4a843'); barG.addColorStop(1,'#f97316');
+  ctx.fillStyle=barG; ctx.fillRect(0,0,5,H);
 
-  // Moats Intel logo top-right
+  // ── Logos ──
+  const MOATS_APP_LOGO = 'https://raw.githubusercontent.com/precidoboss/my-game-sprites/main/moats.appmain_logo-removebg-preview.png';
   const MOATS_INTEL_LOGO = 'https://raw.githubusercontent.com/precidoboss/my-game-sprites/main/moatsintelloadingimage-removebg-preview.png';
   try {
-    const miImg = new Image(); miImg.crossOrigin='anonymous';
+    const maImg=new Image(); maImg.crossOrigin='anonymous';
+    await new Promise((res,rej)=>{maImg.onload=res;maImg.onerror=rej;maImg.src=MOATS_APP_LOGO;});
+    ctx.drawImage(maImg, PAD, 18, 48, 48);
+  } catch(e){}
+  try {
+    const miImg=new Image(); miImg.crossOrigin='anonymous';
     await new Promise((res,rej)=>{miImg.onload=res;miImg.onerror=rej;miImg.src=MOATS_INTEL_LOGO;});
-    ctx.drawImage(miImg, W-90, 14, 60, 60);
+    ctx.drawImage(miImg, W-88, 14, 56, 56);
   } catch(e){}
   ctx.font='bold 11px monospace'; ctx.fillStyle='#8c8074'; ctx.textAlign='right';
-  ctx.fillText('MOATS INTEL', W-28, 84);
+  ctx.fillText('MOATS INTEL', W-PAD, 80);
   ctx.font='10px monospace'; ctx.fillStyle='#6b5f54';
-  ctx.fillText('moats.app', W-28, 98);
+  ctx.fillText('moats.app', W-PAD, 93);
 
-  // Moat logo top-left
+  // ── Title ──
   ctx.textAlign='left';
-  const logoUrl = meta?.logo ? 'https://raw.githubusercontent.com/precidoboss/my-game-sprites/main/'+meta.logo : null;
+  ctx.font='bold 26px "Chakra Petch",sans-serif'; ctx.fillStyle='#f0ebe4';
+  ctx.fillText('ALL POSITIONS', PAD+58, 40);
+  ctx.font='11px monospace'; ctx.fillStyle='#6b5f54';
+  ctx.fillText('MOATS PROTOCOL · PORTFOLIO CARD', PAD+58, 58);
+
+  // ── Divider ──
+  ctx.strokeStyle='rgba(249,115,22,0.25)'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(PAD,72); ctx.lineTo(W-PAD,72); ctx.stroke();
+
+  // ── Summary stats row ──
+  const summaryStats = [
+    {label:'TOTAL POINTS', val:fmtP(totalPts), col:'#f97316'},
+    {label:'GLOBAL RANK',  val:globalRank?'#'+globalRank:'—', col:'#a78bfa'},
+    {label:'MOATS ACTIVE', val:String(sorted.length), col:'#22d3ee'},
+    {label:'TOTAL STAKED', val:fmtP(totalStaked), col:'#6db87a'},
+    {label:'TOTAL LOCKED', val:fmtP(totalLocked), col:'#d4a843'},
+    {label:'TOTAL BURNED', val:fmtP(totalBurned), col:'#e05252'},
+  ];
+  const statW=(W-PAD*2)/6;
+  summaryStats.forEach((s,i)=>{
+    const x=PAD+i*statW, y=84;
+    ctx.fillStyle=s.col+'18'; ctx.strokeStyle=s.col+'30'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.roundRect(x+2,y,statW-6,68,7); ctx.fill(); ctx.stroke();
+    ctx.font='bold 15px "Chakra Petch",sans-serif'; ctx.fillStyle=s.col; ctx.textAlign='center';
+    ctx.fillText(s.val, x+statW/2, y+28);
+    ctx.font='9px monospace'; ctx.fillStyle='#7a6e66';
+    ctx.fillText(s.label, x+statW/2, y+46);
+    ctx.textAlign='left';
+  });
+
+  // ── User info strip ──
+  const uY=162;
+  ctx.fillStyle='rgba(255,255,255,0.03)';
+  ctx.beginPath(); ctx.roundRect(PAD, uY, W-PAD*2, 40, 8); ctx.fill();
+  let avatarLoaded=false;
+  if(knownP?.pic){try{const img=new Image();img.crossOrigin='anonymous';await new Promise((res,rej)=>{img.onload=res;img.onerror=rej;img.src=knownP.pic;});ctx.save();ctx.beginPath();ctx.arc(PAD+22,uY+20,18,0,Math.PI*2);ctx.clip();ctx.drawImage(img,PAD+4,uY+2,36,36);ctx.restore();avatarLoaded=true;}catch(e){}}
+  if(!avatarLoaded){ctx.fillStyle='rgba(249,115,22,0.2)';ctx.beginPath();ctx.arc(PAD+22,uY+20,18,0,Math.PI*2);ctx.fill();ctx.font='bold 13px monospace';ctx.fillStyle='#f97316';ctx.textAlign='center';ctx.fillText((addr||'?').slice(2,4).toUpperCase(),PAD+22,uY+25);ctx.textAlign='left';}
+  ctx.font='bold 13px "Chakra Petch",sans-serif'; ctx.fillStyle='#f0ebe4';
+  ctx.fillText(userName||shortA(addr), PAD+46, uY+17);
+  ctx.font='10px monospace'; ctx.fillStyle='#6b5f54';
+  ctx.fillText(addr?addr.slice(0,12)+'…'+addr.slice(-8):'', PAD+46, uY+32);
+
+  // ── Column headers ──
+  const tY=HEADER-14;
+  ctx.strokeStyle='rgba(249,115,22,0.2)'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(PAD,tY-16); ctx.lineTo(W-PAD,tY-16); ctx.stroke();
+  ctx.font='9px monospace'; ctx.fillStyle='#6b5f54'; ctx.textAlign='left';
+  const cols=[{x:PAD+4,label:'MOAT'},{x:320,label:'POINTS'},{x:430,label:'RANK'},{x:510,label:'STAKED'},{x:610,label:'LOCKED'},{x:710,label:'BURNED'},{x:820,label:'SHARE'}];
+  cols.forEach(c=>{ ctx.textAlign=c.x>300?'center':'left'; ctx.fillText(c.label, c.x, tY); });
+
+  // ── Per-moat rows ──
+  for(let i=0;i<sorted.length;i++){
+    const r = sorted[i];
+    const rowY = HEADER + i*ROW_H;
+    const col  = r.meta?.color||'#f97316';
+    const m    = moatMap[r.moatAddr]||{};
+    const myPts= Math.max(r.pts, allPts.find(p=>getWallet(p)===addr.toLowerCase()&&p.contractAddress===r.moatAddr)?.points||0);
+    const mSorted=m.sorted||[];
+    const rank  = mSorted.length ? mSorted.findIndex(w=>w.points<=myPts)+1 : '?';
+    const share = m.totalPoints ? (myPts/m.totalPoints*100).toFixed(2)+'%' : '—';
+    const locked= r.locks.reduce((s,l)=>s+l.amt,0);
+
+    // Row background
+    ctx.fillStyle = i%2===0 ? 'rgba(255,255,255,0.018)' : 'transparent';
+    ctx.fillRect(PAD, rowY, W-PAD*2, ROW_H-2);
+    // Left color dot
+    ctx.fillStyle=col; ctx.beginPath(); ctx.arc(PAD+10, rowY+ROW_H/2, 4, 0, Math.PI*2); ctx.fill();
+
+    // Moat logo (small)
+    const logoUrl=r.meta?.logo?'https://raw.githubusercontent.com/precidoboss/my-game-sprites/main/'+r.meta.logo:null;
+    let lLoaded=false;
+    if(logoUrl){try{const img=new Image();img.crossOrigin='anonymous';await new Promise((res,rej,t=setTimeout(rej,2000))=>{img.onload=()=>{clearTimeout(t);res();};img.onerror=()=>{clearTimeout(t);rej();};img.src=logoUrl;});ctx.save();ctx.beginPath();ctx.arc(PAD+32,rowY+ROW_H/2,14,0,Math.PI*2);ctx.clip();ctx.drawImage(img,PAD+18,rowY+ROW_H/2-14,28,28);ctx.restore();lLoaded=true;}catch(e){}}
+    if(!lLoaded){ctx.fillStyle=col+'33';ctx.beginPath();ctx.arc(PAD+32,rowY+ROW_H/2,14,0,Math.PI*2);ctx.fill();ctx.font='11px sans-serif';ctx.fillStyle=col;ctx.textAlign='center';ctx.fillText(r.meta?.emoji||'⬡',PAD+32,rowY+ROW_H/2+4);ctx.textAlign='left';}
+
+    // Moat name
+    ctx.font='bold 12px "Chakra Petch",sans-serif'; ctx.fillStyle='#f0ebe4'; ctx.textAlign='left';
+    ctx.fillText(r.meta?.short||'—', PAD+52, rowY+ROW_H/2-3);
+    ctx.font='9px monospace'; ctx.fillStyle='#6b5f54';
+    ctx.fillText(r.meta?.ticker||'', PAD+52, rowY+ROW_H/2+11);
+
+    // Stats
+    const drawStat=(x,val,c)=>{ctx.font='bold 12px monospace';ctx.fillStyle=c;ctx.textAlign='center';ctx.fillText(val,x,rowY+ROW_H/2+4);};
+    drawStat(320, fmtP(myPts), col);
+    drawStat(430, rank?'#'+rank:'—', '#a78bfa');
+    drawStat(510, r.staked>0?fmtP(r.staked):'—', '#6db87a');
+    drawStat(610, locked>0?fmtP(locked):'—', '#d4a843');
+    drawStat(710, r.burned>0?fmtP(r.burned):'—', '#e05252');
+    drawStat(820, share, '#22d3ee');
+
+    // Row separator
+    ctx.strokeStyle='rgba(255,255,255,0.05)'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(PAD, rowY+ROW_H-1); ctx.lineTo(W-PAD, rowY+ROW_H-1); ctx.stroke();
+  }
+
+  // ── Footer ──
+  const fY=HEADER+sorted.length*ROW_H+8;
+  ctx.fillStyle='#1c1916'; ctx.fillRect(0,fY,W,FOOTER+12);
+  ctx.strokeStyle='rgba(249,115,22,0.2)'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(0,fY); ctx.lineTo(W,fY); ctx.stroke();
+  ctx.font='bold 12px "Chakra Petch",sans-serif'; ctx.fillStyle='#f97316'; ctx.textAlign='left';
+  ctx.fillText('MOATS PROTOCOL', PAD, fY+26);
+  ctx.font='10px monospace'; ctx.fillStyle='#6b5f54';
+  ctx.fillText('moats.app  ·  Powered by MOATS INTEL', PAD, fY+42);
+  ctx.font='10px monospace'; ctx.fillStyle='#6b5f54'; ctx.textAlign='right';
+  ctx.fillText(new Date().toLocaleDateString('en-US',{year:'numeric',month:'short',day:'numeric'}), W-PAD, fY+26);
+
+  return canvas;
+}
+
+// ── RENDER A SINGLE MOAT CARD TO CANVAS ──
+async function posRenderCardCanvas(moatAddr) {
+  const meta   = MOATS[moatAddr];
+  const data   = posLoadedData[moatAddr]||{staked:0,burned:0,locks:[],pts:0,wBal:0};
+  const addr   = posViewAddr||posAddress||cmAddress||'';
+  const knownP = getKnownProfile(addr);
+  const sw     = sortedWallets();
+  const rank   = sw.findIndex(w=>w.wallet===addr.toLowerCase())+1;
+  const m      = moatMap[moatAddr]||{};
+  const myPts  = Math.max(data.pts, allPts.find(p=>getWallet(p)===addr.toLowerCase()&&p.contractAddress===moatAddr)?.points||0);
+  const share  = m.totalPoints ? (myPts/m.totalPoints*100).toFixed(3) : '0';
+  const mSorted= m.sorted||[];
+  const myRank = mSorted.length ? mSorted.findIndex(w=>w.points<=myPts)+1 : rank;
+  const lockedTotal = data.locks.reduce((s,l)=>s+l.amt,0);
+  const col    = meta?.color||'#f97316';
+  const userName = (knownP&&knownP.twitter)?'@'+knownP.twitter:(addr?addr.slice(0,6)+'…'+addr.slice(-4):'');
+
+  const W=900, H=520;
+  const canvas=document.createElement('canvas'); canvas.width=W; canvas.height=H;
+  const ctx=canvas.getContext('2d');
+
+  // Background gradient
+  const bgG=ctx.createLinearGradient(0,0,W,H);
+  bgG.addColorStop(0,'#1a1714'); bgG.addColorStop(1,'#0e0c0a');
+  ctx.fillStyle=bgG; ctx.fillRect(0,0,W,H);
+  // Noise
+  ctx.fillStyle='rgba(255,255,255,0.013)';
+  for(let i=0;i<W*H*0.05;i++){ctx.fillRect(Math.random()*W,Math.random()*H,1,1);}
+  // Color glow
+  const radG=ctx.createRadialGradient(W*0.12,0,0,W*0.12,0,W*0.55);
+  radG.addColorStop(0,col+'25'); radG.addColorStop(1,'transparent');
+  ctx.fillStyle=radG; ctx.fillRect(0,0,W,H);
+  // Left accent bar
+  const barG=ctx.createLinearGradient(0,0,0,H);
+  barG.addColorStop(0,col); barG.addColorStop(1,col+'44');
+  ctx.fillStyle=barG; ctx.fillRect(0,0,5,H);
+
+  // ── Logos ──
+  const MOATS_APP_LOGO='https://raw.githubusercontent.com/precidoboss/my-game-sprites/main/moats.appmain_logo-removebg-preview.png';
+  const MOATS_INTEL_LOGO='https://raw.githubusercontent.com/precidoboss/my-game-sprites/main/moatsintelloadingimage-removebg-preview.png';
+  try{const img=new Image();img.crossOrigin='anonymous';await new Promise((res,rej)=>{img.onload=res;img.onerror=rej;img.src=MOATS_APP_LOGO;});ctx.drawImage(img,W-120,12,42,42);}catch(e){}
+  try{const img=new Image();img.crossOrigin='anonymous';await new Promise((res,rej)=>{img.onload=res;img.onerror=rej;img.src=MOATS_INTEL_LOGO;});ctx.drawImage(img,W-72,12,42,42);}catch(e){}
+  ctx.font='bold 10px monospace'; ctx.fillStyle='#6b5f54'; ctx.textAlign='right';
+  ctx.fillText('MOATS INTEL · moats.app', W-26, 64);
+
+  // ── Moat logo ──
+  ctx.textAlign='left';
+  const logoUrl=meta?.logo?'https://raw.githubusercontent.com/precidoboss/my-game-sprites/main/'+meta.logo:null;
   let logoLoaded=false;
-  if(logoUrl){try{const img=new Image();img.crossOrigin='anonymous';await new Promise((res,rej)=>{img.onload=res;img.onerror=rej;img.src=logoUrl;});ctx.save();ctx.beginPath();ctx.roundRect(28,28,64,64,12);ctx.clip();ctx.drawImage(img,28,28,64,64);ctx.restore();logoLoaded=true;}catch(e){}}
-  if(!logoLoaded){ctx.fillStyle=col+'33';ctx.beginPath();ctx.roundRect(28,28,64,64,12);ctx.fill();ctx.font='bold 28px sans-serif';ctx.fillStyle=col;ctx.textAlign='center';ctx.fillText(meta?.emoji||'⬡',60,72);ctx.textAlign='left';}
+  if(logoUrl){try{const img=new Image();img.crossOrigin='anonymous';await new Promise((res,rej)=>{img.onload=res;img.onerror=rej;img.src=logoUrl;});ctx.save();ctx.beginPath();ctx.roundRect(26,20,68,68,14);ctx.clip();ctx.drawImage(img,26,20,68,68);ctx.restore();logoLoaded=true;}catch(e){}}
+  if(!logoLoaded){ctx.fillStyle=col+'33';ctx.beginPath();ctx.roundRect(26,20,68,68,14);ctx.fill();ctx.font='bold 30px sans-serif';ctx.fillStyle=col;ctx.textAlign='center';ctx.fillText(meta?.emoji||'⬡',60,68);ctx.textAlign='left';}
 
-  ctx.font='bold 28px "Chakra Petch",sans-serif'; ctx.fillStyle='#f0ebe4';
-  ctx.fillText(meta?.name||'Moat',108,60);
+  // ── Moat name ──
+  ctx.font='bold 30px "Chakra Petch",sans-serif'; ctx.fillStyle='#f0ebe4'; ctx.textAlign='left';
+  ctx.fillText(meta?.name||'Moat', 106, 52);
   ctx.font='13px monospace'; ctx.fillStyle=col;
-  ctx.fillText((meta?.ticker||'').toUpperCase(),108,80);
+  ctx.fillText((meta?.ticker||'').toUpperCase(), 106, 72);
 
+  // Divider
   ctx.strokeStyle=col+'44'; ctx.lineWidth=1;
-  ctx.beginPath(); ctx.moveTo(28,112); ctx.lineTo(W-28,112); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(26,100); ctx.lineTo(W-26,100); ctx.stroke();
 
+  // ── Stats grid ──
   const stats=[
-    {label:'MOAT POINTS',val:fmtP(myPts),col:col},
-    {label:'RANK',val:rank?'#'+rank:'—',col:'#a78bfa'},
+    {label:'MOAT POINTS',val:fmtP(myPts),col},
+    {label:'MOAT RANK',val:myRank?'#'+myRank:'—',col:'#a78bfa'},
     {label:'ECO SHARE',val:share+'%',col:'#22d3ee'},
     {label:'STAKED',val:fmtP(data.staked),col:'#6db87a'},
     {label:'LOCKED',val:fmtP(lockedTotal),col:'#d4a843'},
     {label:'BURNED',val:fmtP(data.burned),col:'#e05252'},
   ];
-  const colW=(W-56)/3,rowH=100,startY=128;
+  const cW=(W-52)/3, rH=100, sY=114;
   stats.forEach((s,i)=>{
-    const x=28+(i%3)*colW,y=startY+Math.floor(i/3)*rowH;
-    ctx.fillStyle=s.col+'14'; ctx.strokeStyle=s.col+'33'; ctx.lineWidth=1;
-    ctx.beginPath();ctx.roundRect(x+2,y+2,colW-8,rowH-8,8);ctx.fill();ctx.stroke();
+    const x=26+(i%3)*cW, y=sY+Math.floor(i/3)*rH;
+    ctx.fillStyle=s.col+'16'; ctx.strokeStyle=s.col+'35'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.roundRect(x+3,y+3,cW-9,rH-9,9); ctx.fill(); ctx.stroke();
     ctx.font='bold 22px "Chakra Petch",sans-serif'; ctx.fillStyle=s.col; ctx.textAlign='center';
-    ctx.fillText(s.val,x+colW/2-4,y+44);
-    ctx.font='11px monospace'; ctx.fillStyle='#8c8074';
-    ctx.fillText(s.label,x+colW/2-4,y+66); ctx.textAlign='left';
+    ctx.fillText(s.val, x+cW/2, y+42);
+    ctx.font='10px monospace'; ctx.fillStyle='#7a6e66';
+    ctx.fillText(s.label, x+cW/2, y+62); ctx.textAlign='left';
   });
 
+  // ── Active locks row ──
   if(data.locks.length){
-    const ly=startY+2*rowH+8;
-    ctx.font='11px monospace'; ctx.fillStyle='#6b5f54';
-    ctx.fillText('ACTIVE LOCKS ('+data.locks.length+')',28,ly);
+    const ly=sY+2*rH+10;
+    ctx.font='10px monospace'; ctx.fillStyle='#6b5f54'; ctx.textAlign='left';
+    ctx.fillText('🔐 ACTIVE LOCKS ('+data.locks.length+')', 26, ly);
     data.locks.slice(0,5).forEach((l,i)=>{
-      const lx=28+i*172;
-      ctx.fillStyle='#d4a84314'; ctx.strokeStyle='#d4a84333'; ctx.lineWidth=1;
-      ctx.beginPath();ctx.roundRect(lx,ly+8,164,42,7);ctx.fill();ctx.stroke();
-      ctx.font='bold 13px monospace'; ctx.fillStyle='#d4a843';
-      ctx.fillText(fmtP(l.amt),lx+8,ly+26);
-      ctx.font='10px monospace'; ctx.fillStyle='#8c8074';
-      ctx.fillText(l.daysLeft+'d left · '+l.origDurDays+'d lock',lx+8,ly+42);
+      const lx=26+i*170;
+      const done=l.daysLeft===0;
+      ctx.fillStyle='#d4a84316'; ctx.strokeStyle='#d4a84335'; ctx.lineWidth=1;
+      ctx.beginPath(); ctx.roundRect(lx,ly+8,162,40,7); ctx.fill(); ctx.stroke();
+      ctx.font='bold 12px monospace'; ctx.fillStyle='#d4a843'; ctx.textAlign='left';
+      ctx.fillText(fmtP(l.amt), lx+8, ly+24);
+      ctx.font='9px monospace'; ctx.fillStyle='#8c8074';
+      ctx.fillText((done?'✓ Matured':l.daysLeft+'d left')+' · '+l.origDurDays+'d', lx+8, ly+38);
     });
   }
 
-  ctx.fillStyle='#1c1916'; ctx.fillRect(0,H-64,W,64);
+  // ── Footer ──
+  ctx.fillStyle='#1c1916'; ctx.fillRect(0,H-62,W,62);
   ctx.strokeStyle=col+'33'; ctx.lineWidth=1;
-  ctx.beginPath();ctx.moveTo(0,H-64);ctx.lineTo(W,H-64);ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(0,H-62); ctx.lineTo(W,H-62); ctx.stroke();
 
-  let avatarLoaded=false;
-  if(knownP?.pic){try{const img=new Image();img.crossOrigin='anonymous';await new Promise((res,rej)=>{img.onload=res;img.onerror=rej;img.src=knownP.pic;});ctx.save();ctx.beginPath();ctx.arc(52,H-32,22,0,Math.PI*2);ctx.clip();ctx.drawImage(img,30,H-54,44,44);ctx.restore();avatarLoaded=true;}catch(e){}}
-  if(!avatarLoaded){ctx.fillStyle=col+'33';ctx.beginPath();ctx.arc(52,H-32,22,0,Math.PI*2);ctx.fill();ctx.font='bold 16px monospace';ctx.fillStyle=col;ctx.textAlign='center';ctx.fillText((addr||'?').slice(2,4).toUpperCase(),52,H-26);ctx.textAlign='left';}
+  // User avatar
+  let avLoaded=false;
+  if(knownP?.pic){try{const img=new Image();img.crossOrigin='anonymous';await new Promise((res,rej)=>{img.onload=res;img.onerror=rej;img.src=knownP.pic;});ctx.save();ctx.beginPath();ctx.arc(50,H-31,20,0,Math.PI*2);ctx.clip();ctx.drawImage(img,30,H-51,40,40);ctx.restore();avLoaded=true;}catch(e){}}
+  if(!avLoaded){ctx.fillStyle=col+'33';ctx.beginPath();ctx.arc(50,H-31,20,0,Math.PI*2);ctx.fill();ctx.font='bold 14px monospace';ctx.fillStyle=col;ctx.textAlign='center';ctx.fillText((addr||'?').slice(2,4).toUpperCase(),50,H-26);ctx.textAlign='left';}
 
-  ctx.font='bold 15px "Chakra Petch",sans-serif'; ctx.fillStyle='#f0ebe4';
-  ctx.fillText(userName||shortA(addr),86,H-36);
-  ctx.font='11px monospace'; ctx.fillStyle='#6b5f54';
-  ctx.fillText(addr?addr.slice(0,10)+'…'+addr.slice(-8):'',86,H-18);
+  ctx.font='bold 14px "Chakra Petch",sans-serif'; ctx.fillStyle='#f0ebe4'; ctx.textAlign='left';
+  ctx.fillText(userName||shortA(addr), 80, H-36);
+  ctx.font='10px monospace'; ctx.fillStyle='#6b5f54';
+  ctx.fillText(addr?addr.slice(0,12)+'…'+addr.slice(-8):'', 80, H-20);
 
-  ctx.font='bold 12px "Chakra Petch",sans-serif'; ctx.fillStyle=col; ctx.textAlign='right';
-  ctx.fillText('MOATS PROTOCOL',W-28,H-36);
-  ctx.font='11px monospace'; ctx.fillStyle='#6b5f54';
-  ctx.fillText('moats.app',W-28,H-18);
+  ctx.font='bold 11px "Chakra Petch",sans-serif'; ctx.fillStyle=col; ctx.textAlign='right';
+  ctx.fillText('MOATS PROTOCOL', W-26, H-36);
+  ctx.font='10px monospace'; ctx.fillStyle='#6b5f54';
+  ctx.fillText('moats.app', W-26, H-20);
 
   return canvas;
 }
+
 
 // ── INIT ──
 function initPositions() {
