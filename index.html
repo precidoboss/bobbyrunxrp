@@ -1,8 +1,15 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" style="scroll-behavior:smooth">
 <head>
 <meta charset="UTF-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://api.avax.network" crossorigin>
+<link rel="preconnect" href="https://api.dexscreener.com" crossorigin>
+<link rel="dns-prefetch" href="https://moat-api.fortifi.network">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<meta name="theme-color" content="#141210">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>MOATS INTEL</title>
 <link rel="icon" type="image/jpeg" href="https://raw.githubusercontent.com/precidoboss/my-game-sprites/main/photo_2026-03-14_06-11-33.jpg">
 <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/precidoboss/my-game-sprites/main/photo_2026-03-14_06-11-33.jpg">
@@ -126,6 +133,8 @@ main{position:relative;z-index:1;padding:.8rem;max-width:1440px;margin:0 auto}
 .rn{background:rgba(107,95,84,.08);color:var(--mut);border:1px solid var(--bor)}
 .zname{font-family:'DM Mono',monospace;font-size:.66rem;color:var(--acc);font-weight:600;line-height:1.2}
 
+.shimmer{background:linear-gradient(90deg,var(--card) 25%,var(--sur) 50%,var(--card) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
 /* COPY MOAT PAGE */
 .wallet-connect-btn{display:flex;align-items:center;gap:10px;background:linear-gradient(135deg,rgba(249,115,22,.15),rgba(212,168,67,.08));border:2px solid rgba(249,115,22,.4);border-radius:14px;padding:1rem 1.4rem;cursor:pointer;transition:all .2s;width:100%}
 .wallet-connect-btn:hover{border-color:var(--acc);transform:translateY(-2px);box-shadow:0 8px 24px rgba(249,115,22,.2)}
@@ -586,7 +595,13 @@ main{position:relative;z-index:1;padding:.8rem;max-width:1440px;margin:0 auto}
     </div>
     <div id="ms-leaderboard" class="mtsec">
       <div class="panel">
-        <div class="ph"><div class="ptitle" id="mLbTitle">Leaderboard</div><span id="mLbCount" style="font-family:'DM Mono',monospace;font-size:.58rem;color:var(--mut)"></span></div>
+        <div class="ph">
+          <div class="ptitle" id="mLbTitle">Leaderboard</div>
+          <div style="display:flex;align-items:center;gap:5px">
+            <span id="mLbCount" style="font-family:'DM Mono',monospace;font-size:.58rem;color:var(--mut)"></span>
+            <button onclick="exportMoatLbCSV(activeMoat)" class="btn btn-sm btn-g" style="padding:2px 7px;font-size:.52rem" title="Download this moat's leaderboard as CSV">⬇ CSV</button>
+          </div>
+        </div>
         <div class="pb0 tw"><table class="tbl" id="mLbTbl"><thead><tr><th>Rank</th><th>Wallet</th><th>Points</th><th>Weight</th><th>Share</th></tr></thead><tbody></tbody></table></div>
       </div>
     </div>
@@ -604,7 +619,14 @@ main{position:relative;z-index:1;padding:.8rem;max-width:1440px;margin:0 auto}
     <div class="panel"><div class="ph"><div class="ptitle">Wallets by Moat Count</div></div><div class="pb"><div class="ch"><canvas id="cMC"></canvas></div></div></div>
   </div>
   <div class="panel">
-    <div class="ph"><div class="ptitle">🏆 Global Leaderboard</div><span class="live"><span class="ld"></span>live</span></div>
+    <div class="ph">
+      <div class="ptitle">🏆 Global Leaderboard</div>
+      <div style="display:flex;align-items:center;gap:6px">
+        <span class="live"><span class="ld"></span>live</span>
+        <button onclick="exportLbCSV()" class="btn btn-sm btn-g" style="padding:2px 8px;font-size:.54rem" title="Download leaderboard as CSV">⬇ CSV</button>
+        <button onclick="exportLbPDF()" class="btn btn-sm btn-g" style="padding:2px 8px;font-size:.54rem" title="Download leaderboard as PDF">⬇ PDF</button>
+      </div>
+    </div>
     <div class="pb0 tw"><table class="tbl" id="lbTbl"><thead><tr><th>Rank</th><th>Wallet</th><th>Moats</th><th>Points</th><th>Council Score</th><th>Share</th><th></th></tr></thead><tbody></tbody></table></div>
   </div>
 </div>
@@ -633,32 +655,46 @@ main{position:relative;z-index:1;padding:.8rem;max-width:1440px;margin:0 auto}
     <div class="sc"><div class="sl">Event Types</div><div class="sv" id="evTy">—</div></div>
     <div class="sc"><div class="sl">Latest</div><div class="sv" style="font-size:.72rem;font-family:'DM Mono',monospace" id="evLt">—</div></div>
   </div>
+  <div class="panel" style="margin-bottom:.85rem">
+    <div class="ph" style="flex-wrap:wrap;gap:6px">
+      <div class="ptitle">🔍 Filter Events</div>
+      <div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap">
+        <select id="evTypeFilter" onchange="applyEvFilter()" style="padding:3px 7px;background:var(--sur);border:1px solid var(--bor);border-radius:5px;color:var(--dim);font-family:'DM Mono',monospace;font-size:.56rem;outline:none">
+          <option value="">All Types</option>
+          <option value="staked">🔒 Staked</option>
+          <option value="locked">⏳ Locked</option>
+          <option value="burned">🔥 Burned</option>
+          <option value="reward">💰 Rewards/Claims</option>
+          <option value="unstake">↩ Unstake/Withdraw</option>
+        </select>
+        <select id="evMoatFilter" onchange="applyEvFilter()" style="padding:3px 7px;background:var(--sur);border:1px solid var(--bor);border-radius:5px;color:var(--dim);font-family:'DM Mono',monospace;font-size:.56rem;outline:none">
+          <option value="">All Moats</option>
+        </select>
+        <select id="evDaysFilter" onchange="applyEvFilter()" style="padding:3px 7px;background:var(--sur);border:1px solid var(--bor);border-radius:5px;color:var(--dim);font-family:'DM Mono',monospace;font-size:.56rem;outline:none">
+          <option value="0">All Time</option>
+          <option value="1">Last 24h</option>
+          <option value="7">Last 7 days</option>
+          <option value="30">Last 30 days</option>
+          <option value="custom">Custom Range…</option>
+        </select>
+        <input type="date" id="evDateFrom" style="display:none;padding:2px 6px;background:var(--sur);border:1px solid var(--bor);border-radius:5px;color:var(--dim);font-family:'DM Mono',monospace;font-size:.56rem;outline:none" onchange="applyEvFilter()">
+        <input type="date" id="evDateTo" style="display:none;padding:2px 6px;background:var(--sur);border:1px solid var(--bor);border-radius:5px;color:var(--dim);font-family:'DM Mono',monospace;font-size:.56rem;outline:none" onchange="applyEvFilter()">
+        <input id="evWalletSearch" type="text" placeholder="Search wallet…" style="padding:3px 7px;background:var(--sur);border:1px solid var(--bor);border-radius:5px;color:var(--dim);font-family:'DM Mono',monospace;font-size:.56rem;outline:none;width:120px" oninput="applyEvFilter()">
+        <span id="evCt" style="font-family:'DM Mono',monospace;font-size:.56rem;color:var(--mut)"></span>
+        <div style="display:flex;gap:4px;margin-left:4px">
+          <button onclick="exportEventsCSV()" class="btn btn-sm btn-g" style="padding:2px 8px;font-size:.54rem" title="Download filtered events as CSV">⬇ CSV</button>
+          <button onclick="exportEventsPDF()" class="btn btn-sm btn-g" style="padding:2px 8px;font-size:.54rem" title="Download filtered events as PDF">⬇ PDF</button>
+        </div>
+      </div>
+    </div>
+  </div>
   <div class="g2">
     <div class="panel">
       <div class="ph">
-        <div class="ptitle">Event Stream</div>
-        <div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap">
-          <select id="evTypeFilter" onchange="applyEvFilter()" style="padding:3px 7px;background:var(--sur);border:1px solid var(--bor);border-radius:5px;color:var(--dim);font-family:'DM Mono',monospace;font-size:.56rem;outline:none">
-            <option value="">All Types</option>
-            <option value="staked">Staked</option>
-            <option value="locked">Locked</option>
-            <option value="burned">Burned</option>
-            <option value="reward">Rewards/Claims</option>
-            <option value="unstake">Unstake/Withdraw</option>
-          </select>
-          <select id="evMoatFilter" onchange="applyEvFilter()" style="padding:3px 7px;background:var(--sur);border:1px solid var(--bor);border-radius:5px;color:var(--dim);font-family:'DM Mono',monospace;font-size:.56rem;outline:none">
-            <option value="">All Moats</option>
-          </select>
-          <select id="evDaysFilter" onchange="applyEvFilter()" style="padding:3px 7px;background:var(--sur);border:1px solid var(--bor);border-radius:5px;color:var(--dim);font-family:'DM Mono',monospace;font-size:.56rem;outline:none">
-            <option value="0">All Time</option>
-            <option value="1">Last 24h</option>
-            <option value="7">Last 7 days</option>
-            <option value="30">Last 30 days</option>
-          </select>
-          <span id="evCt" style="font-family:'DM Mono',monospace;font-size:.56rem;color:var(--mut)"></span>
-        </div>
+        <div class="ptitle">📡 Event Stream</div>
+        <span id="evCt2" style="font-family:'DM Mono',monospace;font-size:.56rem;color:var(--mut)"></span>
       </div>
-      <div class="evf" style="max-height:500px" id="evFd"></div>
+      <div class="evf" style="max-height:520px" id="evFd"></div>
       <div id="evLoadMore" style="display:none;padding:.7rem;text-align:center">
         <button class="btn btn-sm btn-g" id="evLoadMoreBtn" onclick="loadMoreEvents()">Load More Events</button>
         <div style="font-family:'DM Mono',monospace;font-size:.56rem;color:var(--mut);margin-top:.35rem">
@@ -2211,6 +2247,12 @@ function setMeta(title, desc, img, url) {
   setTag('link-canonical', url || SITE_URL);
 }
 
+// Returns best OG image for a moat (logo if available, fallback to app banner)
+function getMoatOGImage(moatAddr) {
+  const meta = MOATS[moatAddr];
+  return meta?.logo ? RAW + meta.logo : OG_IMG;
+}
+
 function pushRoute(hash) {
   if (window.location.hash !== hash) {
     history.pushState(null, '', hash);
@@ -2243,9 +2285,7 @@ function routeFromMoat(addr) {
   const slug = meta.short?.toLowerCase() || addr;
   pushRoute('#/moat/' + slug);
   const desc = `${meta.name} on Avalanche — stake, lock or burn ${meta.ticker} to earn moat points and council score.`;
-  const img  = meta.logo
-    ? 'https://raw.githubusercontent.com/precidoboss/my-game-sprites/main/' + meta.logo
-    : OG_IMG;
+  const img = getMoatOGImage(addr);
   setMeta(meta.name, desc, img, SITE_URL + '#/moat/' + slug);
   document.title = meta.name + ' — ' + SITE_NAME;
 }
@@ -3150,15 +3190,52 @@ function filterEvs(evs, typeFilter, daysFilter, moatFilter) {
 }
 
 function applyEvFilter() {
-  const type  = document.getElementById('evTypeFilter')?.value  || '';
-  const days  = document.getElementById('evDaysFilter')?.value  || '0';
-  const moat  = document.getElementById('evMoatFilter')?.value  || '';
-  const filtered = filterEvs(allEvs, type, days, moat);
-  const ctEl  = document.getElementById('evCt');
-  if (ctEl) ctEl.textContent = filtered.length+' shown'+(evTotal>allEvs.length?' · '+evTotal+' total':'');
+  const type   = document.getElementById('evTypeFilter')?.value  || '';
+  const days   = document.getElementById('evDaysFilter')?.value  || '0';
+  const moat   = document.getElementById('evMoatFilter')?.value  || '';
+  const wallet = (document.getElementById('evWalletSearch')?.value || '').trim().toLowerCase();
+  const fromEl = document.getElementById('evDateFrom');
+  const toEl   = document.getElementById('evDateTo');
+
+  // Show/hide custom date inputs
+  const isCustom = days === 'custom';
+  if (fromEl) fromEl.style.display = isCustom ? '' : 'none';
+  if (toEl)   toEl.style.display   = isCustom ? '' : 'none';
+
+  let filtered = filterEvs(allEvs, type, isCustom ? '0' : days, moat);
+
+  // Custom date range
+  if (isCustom && fromEl?.value) {
+    const from = new Date(fromEl.value).getTime() / 1000;
+    filtered = filtered.filter(e => !e.timestamp || Number(e.timestamp) >= from);
+  }
+  if (isCustom && toEl?.value) {
+    const to = new Date(toEl.value).getTime() / 1000 + 86400;
+    filtered = filtered.filter(e => !e.timestamp || Number(e.timestamp) <= to);
+  }
+
+  // Wallet search
+  if (wallet) {
+    filtered = filtered.filter(e => {
+      const w = (e.wallet||'').toLowerCase();
+      const uname = (zephyrNames[w] || '').toLowerCase();
+      const prof = getKnownProfile(w);
+      const tw = (prof?.twitter || '').toLowerCase();
+      return w.includes(wallet) || uname.includes(wallet) || tw.includes(wallet);
+    });
+  }
+
+  filtered.sort((a,b) => (Number(b.timestamp)||0) - (Number(a.timestamp)||0));
+  const label = filtered.length + ' event' + (filtered.length !== 1 ? 's' : '') + (evTotal > allEvs.length ? ' of ' + evTotal : '');
+  const ctEl = document.getElementById('evCt');
+  const ctEl2 = document.getElementById('evCt2');
+  if (ctEl)  ctEl.textContent  = label;
+  if (ctEl2) ctEl2.textContent = label;
   setTxt('evShownCount', filtered.length);
-  setTxt('evTotalCount', evTotal||allEvs.length);
-  renderEvItems(filtered.sort((a,b)=>(Number(b.timestamp)||0)-(Number(a.timestamp)||0)), 'evFd');
+  setTxt('evTotalCount', evTotal || allEvs.length);
+  renderEvItems(filtered, 'evFd');
+  // store for export
+  window._lastFilteredEvs = filtered;
 }
 
 function applyMoatEvFilter() {
@@ -3185,6 +3262,7 @@ function renderEvs(freshIds=[]){
   setTxt('evTot',fmt(evTotal||allEvs.length));setTxt('evTy',Object.keys(types).length);
   const s=allEvs.slice().sort((a,b)=>(Number(b.timestamp)||0)-(Number(a.timestamp)||0));
   setTxt('evLt',s[0]?.eventType||'—');
+  window._lastFilteredEvs = allEvs.slice(); // default export = all events
   applyEvFilter();
   buildEvChart(types);
   // Show load more if we know there are more events
@@ -3238,7 +3316,9 @@ function fmtTs(raw){
 
 function renderEvItems(evs,id,freshIds=[]){
   const el=document.getElementById(id); if(!el)return;
-  if(!evs.length){el.innerHTML='<div class="empty" style="padding:1.5rem"><div class="ico">📡</div>No events yet.</div>';return;}
+  if(!evs.length){el.innerHTML='<div class="empty" style="padding:1.5rem"><div class="ico">📡</div>'+
+    (window._lastFilteredEvs!==undefined&&allEvs.length?'No events match your filters. <button onclick="document.getElementById(\'evTypeFilter\').value=\'\';document.getElementById(\'evMoatFilter\').value=\'\';document.getElementById(\'evDaysFilter\').value=\'0\';document.getElementById(\'evWalletSearch\').value=\'\';applyEvFilter()" style="background:none;border:none;color:var(--acc);cursor:pointer;font-family:\'DM Mono\',monospace;font-size:.65rem;padding:0">Clear filters →</button>':'No events yet.')+
+    '</div>';return;}
   const s=evs.slice().sort((a,b)=>(b.timestamp||0)-(a.timestamp||0));
   const freshSet=new Set(freshIds);
 
@@ -4962,6 +5042,22 @@ function copyCopyMoatToAllocator() {
 // ── CONSTANTS ──
 const AVAX_CHAIN_ID  = 43114;
 const AVAX_RPC       = 'https://api.avax.network/ext/bc/C/rpc';
+const AVAX_RPC_LIST  = [
+  'https://api.avax.network/ext/bc/C/rpc',
+  'https://avalanche-c-chain-rpc.publicnode.com',
+  'https://rpc.ankr.com/avalanche',
+];
+// Returns a working provider, cycling through fallbacks
+async function getProvider() {
+  for (const rpc of AVAX_RPC_LIST) {
+    try {
+      const p = new ethers.JsonRpcProvider(rpc);
+      await p.getBlockNumber();
+      return p;
+    } catch(e) {}
+  }
+  return new ethers.JsonRpcProvider(AVAX_RPC);
+}
 const USDC_ADDR      = ethers.getAddress('0xb97ef9ef8734c71904d8002f8b6bc66dd9c48a6e');
 const WAVAX_ADDR     = ethers.getAddress('0xb31f66aa3c1e785363f0875a1b74e27b85fd66c7');
 const DEAD_ADDR_CM   = '0x000000000000000000000000000000000000dEaD';
@@ -6814,7 +6910,7 @@ async function posOpenDetail(moatAddr) {
     if (typeof setMeta === 'function') setMeta(
       (meta?.name || 'Moat') + ' — My Position',
       'Manage your ' + (meta?.ticker || '') + ' position — stake, lock, burn.',
-      meta?.logo ? 'https://raw.githubusercontent.com/precidoboss/my-game-sprites/main/' + meta.logo : null,
+      getMoatOGImage(moatAddr),
       window.location.origin + window.location.pathname + '#/positions/' + slug
     );
   }
@@ -8939,17 +9035,158 @@ async function posRunTx(statusId, fn, successMsg) {
   }
 }
 
+
+// ══════════════════════════════════════════════════
+// ── EXPORT FUNCTIONS (CSV + PDF) ──
+// ══════════════════════════════════════════════════
+
+function eventsToCSVRows(evs) {
+  const rows = [['Timestamp','Event Type','Moat','Wallet','Username','Amount','Token','Points','Tx Hash']];
+  evs.forEach(e => {
+    const meta = e.contractAddress ? MOATS[e.contractAddress] : null;
+    const w = (e.wallet||'').toLowerCase();
+    const uname = zephyrNames[w] || '';
+    const prof = getKnownProfile(e.wallet);
+    const displayName = uname || (prof ? '@'+prof.twitter : '');
+    rows.push([
+      e.timestamp ? new Date(Number(e.timestamp)*1000).toISOString() : '',
+      e.eventType || '',
+      meta ? meta.short : (e.contractAddress || ''),
+      e.wallet || '',
+      displayName,
+      e.tokenAmount > 0 ? e.tokenAmount.toFixed(4) : '',
+      e.tokenSymbol || (meta ? meta.ticker : ''),
+      e.points > 0 ? e.points : '',
+      e.txHash || '',
+    ]);
+  });
+  return rows;
+}
+
+function downloadCSV(rows, filename) {
+  const csv = rows.map(r => r.map(v => '"'+String(v||'').replace(/"/g,'""')+'"').join(',')).join('\n');
+  const blob = new Blob([csv], {type:'text/csv'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href=url; a.download=filename; a.click();
+  setTimeout(()=>URL.revokeObjectURL(url), 1000);
+}
+
+function exportEventsCSV() {
+  const evs = window._lastFilteredEvs || allEvs;
+  if (!evs.length) { showAppNotif('No events to export.','warn',2500); return; }
+  downloadCSV(eventsToCSVRows(evs), 'moats-intel-events-'+Date.now()+'.csv');
+  showAppNotif('Downloaded '+evs.length+' events as CSV','success',2500);
+}
+
+function exportEventsPDF() {
+  const evs = window._lastFilteredEvs || allEvs;
+  if (!evs.length) { showAppNotif('No events to export.','warn',2500); return; }
+  const rows = eventsToCSVRows(evs);
+  const pw = window.open('','_blank','width=960,height=700');
+  if (!pw) { showAppNotif('Allow popups to export PDF','warn',3000); return; }
+  const colW = ['14%','10%','8%','14%','12%','8%','7%','8%','19%'];
+  const hdr = rows[0].map((h,i)=>'<th style="width:'+colW[i]+';padding:5px 6px;background:#1c1916;color:#f97316;font-family:monospace;font-size:10px;border-bottom:2px solid #332e28;text-align:left">'+h+'</th>').join('');
+  const body = rows.slice(1).map((r,ri)=>
+    '<tr style="background:'+(ri%2===0?'#141210':'#1c1916')+'">'+
+    r.map((v,ci)=>'<td style="padding:4px 6px;font-family:monospace;font-size:9px;color:'+(ci===1?'#f97316':ci===3||ci===4?'#d4a843':'#a89880')+';overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+String(v||'')+'</td>').join('')+
+    '</tr>'
+  ).join('');
+  pw.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Moats Intel Events</title>'
+  +'<style>*{box-sizing:border-box}body{background:#141210;color:#f0ebe4;margin:0;padding:20px;font-family:monospace}'
+  +'h2{color:#f97316;margin:0 0 4px;font-size:15px}p{color:#6b5f54;font-size:10px;margin:0 0 12px}'
+  +'table{width:100%;border-collapse:collapse;table-layout:fixed}'
+  +'@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}</style></head><body>'
+  +'<h2>⬡ MOATS INTEL — Activity Export</h2>'
+  +'<p>Generated: '+new Date().toLocaleString()+' · '+(rows.length-1)+' events · Built by @precidobos for moats.app hackathon</p>'
+  +'<table><thead><tr>'+hdr+'</tr></thead><tbody>'+body+'</tbody></table>'
+  +'<script>setTimeout(function(){window.print();},500);<\/script></body></html>');
+  pw.document.close();
+  showAppNotif('Opening PDF print dialog…','success',3000);
+}
+
+function exportLbCSV() {
+  const sw = sortedWallets();
+  const tot = sw.reduce((s,w)=>s+w.totalPoints,0);
+  if (!sw.length) { showAppNotif('No data to export.','warn',2500); return; }
+  const rows = [['Rank','Wallet','Username','Twitter','Moat Count','Total Points','Council Score','Eco Share %']];
+  sw.forEach((w,i) => {
+    const mult=cMult(w.moatCount), cs=Math.round(w.totalPoints*mult);
+    const sh=tot?(w.totalPoints/tot*100).toFixed(3):'0';
+    const uname=w.username||zephyrNames[w.wallet]||'';
+    const prof=getKnownProfile(w.wallet);
+    rows.push([i+1,w.wallet,uname,prof?'@'+prof.twitter:'',w.moatCount,w.totalPoints.toFixed(2),cs,sh]);
+  });
+  downloadCSV(rows, 'moats-intel-leaderboard-'+Date.now()+'.csv');
+  showAppNotif('Downloaded '+sw.length+' wallets as CSV','success',2500);
+}
+
+function exportLbPDF() {
+  const sw = sortedWallets();
+  const tot = sw.reduce((s,w)=>s+w.totalPoints,0);
+  if (!sw.length) { showAppNotif('No data to export.','warn',2500); return; }
+  const pw = window.open('','_blank','width=960,height=700');
+  if (!pw) { showAppNotif('Allow popups to export PDF','warn',3000); return; }
+  const hdr = ['#','Wallet','Name','Moats','Points','Council Score','Share %'].map(h=>'<th style="padding:5px 8px;background:#1c1916;color:#f97316;font-family:monospace;font-size:11px;border-bottom:2px solid #332e28;text-align:left">'+h+'</th>').join('');
+  const body = sw.map((w,i)=>{
+    const mult=cMult(w.moatCount),cs=Math.round(w.totalPoints*mult),sh=tot?(w.totalPoints/tot*100).toFixed(3):'0';
+    const uname=w.username||zephyrNames[w.wallet]||'';
+    const prof=getKnownProfile(w.wallet);
+    const name=uname||(prof?'@'+prof.twitter:w.wallet.slice(0,10)+'...');
+    return '<tr style="background:'+(i%2===0?'#141210':'#1c1916')+'">'
+      +'<td style="padding:4px 8px;color:#f97316;font-size:10px">'+i+1+'</td>'
+      +'<td style="padding:4px 8px;color:#6b5f54;font-size:8px">'+w.wallet+'</td>'
+      +'<td style="padding:4px 8px;color:#d4a843;font-size:10px">'+name+'</td>'
+      +'<td style="padding:4px 8px;color:#a89880;text-align:center;font-size:10px">'+w.moatCount+'</td>'
+      +'<td style="padding:4px 8px;color:#f97316;font-size:10px">'+w.totalPoints.toFixed(0)+'</td>'
+      +'<td style="padding:4px 8px;color:#a78bfa;font-size:10px">'+cs+'</td>'
+      +'<td style="padding:4px 8px;color:#6b5f54;font-size:10px">'+sh+'%</td>'
+      +'</tr>';
+  }).join('');
+  pw.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Moats Intel Leaderboard</title>'
+  +'<style>*{box-sizing:border-box}body{background:#141210;color:#f0ebe4;margin:0;padding:20px;font-family:monospace}'
+  +'h2{color:#f97316;margin:0 0 4px;font-size:15px}p{color:#6b5f54;font-size:10px;margin:0 0 12px}'
+  +'table{width:100%;border-collapse:collapse}'
+  +'@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}</style></head><body>'
+  +'<h2>⬡ MOATS INTEL — Global Leaderboard</h2>'
+  +'<p>Generated: '+new Date().toLocaleString()+' · '+sw.length+' wallets · Built by @precidobos for moats.app hackathon</p>'
+  +'<table><thead><tr>'+hdr+'</tr></thead><tbody>'+body+'</tbody></table>'
+  +'<script>setTimeout(function(){window.print();},500);<\/script></body></html>');
+  pw.document.close();
+  showAppNotif('Opening PDF print dialog…','success',3000);
+}
+
+function exportMoatLbCSV(moatAddr) {
+  const meta = MOATS[moatAddr];
+  const m = moatMap[moatAddr];
+  if (!m || !m.sorted || !m.sorted.length) { showAppNotif('No leaderboard data yet.','warn',2500); return; }
+  const rows = [['Rank','Wallet','Username','Twitter','Points','Eco Share %']];
+  const tot = m.totalPoints || 1;
+  m.sorted.forEach((entry,i) => {
+    const w = getWallet(entry);
+    const uname = entry.username || zephyrNames[w] || '';
+    const prof = getKnownProfile(w);
+    rows.push([i+1, w, uname, prof?'@'+prof.twitter:'', entry.points, (entry.points/tot*100).toFixed(3)]);
+  });
+  downloadCSV(rows, 'moats-'+(meta ? meta.short.toLowerCase() : 'moat')+'-leaderboard-'+Date.now()+'.csv');
+  showAppNotif('Downloaded '+(meta ? meta.name : 'moat')+' leaderboard as CSV','success',2500);
+}
+
 </script>
 
 <!-- ── GLOBAL FOOTER ── -->
-<div id="globalFooter" style="text-align:center;padding:1.5rem .85rem 2.5rem;margin-top:1rem">
-  <div style="display:inline-flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--bor);border-radius:99px;padding:.45rem 1.1rem">
-    <img src="https://raw.githubusercontent.com/precidoboss/my-game-sprites/main/laifumoatsintel.jpg" style="width:22px;height:22px;border-radius:50%;object-fit:cover;border:1px solid var(--bor)" onerror="this.style.display='none'">
+<div id="globalFooter" style="position:relative;z-index:1;text-align:center;padding:2rem .85rem 3rem;margin-top:.5rem;border-top:1px solid var(--bor)">
+  <div style="display:inline-flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--bor);border-radius:99px;padding:.55rem 1.3rem;box-shadow:0 0 24px rgba(249,115,22,.06)">
+    <img src="https://raw.githubusercontent.com/precidoboss/my-game-sprites/main/laifumoatsintel.jpg" style="width:24px;height:24px;border-radius:50%;object-fit:cover;border:1px solid rgba(249,115,22,.3)" onerror="this.style.display='none'">
     <span style="font-family:'DM Mono',monospace;font-size:.6rem;color:var(--mut)">Built by</span>
-    <a href="https://x.com/precidobos" target="_blank" style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.65rem;color:var(--acc);text-decoration:none">@precidobos</a>
-    <span style="font-family:'DM Mono',monospace;font-size:.6rem;color:var(--mut)">for the</span>
-    <a href="https://moats.app" target="_blank" style="font-family:'DM Mono',monospace;font-size:.6rem;color:var(--dim);text-decoration:none">moats.app</a>
-    <span style="font-family:'DM Mono',monospace;font-size:.58rem;color:var(--mut)">hackathon 🏆</span>
+    <a href="https://x.com/precidobos" target="_blank" style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.68rem;color:var(--acc);text-decoration:none;letter-spacing:.02em">@precidobos</a>
+    <span style="width:1px;height:14px;background:var(--bor);display:inline-block"></span>
+    <span style="font-family:'DM Mono',monospace;font-size:.58rem;color:var(--mut)">for</span>
+    <a href="https://moats.app" target="_blank" style="font-family:'Chakra Petch',sans-serif;font-weight:600;font-size:.63rem;color:var(--gld);text-decoration:none">moats.app</a>
+    <span style="font-family:'DM Mono',monospace;font-size:.58rem;color:var(--mut)">hackathon</span>
+    <span style="font-size:.75rem">🏆</span>
+  </div>
+  <div style="margin-top:.6rem;font-family:'DM Mono',monospace;font-size:.52rem;color:var(--ash2)">
+    MOATS INTEL · Avalanche DeFi Intelligence · Not financial advice · Built on-chain data from <a href="https://moats.app" target="_blank" style="color:var(--mut);text-decoration:none">moats.app</a>
   </div>
 </div>
 
