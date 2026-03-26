@@ -6,6 +6,20 @@
 <title>MOATS INTEL</title>
 <link rel="icon" type="image/jpeg" href="https://raw.githubusercontent.com/precidoboss/my-game-sprites/main/photo_2026-03-14_06-11-33.jpg">
 <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/precidoboss/my-game-sprites/main/photo_2026-03-14_06-11-33.jpg">
+<!-- Open Graph / Twitter Card — updated dynamically by JS -->
+<meta property="og:type"        content="website">
+<meta property="og:site_name"   content="MOATS INTEL">
+<meta property="og:title"       id="og-title"       content="MOATS INTEL — Avalanche DeFi Intelligence">
+<meta property="og:description" id="og-desc"        content="Track all 11 Moats live — staked, locked & burned positions, council scores, token prices, signals and more.">
+<meta property="og:image"       id="og-image"       content="https://raw.githubusercontent.com/precidoboss/my-game-sprites/main/moatsintelloadingimage-removebg-preview.png">
+<meta property="og:url"         id="og-url"         content="">
+<meta name="twitter:card"                            content="summary_large_image">
+<meta name="twitter:site"                            content="@MoatsApp">
+<meta name="twitter:title"      id="tw-title"       content="MOATS INTEL — Avalanche DeFi Intelligence">
+<meta name="twitter:description" id="tw-desc"       content="Track all 11 Moats live — staked, locked & burned positions, council scores, token prices, signals and more.">
+<meta name="twitter:image"      id="tw-image"       content="https://raw.githubusercontent.com/precidoboss/my-game-sprites/main/moatsintelloadingimage-removebg-preview.png">
+<meta name="description"        id="meta-desc"      content="MOATS INTEL — Track all 11 Moats live on Avalanche.">
+<link rel="canonical"           id="link-canonical" href="">
 <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=DM+Mono:wght@300;400;500&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
@@ -433,7 +447,7 @@ main{position:relative;z-index:1;padding:.8rem;max-width:1440px;margin:0 auto}
 <div class="tkbar"><div style="display:flex;overflow:hidden;width:100%"><div class="tkin" id="tkEl">Loading…</div></div></div>
 
 <header>
-  <a class="logo" href="#" onclick="nav(document.querySelector('[data-v=overview]'))">
+  <a class="logo" href="#/overview" onclick="nav(document.querySelector('[data-v=overview]'));return false;">
     <img class="logo-img" id="mainLogoImg"
       src="https://raw.githubusercontent.com/precidoboss/my-game-sprites/main/photo_2026-03-14_06-11-33.jpg"
       onerror="this.style.display='none';document.getElementById('mainLogoFb').style.display='flex'"
@@ -1456,16 +1470,16 @@ const LOAD_QUIPS = [
 const DSC_PAIR = 'https://api.dexscreener.com/latest/dex/pairs/avalanche/';
 
 const MOATS = {
-  '0xcf65744c955a292d11de2a4184e9fabedbfc7b40':{name:'HEFE Moat',         short:'HEFE',  ticker:'$hefe',    emoji:'🏔️',color:'#f97316',tokenAddr:'0xcf65744c955a292d11de2a4184e9fabedbfc7b40',  pairAddr:'0xe11e871d312cc9bae9eb24c7bdc2031f8453bf44', altPairAddr:'0xc4fa66b4839af7379a4fcbe5dd048b18fe99a2ac', url:'https://moats.app/moat/0xcf65744c955a292d11de2a4184e9fabedbfc7b40',   logo:'Hefelogo-new.png',              knownSupply:690420000, pharaohPool:true, dexOverride:'pharaoh'},
+  '0xcf65744c955a292d11de2a4184e9fabedbfc7b40':{name:'HEFE Moat',         short:'HEFE',  ticker:'$hefe',    emoji:'🏔️',color:'#f97316',tokenAddr:'0xcf65744c955a292d11de2a4184e9fabedbfc7b40',  pairAddr:'0xc4fa66b4839af7379a4fcbe5dd048b18fe99a2ac', altPairAddr:'0xe11e871d312cc9bae9eb24c7bdc2031f8453bf44', lfjPairAddr:'0xe11e871d312cc9bae9eb24c7bdc2031f8453bf44', url:'https://moats.app/moat/0xcf65744c955a292d11de2a4184e9fabedbfc7b40',   logo:'Hefelogo-new.png',              knownSupply:690420000, pharaohPool:true, dexOverride:'pharaoh'},
   '0x501f6e7bec3db63d8dacbc9fa0ce42d5d2329d53':{name:'hCASH LP Moat',     short:'hCASH', ticker:'$hcash',   emoji:'💧', color:'#d4a843',tokenAddr:'0x8f961980518bc9ab302948de7948580666dc35d9',  pairAddr:'0x8f961980518bc9ab302948de7948580666dc35d9',  url:'https://moats.app/moat/0x501f6e7bec3db63d8dacbc9fa0ce42d5d2329d53',   logo:'hashcashclub.png',   supplyType:'dynamic',knownSupply:21000000000,note:'LP token moat — add AVAX+hCASH liquidity on Pharaoh, then stake LP here',lpOnly:false,lpUrl:'https://phar.gg'},
-  '0x020c73b55d139d5e259bad89b126f2a446c22ac6':{name:'FREAK Anon Moat',   short:'FREAK', ticker:'$freak',   emoji:'👾', color:'#8c8074',tokenAddr:'0x020c73b55d139d5e259bad89b126f2a446c22ac6',  pairAddr:'0x90c2ea98d6389cc4eb05ec635ee82c493b2dfaf2', dexOverride:'pharaoh', pharaohPool:true, url:'https://moats.app/moat/0x020c73b55d139d5e259bad89b126f2a446c22ac6',   logo:'FREAK_Anon.png',                knownSupply:1000000000},
+  '0x020c73b55d139d5e259bad89b126f2a446c22ac6':{name:'FREAK Anon Moat',   short:'FREAK', ticker:'$freak',   emoji:'👾', color:'#8c8074',tokenAddr:'0x020c73b55d139d5e259bad89b126f2a446c22ac6',  pairAddr:'0x0e13283315fd3d996b22ef40f54c38f24c7f4ee0', altPairAddr:'0x90c2ea98d6389cc4eb05ec635ee82c493b2dfaf2', dexOverride:'pharaoh', pharaohPool:true, url:'https://moats.app/moat/0x020c73b55d139d5e259bad89b126f2a446c22ac6',   logo:'FREAK_Anon.png',                knownSupply:1000000000},
   '0x7e1f28c9622aa68001fe0b200f5e5f93f6b35cc9':{name:'Balln Chikn Moat', short:'BALLN', ticker:'$balln',   emoji:'🏀', color:'#f43f5e',tokenAddr:'0x4Afc7838167b77530278483c3d8c1fFe698a912E',  pairAddr:'0xa8f87e026481cf03dc9a68570584a664186b41c7', url:'https://moats.app/moat/0x7e1f28c9622aa68001fe0b200f5e5f93f6b35cc9',    logo:'balln-token.jpg',               knownSupply:100000},
   '0x464b2817f16f6117602ad05bae446c2fc5ba6fb7':{name:'Supercycle Moat',   short:'SUPER', ticker:'$super',   emoji:'🌀', color:'#818cf8',tokenAddr:'0xCA2e0f72653337d05B1ABceBEA5718A4A3E57a0b',  pairAddr:'0x017c5608a8ab29ab23093726cf7c64e5ef88e191', url:'https://moats.app/moat/0x464b2817f16f6117602ad05bae446c2fc5ba6fb7',    logo:'supercycle.jpg',                knownSupply:10000000000},
   '0x940b7f7d73a504ec566157eebb0566b81d57e8f8':{name:'Vitrene Moat',      short:'VIT',   ticker:'$vitrene', emoji:'💎', color:'#22d3ee',tokenAddr:'0xde34C06de75FB446b5e7b8dd272D014F2A19009D',  pairAddr:'0x1ed3c7234ed58700cb99dfd5eb1bad4242855ad8',  url:'https://moats.app/moat/0x940b7f7d73a504ec566157eebb0566b81d57e8f8',   logo:'VIT-Logo-Alternative-2.jpg',    knownSupply:10000000000},
   '0x7a4d20261a765bd9ba67d49fbf8189843eec3393':{name:'Lil Coq Moat',      short:'LIL',   ticker:'$lil',     emoji:'🐓', color:'#fb7185',tokenAddr:'0x22683BbaDD01473969F23709879187705a253763',  pairAddr:'0x8acc49857a1259d25eb3ca0aa15b398d0e149ef2', url:'https://moats.app/moat/0x7a4d20261a765bd9ba67d49fbf8189843eec3393',    logo:'LIL-Coq-Logo.png',              knownSupply:1350000000},
   '0x93d8cc111233f8c5b9a019df7c159b6f9be7b44b':{name:'Dimish Moat',       short:'DISH',  ticker:'$dimish',  emoji:'🌑', color:'#a78bfa',tokenAddr:'0x40146E96EE5297187022D1ca62A3169B5e45B0a4',  pairAddr:null, geckoPoolAddr:'0x3edc0126e36758419ba7eeb44b2a3a094e7e9bb7', geckoNetwork:'avax', url:'https://moats.app/moat/0x93d8cc111233f8c5b9a019df7c159b6f9be7b44b',   logo:'Dimish1000px.png',              knownSupply:1000000000},
   '0x3399d03566bb6db0cb4f1e13047589a1499cebbc':{name:'Bensi Box Moat',    short:'BENSI', ticker:'$bensi',   emoji:'📦', color:'#fbbf24',tokenAddr:'0x00697F5F6dc2CA0A17e6c89bCcd1173A61eA24a6',  pairAddr:'0x7984cD0FA3DaA31f8B305A0544b6097BA40Fd3B8', swapViaWavax:true, url:'https://moats.app/moat/0x3399d03566bb6db0cb4f1e13047589a1499cebbc',    logo:'Bensi-Box-logo-new.jpg',        knownSupply:1000000000},
-  '0x9c5f177cdc0332e61e423ee9ad9e4f2333f62685':{name:'Where Is Malek Moat',short:'MALEK',ticker:'$malek',   emoji:'🔍', color:'#34d399',tokenAddr:'0xeB55FAB1C23EC0Aa5024Ee593A12edCD031Ecd9b',  pairAddr:'0xa7e81808219cb1a27c71bd56f551a43fc8cad23',   url:'https://moats.app/moat/0x9c5f177cdc0332e61e423ee9ad9e4f2333f62685',    logo:'wheremalek.jpg',                knownSupply:10000000000, isNew:true},
+  '0x9c5f177cdc0332e61e423ee9ad9e4f2333f62685':{name:'Where Is Malek Moat',short:'MALEK',ticker:'$malek',   emoji:'🔍', color:'#34d399',tokenAddr:'0xeB55FAB1C23EC0Aa5024Ee593A12edCD031Ecd9b',  pairAddr:'0xa7e81808219cb1a27c71bd56f551a43fc8cad23', arenaToken:'0xB8d7710f7d8349A506b75dD184F05777c82dAd0C',   url:'https://moats.app/moat/0x9c5f177cdc0332e61e423ee9ad9e4f2333f62685',    logo:'wheremalek.jpg',                knownSupply:10000000000, isNew:true},
 };
 
 // Pre-seed supply cache with known values — app works instantly, Snowtrace enriches later
@@ -1596,7 +1610,7 @@ function populateMoatSelects() {
 function getWallet(r){return(r.address||r.walletAddress||r.wallet||r.owner||r.holder||r.user||'').toLowerCase();}
 
 // ── NAV ──
-function nav(el){
+function nav(el, _skipRoute=false){
   if (!el || !el.dataset) return;
   const v=el.dataset.v;
   // Guard: don't render data-dependent views before first load completes
@@ -1617,6 +1631,8 @@ function nav(el){
   if(v==='copymoat')initCopyMoat();
   if(v==='positions')initPositions();
   if(v==='pos-detail'){} // handled by posOpenDetail
+  // Update URL + meta (skip during boot to avoid double-push)
+  if(!_skipRoute && typeof routeFromTab === 'function') routeFromTab(v);
 }
 function mTab(el){
   document.querySelectorAll('.mtab').forEach(x=>x.classList.remove('on'));
@@ -2143,6 +2159,167 @@ function openMoatModal(addr) {
   navToMoat(addr);
 }
 
+// ── URL ROUTER ──────────────────────────────────────────────────────────────
+const SITE_NAME = 'MOATS INTEL';
+const SITE_URL  = window.location.origin + window.location.pathname;
+const OG_IMG    = 'https://raw.githubusercontent.com/precidoboss/my-game-sprites/main/moatsintelloadingimage-removebg-preview.png';
+
+// Tab slug → data-v mapping
+const ROUTE_MAP = {
+  'overview':   'overview',
+  'moats':      'moats',
+  'leaders':    'leaderboard',
+  'leaderboard':'leaderboard',
+  'activity':   'events',
+  'events':     'events',
+  'signals':    'signals',
+  'wallet':     'wallet',
+  'invest':     'invest-home',
+  'guide':      'guide',
+  'copy':       'copymoat',
+  'copymoat':   'copymoat',
+  'positions':  'positions',
+  'debug':      'debug',
+};
+
+// Moat slug → moat address
+function moatSlugToAddr(slug) {
+  const s = slug.toLowerCase();
+  return Object.keys(MOATS).find(addr => {
+    const m = MOATS[addr];
+    return m.short?.toLowerCase() === s || addr.toLowerCase() === s ||
+           m.name?.toLowerCase().replace(/\s+/g,'') === s.replace(/-/g,'');
+  }) || null;
+}
+
+function setMeta(title, desc, img, url) {
+  document.title = title ? title + ' — ' + SITE_NAME : SITE_NAME;
+  const setTag = (id, val) => { const el = document.getElementById(id); if (el) el.setAttribute(el.tagName === 'LINK' ? 'href' : 'content', val); };
+  setTag('og-title',  title || SITE_NAME);
+  setTag('og-desc',   desc  || 'Track all 11 Moats live on Avalanche.');
+  setTag('og-image',  img   || OG_IMG);
+  setTag('og-url',    url   || SITE_URL);
+  setTag('tw-title',  title || SITE_NAME);
+  setTag('tw-desc',   desc  || 'Track all 11 Moats live on Avalanche.');
+  setTag('tw-image',  img   || OG_IMG);
+  setTag('meta-desc', desc  || 'Track all 11 Moats live on Avalanche.');
+  setTag('link-canonical', url || SITE_URL);
+}
+
+function pushRoute(hash) {
+  if (window.location.hash !== hash) {
+    history.pushState(null, '', hash);
+  }
+}
+
+// Called by nav() — updates URL and meta
+function routeFromTab(v) {
+  const slug = Object.keys(ROUTE_MAP).find(k => ROUTE_MAP[k] === v) || v;
+  const tabMeta = {
+    'overview':   ['📊 Overview',    'Live Avalanche moat stats — points, wallets, prices and council scores.'],
+    'moats':      ['⬡ Moats',        'All 11 Moats on Avalanche — stake, lock or burn to earn points.'],
+    'leaderboard':['🏆 Leaderboard', 'Top wallets ranked by council score across all Avalanche moats.'],
+    'events':     ['📡 Activity',     'Recent moat activity — staking, locking and burning events.'],
+    'signals':    ['🔬 Signals',      'Market signals — moat momentum, whale moves and entry zones.'],
+    'wallet':     ['🔎 Wallet',       'Analyze any wallet's moat positions, points and council score.'],
+    'invest-home':['🧮 Invest',       'Allocate USDC across moats optimally based on your goals.'],
+    'guide':      ['💡 Guide',        'How Moats work — staking, locking, burning and council scores explained.'],
+    'copymoat':   ['📋 Copy Moat',    'Copy a top wallet's moat strategy automatically.'],
+    'positions':  ['🏦 My Positions', 'Manage your on-chain moat positions — stake, lock, burn and claim.'],
+  };
+  const [title, desc] = tabMeta[v] || [null, null];
+  pushRoute('#/' + slug);
+  setMeta(title, desc, OG_IMG, SITE_URL + '#/' + slug);
+}
+
+function routeFromMoat(addr) {
+  const meta = MOATS[addr];
+  if (!meta) return;
+  const slug = meta.short?.toLowerCase() || addr;
+  pushRoute('#/moat/' + slug);
+  const desc = `${meta.name} on Avalanche — stake, lock or burn ${meta.ticker} to earn moat points and council score.`;
+  const img  = meta.logo
+    ? 'https://raw.githubusercontent.com/precidoboss/my-game-sprites/main/' + meta.logo
+    : OG_IMG;
+  setMeta(meta.name, desc, img, SITE_URL + '#/moat/' + slug);
+  document.title = meta.name + ' — ' + SITE_NAME;
+}
+
+function routeFromWallet(addr, displayName) {
+  const slug = displayName && !displayName.startsWith('0x') ? displayName : addr;
+  pushRoute('#/wallet/' + slug);
+  const desc = `Moat positions and council score for ${displayName || shortA(addr)} on Avalanche.`;
+  setMeta('Wallet: ' + (displayName || shortA(addr)), desc, OG_IMG, SITE_URL + '#/wallet/' + slug);
+}
+
+// ── BOOT ROUTER — parse URL on load and navigate ──
+async function bootRouter() {
+  const hash = window.location.hash || '';
+  if (!hash || hash === '#' || hash === '#/') return; // default = overview
+
+  const parts = hash.replace(/^#\/?/, '').split('/');
+  const seg0  = parts[0]?.toLowerCase();
+  const seg1  = parts[1]?.toLowerCase();
+
+  if (seg0 === 'moat' && seg1) {
+    // #/moat/hefe or #/moat/0xcf65...
+    const addr = moatSlugToAddr(seg1);
+    if (addr) {
+      // Wait for data to load then open moat detail
+      const tryOpen = (attempts=0) => {
+        const tabEl = document.querySelector('[data-v="moats"]');
+        nav(tabEl);
+        if (typeof navToMoat === 'function') {
+          navToMoat(addr);
+          routeFromMoat(addr);
+        } else if (attempts < 20) {
+          setTimeout(() => tryOpen(attempts+1), 300);
+        }
+      };
+      setTimeout(tryOpen, 800);
+    }
+    return;
+  }
+
+  if (seg0 === 'positions' && seg1) {
+    // #/positions/hefe — open My Positions tab then open that moat's detail
+    const addr = moatSlugToAddr(seg1);
+    setTimeout(() => {
+      const tabEl = document.querySelector('[data-v="positions"]');
+      nav(tabEl, true);
+      if (addr) setTimeout(() => posOpenDetail && posOpenDetail(addr), 600);
+    }, 900);
+    return;
+  }
+
+  if (seg0 === 'wallet' && seg1) {
+    // #/wallet/0x... or #/wallet/vRoshi55
+    const el = document.getElementById('wIn');
+    if (el) el.value = seg1;
+    const tabEl = document.querySelector('[data-v="wallet"]');
+    nav(tabEl);
+    // Resolve and load wallet after data ready
+    setTimeout(async () => {
+      const addr = await resolveWalletInput(seg1);
+      if (addr) {
+        if (el) el.value = addr;
+        gotoW(addr);
+      }
+    }, 1000);
+    return;
+  }
+
+  // Tab routes
+  const viewKey = ROUTE_MAP[seg0];
+  if (viewKey) {
+    const tabEl = document.querySelector('[data-v="' + viewKey + '"]');
+    if (tabEl) nav(tabEl);
+  }
+}
+
+// Listen for back/forward navigation
+window.addEventListener('popstate', () => bootRouter());
+
 function navToMoat(addr) {
   activeMoat = addr;
   // Switch to moats tab
@@ -2151,8 +2328,8 @@ function navToMoat(addr) {
   document.getElementById('view-moat-detail').classList.add('on');
   document.querySelector('[data-v="moats"]').classList.add('on');
   renderMoatDetail(addr, true);
-  // Scroll to top
   window.scrollTo({top:0,behavior:'smooth'});
+  if (typeof routeFromMoat === 'function') routeFromMoat(addr);
 }
 
 function backToMoats() {
@@ -2163,6 +2340,7 @@ function backToMoats() {
   if (moatsTab) moatsTab.classList.add('on');
   activeMoat = null;
   window.scrollTo({top:0,behavior:'smooth'});
+  if (typeof pushRoute === 'function') pushRoute('#/moats');
 }
 
 function closeMoatModal() {
@@ -3174,6 +3352,12 @@ async function analyzeW(){
 async function gotoW(addr,silent=false){
   if(!addr)return;
   if(!silent){
+    if (typeof routeFromWallet === 'function') {
+      // resolve display name for URL
+      const _dp = getKnownProfile(addr);
+      const _zn = zephyrNames[addr.toLowerCase()];
+      routeFromWallet(addr, _dp?.twitter || _zn || null);
+    }
     document.querySelectorAll('.view').forEach(x=>x.classList.remove('on'));
     document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));
     document.getElementById('view-wallet').classList.add('on');
@@ -4418,6 +4602,8 @@ setTimeout(function(){
   fetchAllSupplies();
   fetchZephyrUsernames();
   populateEvMoatFilter();
+  // Boot URL router — parse hash and navigate on load
+  setTimeout(bootRouter, 200);
   setInterval(loadAll,300000); // 5 min auto-refresh
   setInterval(fetchAllSupplies,600000);
 })();
@@ -4845,6 +5031,10 @@ function buildPaths(tokenIn, tokenOut, isNative) {
   const inp = isNative ? WAVAX_ADDR : tokenIn;
   const tOut = tokenOut.toLowerCase();
   const tIn  = inp.toLowerCase();
+  // Check if tokenOut is MALEK — add Arena intermediary path
+  const malek = MOATS['0x9c5f177cdc0332e61e423ee9ad9e4f2333f62685'];
+  const arenaToken = malek?.arenaToken || '0xB8d7710f7d8349A506b75dD184F05777c82dAd0C';
+  const isMalek = tOut === (malek?.tokenAddr||'').toLowerCase();
   // All meaningful paths — WAVAX is hub for most Avax small-caps
   const allPaths = [
     [inp, tokenOut],                           // direct
@@ -4852,6 +5042,11 @@ function buildPaths(tokenIn, tokenOut, isNative) {
     [inp, USDC_ADDR, WAVAX_ADDR, tokenOut],    // USDC→WAVAX→token
     [inp, USDC_ADDR, tokenOut],                // direct via USDC
     [inp, WAVAX_ADDR, USDC_ADDR, tokenOut],    // WAVAX→USDC→token
+    ...(isMalek ? [
+      [inp, arenaToken, tokenOut],             // via Arena token (MALEK-specific)
+      [inp, WAVAX_ADDR, arenaToken, tokenOut], // WAVAX→Arena→MALEK
+      [inp, USDC_ADDR, arenaToken, tokenOut],  // USDC→Arena→MALEK
+    ] : []),
   ];
   return allPaths.filter((p, i, arr) => {
     const key = p.map(x=>x.toLowerCase()).join(',');
@@ -4908,6 +5103,8 @@ async function pharaohQuote(provider, tokenIn, tokenOut, amountIn) {
   const tOut = tokenOut.toLowerCase() === 'avax' ? WAVAX_ADDR : tokenOut;
   if (tIn.toLowerCase() === tOut.toLowerCase()) return null;
   const router = new ethers.Contract(PHARAOH_ROUTER_ADDR, PHARAOH_ROUTER_ABI, provider);
+  const _arenaT = '0xB8d7710f7d8349A506b75dD184F05777c82dAd0C'.toLowerCase();
+  const _isMalekOut = tOut.toLowerCase() === (MOATS['0x9c5f177cdc0332e61e423ee9ad9e4f2333f62685']?.tokenAddr||'').toLowerCase();
   const routeSets = [
     [{from:tIn, to:tOut, stable:false}],
     [{from:tIn, to:WAVAX_ADDR, stable:false},{from:WAVAX_ADDR, to:tOut, stable:false}],
@@ -4916,6 +5113,10 @@ async function pharaohQuote(provider, tokenIn, tokenOut, amountIn) {
     [{from:tIn, to:USDC_ADDR, stable:true},{from:USDC_ADDR, to:WAVAX_ADDR, stable:false},{from:WAVAX_ADDR, to:tOut, stable:false}],
     [{from:tIn, to:USDC_ADDR, stable:false},{from:USDC_ADDR, to:tOut, stable:false}],
     [{from:tIn, to:WAVAX_ADDR, stable:false},{from:WAVAX_ADDR, to:USDC_ADDR, stable:true},{from:USDC_ADDR, to:tOut, stable:false}],
+    ...(_isMalekOut ? [
+      [{from:tIn, to:_arenaT, stable:false},{from:_arenaT, to:tOut, stable:false}],
+      [{from:tIn, to:WAVAX_ADDR, stable:false},{from:WAVAX_ADDR, to:_arenaT, stable:false},{from:_arenaT, to:tOut, stable:false}],
+    ] : []),
   ].filter(r => !(r.length===1 && r[0].from.toLowerCase()===r[0].to.toLowerCase()));
   let best = null;
   await Promise.allSettled(routeSets.map(async routes => {
@@ -6473,6 +6674,18 @@ async function posOpenDetail(moatAddr) {
   document.getElementById('view-pos-detail').classList.add('on');
   document.querySelector('[data-v="positions"]').classList.add('on');
   window.scrollTo({top:0,behavior:'smooth'});
+  // Update URL to position detail
+  if (typeof pushRoute === 'function') {
+    const meta = MOATS[moatAddr];
+    const slug = meta?.short?.toLowerCase() || moatAddr;
+    pushRoute('#/positions/' + slug);
+    if (typeof setMeta === 'function') setMeta(
+      (meta?.name || 'Moat') + ' — My Position',
+      'Manage your ' + (meta?.ticker || '') + ' position — stake, lock, burn.',
+      meta?.logo ? 'https://raw.githubusercontent.com/precidoboss/my-game-sprites/main/' + meta.logo : null,
+      window.location.origin + window.location.pathname + '#/positions/' + slug
+    );
+  }
 
   const container = document.getElementById('posDetailContent');
   container.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--mut)"><span class="spin"></span> Loading…</div>';
@@ -6889,7 +7102,7 @@ async function posOpenDetail(moatAddr) {
     <div style="padding:1rem">
       <!-- Tabs -->
       <div style="display:flex;gap:4px;margin-bottom:.85rem;overflow-x:auto;scrollbar-width:none">
-        ${['stake','lock','burn','unstake','claims'].filter(t=>!isLP).map((t,i)=>`
+        ${(isLP ? ['lock','unstake','claims'] : ['stake','lock','burn','unstake','claims']).map((t,i)=>`
           <button onclick="posActionTab('${t}',this)" id="posTab_${t}"
             style="padding:5px 12px;border-radius:7px;cursor:pointer;font-family:'DM Mono',monospace;font-size:.6rem;border:1px solid ${i===0?'rgba(249,115,22,.35)':'var(--bor)'};background:${i===0?'rgba(249,115,22,.1)':'transparent'};color:${i===0?'var(--acc)':'var(--mut)'};white-space:nowrap;flex-shrink:0;transition:all .15s">
             ${{stake:'🔒 Stake',lock:'⏳ Lock',burn:'🔥 Burn',unstake:'↩ Unstake',claims:'💰 Rewards'}[t]}
@@ -6897,7 +7110,7 @@ async function posOpenDetail(moatAddr) {
       </div>
 
       <!-- ── STAKE PANE ── -->
-      <div id="posPane_stake" style="display:block">
+      <div id="posPane_stake" style="display:${isLP?'none':'block'}">
         <div style="font-size:.73rem;color:var(--dim);margin-bottom:.7rem;line-height:1.55">Stake <b style="color:var(--acc)">${meta?.ticker}</b> for <b>1× points</b>. Flexible — unstake any amount anytime (0.5% fee).</div>
         <div style="font-family:'DM Mono',monospace;font-size:.54rem;color:var(--mut);margin-bottom:4px">Amount · wallet balance: <b style="color:var(--txt)">${fmtP(data.wBal)} ${meta?.ticker}</b></div>
         <div style="display:flex;gap:5px;margin-bottom:.5rem">
@@ -6910,8 +7123,8 @@ async function posOpenDetail(moatAddr) {
       </div>
 
       <!-- ── LOCK PANE ── -->
-      <div id="posPane_lock" style="display:none">
-        <div style="font-size:.73rem;color:var(--dim);margin-bottom:.75rem;line-height:1.55">Lock <b style="color:var(--gld)">${meta?.ticker}</b> for <b>2.04×–5.00× multiplied points</b>. Early exit triggers the EEL penalty — the longer you've waited, the lower the penalty.</div>
+      <div id="posPane_lock" style="display:${isLP?'block':'none'}">
+        <div style="font-size:.73rem;color:var(--dim);margin-bottom:.75rem;line-height:1.55">Lock <b style="color:var(--gld)">${isLP ? 'LP tokens' : meta?.ticker}</b> for <b>2.04×–5.00× multiplied points</b>. Early exit triggers the EEL penalty — the longer you've waited, the lower the penalty.${isLP ? ' Your locked LP tokens earn multiplied points in the hCASH moat.' : ''}</div>
 
         <!-- New lock form -->
         <div style="background:rgba(212,168,67,.06);border:1px solid rgba(212,168,67,.2);border-radius:10px;padding:.85rem;margin-bottom:.85rem">
@@ -8455,7 +8668,7 @@ async function posRunTx(statusId, fn, successMsg) {
       showAppNotif(msg, 'info', 3500);
       if (el) el.innerHTML = `<span style="color:var(--gld)">${msg} — <button onclick="document.getElementById('${statusId}').innerHTML=''" style="background:none;border:none;color:var(--acc);cursor:pointer;font-family:'DM Mono',monospace;font-size:.65rem">Dismiss</button></span>`;
     } else {
-      if (isRevert) msg = msg.replace(/.*estimateGas.*?reason=null,?\s*/,'').replace(/transaction=.*$/s,'').trim() || 'Transaction reverted — check your balance and amounts.';
+      if (isRevert) msg = msg.replace(/.*estimateGas.*?reason=null,?\s*/,'').replace(/transaction=.*$/,'').trim() || 'Transaction reverted — check your balance and amounts.';
       if (msg.length > 180) msg = msg.slice(0, 180) + '…';
       const failQuip = FAIL_QUIPS[Math.floor(Math.random() * FAIL_QUIPS.length)];
       showTxToast(false, failQuip, msg);
