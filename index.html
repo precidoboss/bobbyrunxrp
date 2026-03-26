@@ -4955,6 +4955,8 @@ const ODOS_ASSEMBLE   = 'https://api.odos.xyz/sor/assemble';
 // KyberSwap: public aggregator API
 const KYBER_QUOTE_URL = 'https://aggregator-api.kyberswap.com/avalanche/api/v1/routes';
 const KYBER_SWAP_URL  = 'https://aggregator-api.kyberswap.com/avalanche/api/v1/route/build';
+const OPENOCEAN_QUOTE = 'https://open-api.openocean.finance/v3/avax/quote';
+const OPENOCEAN_SWAP  = 'https://open-api.openocean.finance/v3/avax/swap';
 // Paraswap: public, no key, good Avalanche coverage
 const PARASWAP_PRICE  = 'https://apiv5.paraswap.io/prices';
 const PARASWAP_TX     = 'https://apiv5.paraswap.io/transactions/43114';
@@ -5014,8 +5016,11 @@ let cmRouteCache    = {}; // tokenOut -> {agg, data, gasEstimate}
 function isValidRoute(r) {
   if (!r) return false;
   if (!r.amountOut || r.amountOut === 0n) return false;
-  // Odos quote-only shape: has pathId instead of txData (assembled at execution time)
-  if (r._odosPathId) return true;
+  // Quote-only shapes (assembled at execution time with real signer address)
+  if (r._odosPathId)          return true; // Odos
+  if (r._kyberRouteSummary)   return true; // KyberSwap
+  if (r._openoceanMeta)       return true; // OpenOcean
+  if (r._usePharaoh)          return true; // Pharaoh on-chain
   // Normal aggregator shape: must have calldata
   if (!r.txData?.to || !r.txData?.data) return false;
   if (r.txData.data === '' || r.txData.data === '0x' || r.txData.data.length < 10) return false;
@@ -5266,7 +5271,7 @@ async function odosAssemble(tokenIn, tokenOut, amountInWei, userAddr, slippagePc
   } catch(e) { return null; }
 }
 
-// ── KYBERSWAP (public aggregator, CORS-friendly) ──
+// ── KYBERSWAP — quote only (build tx at execution time with real signer address) ──
 async function kyberGetRoute(tokenIn, tokenOut, amountInWei, userAddr, slippageBps=100) {
   const isNative = tokenIn.toLowerCase()==='avax';
   const inputAddr = isNative ? '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE' : tokenIn;
@@ -5280,23 +5285,46 @@ async function kyberGetRoute(tokenIn, tokenOut, amountInWei, userAddr, slippageB
     if (!routeData.data?.routeSummary) return null;
     const amtOut = BigInt(routeData.data.routeSummary.amountOut || '0');
     if (amtOut === 0n) return null;
+    // Return routeSummary for late assembly at execution time
+    return {
+      dex: 'KyberSwap',
+      amountOut: amtOut,
+      _kyberRouteSummary: routeData.data.routeSummary,
+      _kyberMeta: { tokenIn, tokenOut, amountInWei: amountInWei.toString(), isNative, slippageBps },
+    };
+  } catch(e) { return null; }
+}
 
+// Called at swap execution time — builds KyberSwap tx with real signer address
+async function kyberAssemble(tokenIn, tokenOut, amountInWei, userAddr, slippageBps=100) {
+  const isNative = tokenIn.toLowerCase()==='avax';
+  const inputAddr = isNative ? '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE' : tokenIn;
+  try {
+    // Fresh quote
+    const routeRes = await fetch(
+      `${KYBER_QUOTE_URL}?tokenIn=${inputAddr}&tokenOut=${tokenOut}&amountIn=${amountInWei.toString()}&gasInclude=true`,
+      {headers:{'x-client-id':'moatsintel'}}
+    );
+    if (!routeRes.ok) return null;
+    const routeData = await routeRes.json();
+    if (!routeData.data?.routeSummary) return null;
+    const amtOut = BigInt(routeData.data.routeSummary.amountOut || '0');
+    if (amtOut === 0n) return null;
+
+    // Build tx with real user address immediately after fresh quote
     const buildRes = await fetch(KYBER_SWAP_URL, {
       method:'POST',
       headers:{'Content-Type':'application/json','x-client-id':'moatsintel'},
       body: JSON.stringify({
         routeSummary: routeData.data.routeSummary,
-        sender: userAddr,
-        recipient: userAddr,
+        sender: userAddr, recipient: userAddr,
         slippageTolerance: slippageBps,
         deadline: Math.floor(Date.now()/1000)+1800,
       })
     });
     if (!buildRes.ok) return null;
     const built = await buildRes.json();
-    // Strict: reject if calldata is empty or too short
     if (!built.data?.data || built.data.data.length < 10) return null;
-
     return {
       dex: 'KyberSwap',
       amountOut: amtOut,
@@ -5305,6 +5333,57 @@ async function kyberGetRoute(tokenIn, tokenOut, amountInWei, userAddr, slippageB
         data: built.data.data,
         value: isNative ? amountInWei : 0n,
         gasLimit: BigInt(Math.ceil(Number(built.data.gas||350000)*1.25)),
+      }
+    };
+  } catch(e) { return null; }
+}
+
+// ── OPENOCEAN — quote only (build tx at execution time with real signer address) ──
+async function openoceanGetRoute(tokenIn, tokenOut, amountInWei, decimalsIn=18, decimalsOut=18) {
+  const isNative = tokenIn.toLowerCase()==='avax';
+  // OpenOcean uses AVAX native address
+  const inAddr  = isNative ? '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE' : tokenIn;
+  const amtHuman = (Number(amountInWei) / Math.pow(10, decimalsIn)).toFixed(decimalsIn);
+  try {
+    const res = await fetch(
+      `${OPENOCEAN_QUOTE}?inTokenAddress=${inAddr}&outTokenAddress=${tokenOut}&amount=${amtHuman}&gasPrice=25&slippage=1`,
+      {headers:{'Content-Type':'application/json'}}
+    );
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (data.code !== 200 || !data.data?.outAmount) return null;
+    const amtOut = BigInt(data.data.outAmount);
+    if (amtOut === 0n) return null;
+    return {
+      dex: 'OpenOcean',
+      amountOut: amtOut,
+      _openoceanMeta: { tokenIn, tokenOut, amountInWei: amountInWei.toString(), decimalsIn, isNative },
+    };
+  } catch(e) { return null; }
+}
+
+// Called at swap execution time — builds OpenOcean tx with real signer address
+async function openoceanAssemble(tokenIn, tokenOut, amountInWei, userAddr, decimalsIn=18) {
+  const isNative = tokenIn.toLowerCase()==='avax';
+  const inAddr  = isNative ? '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE' : tokenIn;
+  const amtHuman = (Number(amountInWei) / Math.pow(10, decimalsIn)).toFixed(decimalsIn);
+  try {
+    const res = await fetch(
+      `${OPENOCEAN_SWAP}?inTokenAddress=${inAddr}&outTokenAddress=${tokenOut}&amount=${amtHuman}&gasPrice=25&slippage=1&account=${userAddr}`,
+      {headers:{'Content-Type':'application/json'}}
+    );
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (data.code !== 200 || !data.data?.data || data.data.data.length < 10) return null;
+    const amtOut = BigInt(data.data.outAmount || '0');
+    return {
+      dex: 'OpenOcean',
+      amountOut: amtOut,
+      txData: {
+        to: data.data.to,
+        data: data.data.data,
+        value: isNative ? amountInWei : 0n,
+        gasLimit: BigInt(Math.ceil(Number(data.data.estimatedGas||400000)*1.25)),
       }
     };
   } catch(e) { return null; }
@@ -5369,14 +5448,38 @@ async function getBestRoute(tokenIn, tokenOut, amountInWei, userAddr, decimalsIn
   const isHcashToken = HCASH_TOKEN_ADDR && tOutL === HCASH_TOKEN_ADDR.toLowerCase();
   const isPharaohToken = forcePharaoh || isHcashToken || tokenOutMeta?.pharaohPool || tokenOutMeta?.dexOverride === 'pharaoh';
 
-  // odosOnly tokens (FREAK, HEFE, MALEK) — skip all on-chain routers, use Odos exclusively.
-  // Paraswap 404s on them and Pharaoh router calls trigger MetaMask -32603 errors.
-  // Odos works reliably for these tokens on Avalanche mainnet.
+  // Small-cap Pharaoh tokens (FREAK, HEFE, MALEK) — odosOnly flag.
+  // Paraswap 404s, Odos 400s, Pharaoh router staticCalls trigger MetaMask -32603.
+  // Strategy: try all off-chain aggregators in parallel (quote-only, assembled at exec time),
+  // then fall back to direct on-chain Pharaoh swap (JsonRpcProvider quote, signer executes).
   const isOdosOnly = !!(tokenOutMeta?.odosOnly);
   if (isOdosOnly) {
-    const odosOnly = await odosGetRoute(tokenIn, tokenOut, amountInWei, userAddr, 1);
-    if (isValidRoute(odosOnly)) return odosOnly;
-    return null; // surface "no route" cleanly — user can go to phar.gg
+    const [kyberQ, odosQ, openoceanQ] = await Promise.all([
+      kyberGetRoute(tokenIn, tokenOut, amountInWei, userAddr, 100),
+      odosGetRoute(tokenIn, tokenOut, amountInWei, userAddr, 1),
+      openoceanGetRoute(tokenIn, tokenOut, amountInWei, 18, 18),
+    ]);
+    // Pick best aggregator quote by amountOut
+    const aggCandidates = [kyberQ, odosQ, openoceanQ].filter(isValidRoute);
+    aggCandidates.sort((a,b) => a.amountOut > b.amountOut ? -1 : 1);
+    if (aggCandidates[0]) return aggCandidates[0];
+
+    // All aggregators failed — fall back to direct on-chain Pharaoh quote
+    // (uses dedicated JsonRpcProvider, never MetaMask, safe from -32603)
+    const pharQ = await pharaohQuote(prov, tokenIn, tokenOut, amountInWei);
+    if (pharQ && pharQ.amountOut > 0n) {
+      return { dex:'Pharaoh', amountOut:pharQ.amountOut, _useV1:false, _usePharaoh:true, _pharaohRoutes:pharQ.routes };
+    }
+    // Final fallback: read reserves directly from known pair address
+    const pm = tokenOutMeta;
+    const knownP = pm?.pairAddr || pm?.altPairAddr || null;
+    if (knownP) {
+      const dQ = await directPairQuote(prov, knownP, tokenIn, tokenOut, amountInWei);
+      if (dQ && dQ.amountOut > 0n) {
+        return { dex:'Pharaoh', amountOut:dQ.amountOut, _useV1:false, _usePharaoh:true, _pharaohRoutes:null };
+      }
+    }
+    return null;
   }
 
   // For Pharaoh-native tokens resolve their known pair address (used for directPairQuote)
@@ -5385,9 +5488,11 @@ async function getBestRoute(tokenIn, tokenOut, amountInWei, userAddr, decimalsIn
     ? ((isHcashToken ? HCASH_LP_ADDR : null) || pairMeta?.pairAddr || pairMeta?.altPairAddr || null)
     : null;
 
-  // Step 1: Run everything in parallel — Odos, Paraswap, Pharaoh router, LFJ V1, direct pair
-  const [odosR, paraR, pharaohQ, v1Quote, directQ] = await Promise.all([
+  // Step 1: Run everything in parallel — KyberSwap, Odos, OpenOcean, Paraswap, Pharaoh, LFJ V1, direct pair
+  const [kyberR, odosR, openoceanR, paraR, pharaohQ, v1Quote, directQ] = await Promise.all([
+    kyberGetRoute(tokenIn, tokenOut, amountInWei, userAddr, 100),
     odosGetRoute(tokenIn, tokenOut, amountInWei, userAddr, 1),
+    openoceanGetRoute(tokenIn, tokenOut, amountInWei, decimalsIn, decimalsOut),
     paraswapGetRoute(tokenIn, tokenOut, amountInWei, userAddr, decimalsIn, decimalsOut),
     pharaohQuote(prov, tokenIn, tokenOut, amountInWei),
     isPharaohToken ? Promise.resolve(null) : lfjV1Quote(prov, tokenIn, tokenOut, amountInWei),
@@ -5399,7 +5504,9 @@ async function getBestRoute(tokenIn, tokenOut, amountInWei, userAddr, decimalsIn
     if (directQ && directQ.amountOut > 0n) {
       return { dex:'Pharaoh', amountOut:directQ.amountOut, _useV1:false, _usePharaoh:true, _pharaohRoutes:null };
     }
+    if (isValidRoute(kyberR)) return kyberR;
     if (isValidRoute(odosR)) return odosR;
+    if (isValidRoute(openoceanR)) return openoceanR;
     if (isValidRoute(paraR)) return paraR;
     if (pharaohQ && pharaohQ.amountOut > 0n) {
       return { dex:'Pharaoh', amountOut:pharaohQ.amountOut, _useV1:false, _usePharaoh:true, _pharaohRoutes:pharaohQ.routes };
@@ -5407,8 +5514,8 @@ async function getBestRoute(tokenIn, tokenOut, amountInWei, userAddr, decimalsIn
     return null;
   }
 
-  // Step 3: For normal tokens — pick best aggregator
-  const candidates = [odosR, paraR].filter(isValidRoute);
+  // Step 3: For normal tokens — pick best aggregator (highest amountOut wins)
+  const candidates = [kyberR, odosR, openoceanR, paraR].filter(isValidRoute);
   candidates.sort((a,b) => a.amountOut > b.amountOut ? -1 : 1);
   const bestAgg = candidates[0] || null;
 
@@ -5479,20 +5586,23 @@ async function cmSmartSwap(signer, tokenIn, tokenOut, amountIn, userAddr, decima
     const amtHuman = Number(route.amountOut) / Math.pow(10, decimalsOut);
     cmUpdateStep(stepId, 'active', `Route: ${route.dex} → ~${fmtP(amtHuman)} ${ticker}. Assembling tx…`);
 
-    // Odos: re-quote + assemble with real signer address at execution time
+    // All aggregator routes are quote-only — assemble with real signer address at execution time
     let execRoute = route;
     if (route._odosPathId || route.dex === 'Odos') {
-      cmUpdateStep(stepId, 'active', `Odos: assembling tx for ${ticker}…`);
-      const meta = route._odosMeta || {};
-      const assembled = await odosAssemble(
-        meta.tokenIn  || tokenIn,
-        meta.tokenOut || tokenOut,
-        BigInt(meta.amountInWei || amountIn.toString()),
-        userAddr,
-        meta.slippagePct || 1
-      );
-      if (!assembled?.txData) throw new Error(`Odos assembly failed for ${ticker}. Try phar.gg/trade.`);
-      execRoute = assembled;
+      cmUpdateStep(stepId, 'active', `Odos: building tx for ${ticker}…`);
+      const m = route._odosMeta || {};
+      execRoute = await odosAssemble(m.tokenIn||tokenIn, m.tokenOut||tokenOut, BigInt(m.amountInWei||amountIn.toString()), userAddr, m.slippagePct||1);
+      if (!execRoute?.txData) throw new Error(`Odos assembly failed for ${ticker}. Try phar.gg/trade.`);
+    } else if (route._kyberRouteSummary || route.dex === 'KyberSwap') {
+      cmUpdateStep(stepId, 'active', `KyberSwap: building tx for ${ticker}…`);
+      const m = route._kyberMeta || {};
+      execRoute = await kyberAssemble(m.tokenIn||tokenIn, m.tokenOut||tokenOut, BigInt(m.amountInWei||amountIn.toString()), userAddr, m.slippageBps||100);
+      if (!execRoute?.txData) throw new Error(`KyberSwap assembly failed for ${ticker}. Try phar.gg/trade.`);
+    } else if (route._openoceanMeta || route.dex === 'OpenOcean') {
+      cmUpdateStep(stepId, 'active', `OpenOcean: building tx for ${ticker}…`);
+      const m = route._openoceanMeta || {};
+      execRoute = await openoceanAssemble(m.tokenIn||tokenIn, m.tokenOut||tokenOut, BigInt(m.amountInWei||amountIn.toString()), userAddr, m.decimalsIn||18);
+      if (!execRoute?.txData) throw new Error(`OpenOcean assembly failed for ${ticker}. Try phar.gg/trade.`);
     }
 
     if (!isNative) {
