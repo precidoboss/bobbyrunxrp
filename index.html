@@ -2207,12 +2207,8 @@ function setMeta(title, desc, img, url) {
 }
 
 function pushRoute(hash) {
-  // Use clean path URLs (no # symbol): #/positions/freak -> /positions/freak
-  const cleanPath = hash.replace(/^#\/?/, '/');
-  const base = window.location.pathname.replace(/\/(overview|moats|leaderboard|events|signals|wallet|invest-home|guide|copymoat|positions|moat|wallet)(\/.*)?$/, '');
-  const fullPath = base.replace(/\/$/, '') + cleanPath;
-  if (window.location.pathname !== fullPath) {
-    history.pushState(null, '', fullPath);
+  if (window.location.hash !== hash) {
+    history.pushState(null, '', hash);
   }
 }
 
@@ -2258,16 +2254,10 @@ function routeFromWallet(addr, displayName) {
 
 // ── BOOT ROUTER — parse URL on load and navigate ──
 async function bootRouter() {
-  // Support both clean paths (/positions/freak) and legacy hash (#/positions/freak)
   const hash = window.location.hash || '';
-  const pathname = window.location.pathname || '';
-  // Extract the route from clean path: strip leading / and any base path prefix
-  const pathRoute = pathname.replace(/^\//, '').replace(/^index\.html\/?/, '');
-  const hashRoute = hash.replace(/^#\/?/, '');
-  const route = pathRoute || hashRoute;
-  if (!route || route === '' || route === '/') return; // default = overview
+  if (!hash || hash === '#' || hash === '#/') return; // default = overview
 
-  const parts = route.split('/');
+  const parts = hash.replace(/^#\/?/, '').split('/');
   const seg0  = parts[0]?.toLowerCase();
   const seg1  = parts[1]?.toLowerCase();
 
@@ -5023,9 +5013,12 @@ let cmRouteCache    = {}; // tokenOut -> {agg, data, gasEstimate}
 // ── VALIDATION HELPER — reject routes with empty/invalid calldata ──
 function isValidRoute(r) {
   if (!r) return false;
+  if (!r.amountOut || r.amountOut === 0n) return false;
+  // Odos quote-only shape: has pathId instead of txData (assembled at execution time)
+  if (r._odosPathId) return true;
+  // Normal aggregator shape: must have calldata
   if (!r.txData?.to || !r.txData?.data) return false;
   if (r.txData.data === '' || r.txData.data === '0x' || r.txData.data.length < 10) return false;
-  if (!r.amountOut || r.amountOut === 0n) return false;
   return true;
 }
 
@@ -5191,11 +5184,47 @@ async function pharaohSwap(signer, tokenIn, tokenOut, amountIn, userAddr, deadli
 }
 
 // ── ODOS (public, good CORS, strong Avalanche coverage) ──
+// Quote-only — returns pathId for deferred assembly at swap time with real signer address.
+// pathId expires in ~60s so we re-quote+assemble at execution time.
 async function odosGetRoute(tokenIn, tokenOut, amountInWei, userAddr, slippagePct=1) {
   const isNative = tokenIn.toLowerCase()==='avax';
-  // Odos uses 0x000...000 for native AVAX
   const inputToken = isNative ? '0x0000000000000000000000000000000000000000' : tokenIn;
   try {
+    const quoteRes = await fetch(ODOS_QUOTE_URL, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        chainId: 43114,
+        inputTokens:[{tokenAddress: inputToken, amount: amountInWei.toString()}],
+        outputTokens:[{tokenAddress: tokenOut, proportion:1}],
+        userAddr: userAddr || '0x0000000000000000000000000000000000000001',
+        slippageLimitPercent: slippagePct,
+        referralCode: 0,
+        disableRFQs: false,
+        compact: false,
+      })
+    });
+    if (!quoteRes.ok) return null;
+    const quote = await quoteRes.json();
+    if (!quote.pathId || !quote.outAmounts?.[0]) return null;
+    const amtOut = BigInt(quote.outAmounts[0]);
+    if (amtOut === 0n) return null;
+    // Return pathId — assembly happens at execution time with the real signer address
+    return {
+      dex: 'Odos',
+      amountOut: amtOut,
+      _odosPathId: quote.pathId,
+      _odosMeta: { tokenIn, tokenOut, amountInWei: amountInWei.toString(), slippagePct },
+    };
+  } catch(e) { return null; }
+}
+
+// Called at swap execution time — re-quotes Odos with real signer address and assembles tx
+async function odosAssemble(tokenIn, tokenOut, amountInWei, userAddr, slippagePct=1) {
+  const isNative = tokenIn.toLowerCase()==='avax';
+  const inputToken = isNative ? '0x0000000000000000000000000000000000000000' : tokenIn;
+  try {
+    // Fresh quote with real user address
     const quoteRes = await fetch(ODOS_QUOTE_URL, {
       method:'POST',
       headers:{'Content-Type':'application/json'},
@@ -5213,23 +5242,20 @@ async function odosGetRoute(tokenIn, tokenOut, amountInWei, userAddr, slippagePc
     if (!quoteRes.ok) return null;
     const quote = await quoteRes.json();
     if (!quote.pathId || !quote.outAmounts?.[0]) return null;
-    const amtOut = BigInt(quote.outAmounts[0]);
-    if (amtOut === 0n) return null;
 
-    // Assemble tx — pathId is short-lived (~60s), do immediately
+    // Assemble tx immediately after fresh quote (pathId still fresh)
     const asmRes = await fetch(ODOS_ASSEMBLE, {
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ userAddr, pathId: quote.pathId, simulate:false })
+      body: JSON.stringify({ userAddr, pathId: quote.pathId, simulate: false })
     });
     if (!asmRes.ok) return null;
     const asm = await asmRes.json();
-    // Strict: must have actual calldata
     if (!asm.transaction?.data || asm.transaction.data.length < 10) return null;
 
     return {
       dex: 'Odos',
-      amountOut: amtOut,
+      amountOut: BigInt(quote.outAmounts[0]),
       txData: {
         to: asm.transaction.to,
         data: asm.transaction.data,
@@ -5451,22 +5477,39 @@ async function cmSmartSwap(signer, tokenIn, tokenOut, amountIn, userAddr, decima
 
   if (route && !route._useV1 && !route._usePharaoh && isValidRoute(route)) {
     const amtHuman = Number(route.amountOut) / Math.pow(10, decimalsOut);
-    cmUpdateStep(stepId, 'active', `Route: ${route.dex} → ~${fmtP(amtHuman)} ${ticker}. Approving…`);
+    cmUpdateStep(stepId, 'active', `Route: ${route.dex} → ~${fmtP(amtHuman)} ${ticker}. Assembling tx…`);
+
+    // Odos: re-quote + assemble with real signer address at execution time
+    let execRoute = route;
+    if (route._odosPathId || route.dex === 'Odos') {
+      cmUpdateStep(stepId, 'active', `Odos: assembling tx for ${ticker}…`);
+      const meta = route._odosMeta || {};
+      const assembled = await odosAssemble(
+        meta.tokenIn  || tokenIn,
+        meta.tokenOut || tokenOut,
+        BigInt(meta.amountInWei || amountIn.toString()),
+        userAddr,
+        meta.slippagePct || 1
+      );
+      if (!assembled?.txData) throw new Error(`Odos assembly failed for ${ticker}. Try phar.gg/trade.`);
+      execRoute = assembled;
+    }
+
     if (!isNative) {
       const tokC = new ethers.Contract(tokenIn, ERC20_ABI, signer);
-      const allowed = await tokC.allowance(userAddr, route.txData.to);
+      const allowed = await tokC.allowance(userAddr, execRoute.txData.to);
       if (allowed < amountIn) {
-        cmUpdateStep(stepId, 'active', `Approving ${route.dex}…`);
-        const a = await tokC.approve(route.txData.to, ethers.MaxUint256);
+        cmUpdateStep(stepId, 'active', `Approving ${execRoute.dex}…`);
+        const a = await tokC.approve(execRoute.txData.to, ethers.MaxUint256);
         await a.wait();
       }
     }
-    cmUpdateStep(stepId, 'active', `Confirm swap in wallet (${route.dex})…`);
+    cmUpdateStep(stepId, 'active', `Confirm swap in wallet (${execRoute.dex})…`);
     const tx = await signer.sendTransaction({
-      to: route.txData.to, data: route.txData.data,
-      value: route.txData.value || 0n, gasLimit: route.txData.gasLimit,
+      to: execRoute.txData.to, data: execRoute.txData.data,
+      value: execRoute.txData.value || 0n, gasLimit: execRoute.txData.gasLimit,
     });
-    return { tx, dex: route.dex, amtOut: route.amountOut };
+    return { tx, dex: execRoute.dex, amtOut: execRoute.amountOut };
   }
 
   // ── Last resort: brute-force Pharaoh then LFJ V1 ──
