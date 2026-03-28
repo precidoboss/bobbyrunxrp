@@ -542,6 +542,7 @@ main{position:relative;z-index:1;padding:.8rem;max-width:1440px;margin:0 auto}
       <div class="mtab on" data-ms="overview"    onclick="mTab(this)">Overview</div>
       <div class="mtab"    data-ms="token"       onclick="mTab(this)">Token & Price</div>
       <div class="mtab"    data-ms="leaderboard" onclick="mTab(this)">Leaderboard</div>
+      <div class="mtab"    data-ms="bubblemap"   onclick="mTab(this);renderBubbleMap(activeMoat)">🫧 Bubble Map</div>
       <div class="mtab"    data-ms="rewards"     onclick="mTab(this)">Rewards</div>
     </div>
     <div id="ms-overview" class="mtsec on">
@@ -603,6 +604,40 @@ main{position:relative;z-index:1;padding:.8rem;max-width:1440px;margin:0 auto}
           </div>
         </div>
         <div class="pb0 tw"><table class="tbl" id="mLbTbl"><thead><tr><th>Rank</th><th>Wallet</th><th>Points</th><th>Weight</th><th>Share</th></tr></thead><tbody></tbody></table></div>
+      </div>
+    </div>
+    <div id="ms-bubblemap" class="mtsec">
+      <div class="panel">
+        <div class="ph">
+          <div class="ptitle" id="bubbleMapTitle">🫧 Holder Bubble Map</div>
+          <div style="display:flex;gap:6px;align-items:center">
+            <span style="font-family:'DM Mono',monospace;font-size:.56rem;color:var(--mut)" id="bubbleMapCount"></span>
+            <button onclick="renderBubbleMap(activeMoat,true)" class="btn btn-sm btn-g" style="padding:2px 8px;font-size:.54rem">↻ Refresh</button>
+          </div>
+        </div>
+        <div style="padding:.5rem">
+          <!-- Legend -->
+          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:.6rem;font-family:'DM Mono',monospace;font-size:.53rem;color:var(--mut)">
+            <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--acc);margin-right:4px;vertical-align:middle"></span>Staked</span>
+            <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--gld);margin-right:4px;vertical-align:middle"></span>Locked</span>
+            <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--red);margin-right:4px;vertical-align:middle"></span>Burned</span>
+            <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--pur);margin-right:4px;vertical-align:middle"></span>Mixed</span>
+            <span style="margin-left:auto;color:var(--dim)">Tap a bubble to see details · Size = points share</span>
+          </div>
+          <canvas id="bubbleMapCanvas" style="width:100%;border-radius:10px;cursor:pointer;touch-action:none;background:var(--sur)" height="500"></canvas>
+          <!-- Tooltip / detail panel -->
+          <div id="bubbleMapDetail" style="display:none;margin-top:.65rem;background:var(--card);border:1px solid var(--bor);border-radius:10px;padding:.85rem">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:.55rem">
+              <div id="bmd-pic" style="width:38px;height:38px;border-radius:50%;overflow:hidden;flex-shrink:0;background:var(--bor);display:flex;align-items:center;justify-content:center;font-size:1rem"></div>
+              <div style="flex:1;min-width:0">
+                <div id="bmd-name" style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.82rem"></div>
+                <div id="bmd-addr" style="font-family:'DM Mono',monospace;font-size:.56rem;color:var(--mut);cursor:pointer" onclick="gotoW(document.getElementById('bmd-addr').dataset.addr)"></div>
+              </div>
+              <button onclick="gotoW(document.getElementById('bmd-addr').dataset.addr)" class="btn btn-sm btn-g" style="padding:2px 8px;font-size:.54rem">View Wallet →</button>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:.4rem" id="bmd-stats"></div>
+          </div>
+        </div>
       </div>
     </div>
     <div id="ms-rewards" class="mtsec">
@@ -1731,8 +1766,10 @@ function normEvs(d){
   let a=d;
   if(!Array.isArray(a)||!a.length)return[];
   return a.map(e=>{
-    // Resolve wallet — API uses 'user' or 'from' or nested fields
-    const wallet = (e.user||e.from||e.walletAddress||e.wallet||e.address||e.owner||'').toLowerCase();
+    // Resolve wallet — check all possible field names the API might use
+    const _rawWallet = e.user||e.from||e.walletAddress||e.wallet||e.address||e.owner||e.account||e.maker||e.sender||e.caller||
+      e.profile?.address||e.profile?.wallet||e.userAddress||e.fromAddress||e.initiator||e.actor||'';
+    const wallet = (typeof _rawWallet === 'string' ? _rawWallet : '').toLowerCase();
     const txHash = e.transactionHash||e.txHash||e.hash||'';
     // Parse timestamp — API returns ISO string like "2025-01-15T..." or unix seconds
     let ts = e.timestamp||e.time||e.createdAt||e.blockTimestamp||0;
@@ -3355,22 +3392,29 @@ function renderEvItems(evs,id,freshIds=[]){
       ${logoImg(meta.logo,'moat-logo-sm',meta.emoji,meta.color)}<span>${meta.short||meta.name}</span>
     </span>`:'';
 
-    // Wallet — show profile pic + known name + .bensi name if available
-    const _ep2 = getKnownProfile(e.wallet);
-    const _zn2 = e.wallet ? (zephyrNames[e.wallet.toLowerCase()] || null) : null;
-    const _dispName = _ep2 ? ('@' + _ep2.twitter) : (_zn2 || shortA(e.wallet));
-    const _picHtml = _ep2
-      ? `<img src="${_ep2.pic}" style="width:18px;height:18px;border-radius:50%;object-fit:cover;border:1px solid var(--bor)" onerror="this.style.display='none'">`
-      : `<div style="width:18px;height:18px;border-radius:50%;background:var(--bor);display:flex;align-items:center;justify-content:center;font-size:.55rem;flex-shrink:0">${(e.wallet||'?')[2]?.toUpperCase()||'?'}</div>`;
-    const _bensiTag = _zn2 && _zn2.endsWith('.bensi')
-      ? `<span style="font-family:'DM Mono',monospace;font-size:.5rem;color:var(--gld);background:rgba(212,168,67,.1);border:1px solid rgba(212,168,67,.22);border-radius:3px;padding:1px 4px">${_zn2}</span>` : '';
+    // Wallet chip — robust: works whether wallet comes from API or synth events
+    const _w2     = (e.wallet || e.user || e.from || e.walletAddress || e.address || '').toLowerCase();
+    const _ep2    = getKnownProfile(_w2);
+    const _zn2    = _w2 ? (zephyrNames[_w2] || null) : null;
+    const _dispName = _ep2 ? ('@' + _ep2.twitter) : (_zn2 || shortA(_w2));
+    const _picHtml  = _w2
+      ? (_ep2
+          ? `<img src="${_ep2.pic}" style="width:18px;height:18px;border-radius:50%;object-fit:cover;border:1px solid var(--bor);flex-shrink:0" onerror="this.style.display='none'">`
+          : `<div style="width:18px;height:18px;border-radius:50%;background:var(--bor);display:flex;align-items:center;justify-content:center;font-size:.55rem;color:var(--dim);flex-shrink:0;font-weight:700">${(_w2[2]||'?').toUpperCase()}</div>`)
+      : '';
+    const _bensiTag   = _zn2 && _zn2.endsWith('.bensi')
+      ? `<span style="font-family:'DM Mono',monospace;font-size:.5rem;color:var(--gld);background:rgba(212,168,67,.1);border:1px solid rgba(212,168,67,.22);border-radius:3px;padding:1px 4px">${_zn2}</span>`
+      : '';
     const _twitterTag = _ep2
-      ? `<a href="https://x.com/${_ep2.twitter}" target="_blank" onclick="event.stopPropagation()" style="font-family:'DM Mono',monospace;font-size:.52rem;color:var(--acc);text-decoration:none">@${_ep2.twitter}</a>` : '';
-    const wallet = e.wallet ? `<span class="wa" onclick="gotoW('${e.wallet}')" title="${e.wallet}" style="display:inline-flex;align-items:center;gap:4px;background:var(--sur);border:1px solid var(--bor);border-radius:6px;padding:2px 6px;cursor:pointer">
-      ${_picHtml}
-      <span style="font-family:'DM Mono',monospace;font-size:.6rem;color:var(--txt)">${_dispName}</span>
-      ${_bensiTag}${_twitterTag}
-    </span>` : '';
+      ? `<a href="https://x.com/${_ep2.twitter}" target="_blank" onclick="event.stopPropagation()" style="font-family:'DM Mono',monospace;font-size:.52rem;color:var(--acc);text-decoration:none">@${_ep2.twitter}</a>`
+      : '';
+    const wallet = _w2
+      ? `<span class="wa" onclick="gotoW('${_w2}')" title="${_w2}" style="display:inline-flex;align-items:center;gap:4px;background:var(--sur);border:1px solid var(--bor);border-radius:6px;padding:2px 6px;cursor:pointer">
+          ${_picHtml}
+          <span style="font-family:'DM Mono',monospace;font-size:.6rem;color:var(--txt)">${_dispName}</span>
+          ${_bensiTag}${_twitterTag}
+        </span>`
+      : '';
 
     // Token amount chip
     let amtChip='';
@@ -4498,57 +4542,110 @@ function lockM(d){
   return 5.00;
 }
 function onMoatSelChange(){
-  const addr=document.getElementById('cMoatSel').value;
-  const ctx=document.getElementById('moatCtx'),st=document.getElementById('moatCtxStats');
-  if(!addr||!moatMap[addr]){ctx.style.display='none';calcPts();return;}
-  const m=moatMap[addr],meta=MOATS[addr]||{};
-  ctx.style.display='block';
-  const supply=getSupply(addr);
-  let supplyLine='';
-  if(supply){
-    const dynTag=meta.supplyType==='dynamic'
-      ?'<span style="color:var(--gld)">&#9889; Dynamic &#8212; points may adjust</span>'
-      :'<span style="color:var(--grn)">&#128274; Fixed supply</span>';
-    supplyLine="<div style=\"grid-column:1/-1;margin-top:5px;font-family:monospace;font-size:.56rem;color:var(--dim);display:flex;align-items:center;gap:6px\">"
-      +"<span>Total Supply: <b style=\"color:var(--txt)\">" + fmtP(supply.totalSupply) + " " + (supply.symbol||meta.ticker) + "</b></span>"
-      + dynTag + "</div>";
-  } else {
-    supplyLine="<div style=\"grid-column:1/-1;margin-top:4px;font-size:.54rem;color:var(--mut)\"><span class=\"spin\"></span>Fetching supply&#8230;</div>";
-  }
-  st.innerHTML=`
-    <div style="text-align:center"><div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.88rem;color:${meta.color}">${fmtP(m.totalPoints)}</div><div style="font-family:'DM Mono',monospace;font-size:.5rem;color:var(--mut);text-transform:uppercase">Live Pool</div></div>
-    <div style="text-align:center"><div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.88rem">${m.walletCount}</div><div style="font-family:'DM Mono',monospace;font-size:.5rem;color:var(--mut);text-transform:uppercase">Wallets</div></div>
-    <div style="text-align:center"><div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.88rem;color:var(--gld)">${Math.round(m.avgPoints)}</div><div style="font-family:'DM Mono',monospace;font-size:.5rem;color:var(--mut);text-transform:uppercase">Avg Pts</div></div>
-    ` + supplyLine + ``;
-  if(!supply&&meta.tokenAddr){
-    fetchTokenSupply(meta.tokenAddr).then(()=>onMoatSelChange());
-  }
-  calcPts();
+  const addr = document.getElementById('cMoatSel').value;
+  const ctx  = document.getElementById('moatCtx');
+  const st   = document.getElementById('moatCtxStats');
+  if (!addr || !moatMap[addr]) { if(ctx) ctx.style.display='none'; calcPts(); return; }
+
+  const m    = moatMap[addr] || {};
+  const meta = MOATS[addr]  || {};
+  if (ctx) ctx.style.display = 'block';
+
+  // Use knownSupply as primary source — NEVER await anything, UI stays instant
+  const knownSup = meta.knownSupply || 0;
+  // Try supplyCache first (may have been enriched), fall back to knownSupply
+  const cached = getSupply(addr);
+  const sup    = (cached && cached.totalSupply > 0) ? cached : (knownSup ? {totalSupply:knownSup, symbol:meta.ticker, decimals:18} : null);
+
+  // Estimated pts-per-token for rank preview
+  const ppt = (knownSup > 0) ? (1000000 / knownSup) : (estPtsPerToken(addr) || null);
+
+  const dynTag = meta.supplyType === 'dynamic'
+    ? '<span style="color:var(--gld)">⚡ Dynamic</span>'
+    : '<span style="color:var(--grn)">🔒 Fixed</span>';
+
+  const supplyLine = sup && sup.totalSupply > 0
+    ? '<div style="grid-column:1/-1;margin-top:5px;font-family:monospace;font-size:.56rem;color:var(--dim);display:flex;align-items:center;gap:8px">'
+      + '<span>Supply: <b style="color:var(--txt)">'+fmtP(sup.totalSupply)+' '+(sup.symbol||meta.ticker||'')+'</b></span>'
+      + dynTag
+      + (ppt ? '<span style="color:var(--acc)">~'+fmtPrice(ppt)+' pts/token (stake)</span>' : '')
+      + '</div>'
+    : '';
+
+  if (st) st.innerHTML =
+    `<div style="text-align:center"><div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.88rem;color:${meta.color||'var(--acc)'}">${fmtP(m.totalPoints||0)}</div><div style="font-family:'DM Mono',monospace;font-size:.5rem;color:var(--mut);text-transform:uppercase">Live Pool</div></div>`
+    +`<div style="text-align:center"><div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.88rem">${m.walletCount||0}</div><div style="font-family:'DM Mono',monospace;font-size:.5rem;color:var(--mut);text-transform:uppercase">Wallets</div></div>`
+    +`<div style="text-align:center"><div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.88rem;color:var(--gld)">${Math.round(m.avgPoints||0)}</div><div style="font-family:'DM Mono',monospace;font-size:.5rem;color:var(--mut);text-transform:uppercase">Avg Pts</div></div>`
+    + supplyLine;
+
+  calcPts(); // always synchronous
 }
 function calcPts(){
-  const t=Number(document.getElementById('cTok').value)||0,a=document.getElementById('cAct').value;
-  const addr=document.getElementById('cMoatSel').value;
-  document.getElementById('lockRow').style.display=a==='lock'?'block':'none';
-  if(!t){document.getElementById('pRes').style.display='none';return;}
-  let m=a==='burn'?10:a==='lock'?lockM(document.getElementById('cDays').value):1;
-  const addr2=document.getElementById('cMoatSel').value;
-  const ppt2=addr2?estPtsPerToken(addr2):null;
-  const pts=ppt2!==null?t*ppt2*m:t*m;
-  const ptsNote=ppt2!==null?
-    `${f2(t)} tokens × ${fmtPrice(ppt2)} pts/token × ${m}×`:
-    `${f2(t)} × ${m}× (raw — no supply data)`;
-  document.getElementById('pRes').style.display='block';
-  setTxt('rT',f2(t));
-  setTxt('rM',m+'×'+(ppt2===null?' ⚠️ raw':''));
-  setTxt('rPt',fmtP(pts));
-  const ptsnEl=document.getElementById('rPtNote');
-  const ptsnRowEl=document.getElementById('rPtNoteRow');
-  if(ptsnEl){ptsnEl.textContent=ptsNote;if(ptsnRowEl)ptsnRowEl.style.display='flex';}
-  const rR=document.getElementById('rRankRow'),rS=document.getElementById('rShareRow');
-  if(addr&&moatMap[addr]){
-    const md=moatMap[addr],rank=md.sorted.findIndex(w=>w.points<pts)+1||md.walletCount+1,share=md.totalPoints?(pts/(md.totalPoints+pts)*100).toFixed(3):'100';
-    rR.style.display=rS.style.display='flex';setTxt('rRank','#'+rank+' of '+(md.walletCount+1));setTxt('rShare',share+'%');
-  }else{rR.style.display=rS.style.display='none';}
+  const t    = Number(document.getElementById('cTok').value) || 0;
+  const a    = document.getElementById('cAct').value;
+  const addr = document.getElementById('cMoatSel').value;
+  const meta = MOATS[addr] || {};
+  document.getElementById('lockRow').style.display = a === 'lock' ? 'block' : 'none';
+  if (!t) { document.getElementById('pRes').style.display = 'none'; return; }
+
+  const days       = Number(document.getElementById('cDays').value) || 180;
+  const multiplier = a === 'burn' ? 10 : a === 'lock' ? lockM(days) : 1;
+
+  // pts-per-token: knownSupply is the ground truth (hardcoded from moats.app docs)
+  // Formula: 1,000,000 base pts allocated per full token supply — standard Moats mechanic
+  const knownSup = meta.knownSupply || 0;
+  const cached   = getSupply(addr);
+  const supply   = (cached && cached.totalSupply > 0) ? cached.totalSupply : knownSup;
+  let ppt        = null;
+  let pptSource  = '';
+  if (supply > 0) {
+    ppt       = 1000000 / supply;
+    pptSource = 'hardcoded supply';
+  } else if (addr) {
+    ppt       = estPtsPerToken(addr);
+    pptSource = 'live estimate';
+  }
+
+  const pts = ppt !== null ? t * ppt * multiplier : t * multiplier;
+
+  // Formula note
+  let ptsNote = '';
+  if (ppt !== null) {
+    ptsNote = fmtP(t) + ' ' + (meta.ticker||'tokens') + ' × ' + fmtPrice(ppt) + ' pts/token (base) × ' + multiplier + '×';
+    if (a === 'lock') ptsNote += ' — ' + days + 'd lock';
+    if (a === 'burn') ptsNote += ' — permanent 🔥';
+  } else {
+    ptsNote = fmtP(t) + ' × ' + multiplier + '× — no supply data yet';
+  }
+
+  document.getElementById('pRes').style.display = 'block';
+  setTxt('rT',  fmtP(t));
+  setTxt('rM',  multiplier + '×');
+  setTxt('rPt', fmtP(pts));
+  const ptsnEl    = document.getElementById('rPtNote');
+  const ptsnRowEl = document.getElementById('rPtNoteRow');
+  if (ptsnEl) { ptsnEl.textContent = ptsNote; if (ptsnRowEl) ptsnRowEl.style.display = 'flex'; }
+
+  // Live rank projection using real leaderboard data
+  const rR = document.getElementById('rRankRow');
+  const rS = document.getElementById('rShareRow');
+  if (addr && moatMap[addr]) {
+    const md     = moatMap[addr];
+    const sorted = (md.sorted || []).slice();
+    // Find rank: count how many wallets have MORE pts than our projection
+    let rank = sorted.filter(w => (w.points || w.totalPoints || 0) > pts).length + 1;
+    const totalWallets  = (md.walletCount || sorted.length) + 1; // +1 for this wallet
+    const newPool       = (md.totalPoints || 0) + pts;
+    const share         = newPool > 0 ? (pts / newPool * 100).toFixed(3) : '100';
+    const percentile    = totalWallets > 1 ? (100 - ((rank - 1) / totalWallets * 100)).toFixed(1) : '100';
+    if (rR) rR.style.display = 'flex';
+    if (rS) rS.style.display = 'flex';
+    setTxt('rRank',  '#' + rank + ' of ' + totalWallets + ' (top ' + percentile + '%)');
+    setTxt('rShare', share + '% of pool');
+  } else {
+    if (rR) rR.style.display = 'none';
+    if (rS) rS.style.display = 'none';
+  }
 }
 function calcEEL(){
   const t=Number(document.getElementById('eT').value)||0,ld=Number(document.getElementById('eLD').value)||0,di=Number(document.getElementById('eDI').value)||0;
@@ -7726,17 +7823,33 @@ async function posExecuteSwap(moatAddr) {
 
 // ── POINTS CALCULATOR ──
 function posCalcPoints(action, amtStr, moatAddr) {
-  const amt = parseFloat(amtStr)||0;
+  const amt  = parseFloat(amtStr) || 0;
   if (!amt || !moatAddr) return;
-  const days = action==='lock' ? parseInt(document.getElementById('lockDays')?.value||180) : 0;
-  const mult = action==='burn' ? 10 : action==='lock' ? lockM(days) : 1;
-  const ppt  = estPtsPerToken(moatAddr);
-  const pts  = ppt ? amt*ppt*mult : amt*mult;
-  const m    = moatMap[moatAddr]||{};
-  const estRank = m.sorted?.length ? m.sorted.findIndex(w=>w.points<pts)+1||m.walletCount+1 : 1;
-  const share= m.totalPoints ? (pts/(m.totalPoints+pts)*100).toFixed(3) : '100';
-  const previewEl = document.getElementById(action+'Preview');
-  if (previewEl) previewEl.innerHTML = `${mult}× · ~${fmtP(pts)} pts · est. rank #${estRank} · ${share}% of pool`;
+  const meta = MOATS[moatAddr] || {};
+  const days = action === 'lock' ? parseInt(document.getElementById('lockDays')?.value || 180) : 0;
+  const mult = action === 'burn' ? 10 : action === 'lock' ? lockM(days) : 1;
+
+  // Use knownSupply as primary — same formula as estimator
+  const knownSup = meta.knownSupply || 0;
+  const cached   = getSupply(moatAddr);
+  const supplyV  = (cached && cached.totalSupply > 0) ? cached.totalSupply : knownSup;
+  const ppt      = supplyV > 0 ? (1000000 / supplyV) : estPtsPerToken(moatAddr);
+  const pts      = ppt ? amt * ppt * mult : amt * mult;
+
+  const m       = moatMap[moatAddr] || {};
+  const sorted  = m.sorted || [];
+  const rank    = sorted.filter(w => (w.points || 0) > pts).length + 1;
+  const newPool = (m.totalPoints || 0) + pts;
+  const share   = newPool > 0 ? (pts / newPool * 100).toFixed(3) : '100';
+  const percentile = sorted.length ? (100 - ((rank-1)/(sorted.length+1)*100)).toFixed(0) : '100';
+
+  const previewEl = document.getElementById(action + 'Preview');
+  if (previewEl) previewEl.innerHTML =
+    '<span style="color:var(--acc)">' + mult + '×</span>'
+    + ' · <b>~' + fmtP(pts) + ' pts</b>'
+    + ' · est. rank <span style="color:var(--gld)">#' + rank + '</span>'
+    + ' (top ' + percentile + '%)'
+    + ' · ' + share + '% of pool';
 }
 
 // ── STAKE ──
@@ -9169,6 +9282,368 @@ function exportMoatLbCSV(moatAddr) {
   });
   downloadCSV(rows, 'moats-'+(meta ? meta.short.toLowerCase() : 'moat')+'-leaderboard-'+Date.now()+'.csv');
   showAppNotif('Downloaded '+(meta ? meta.name : 'moat')+' leaderboard as CSV','success',2500);
+}
+
+
+
+// ══════════════════════════════════════════════════
+// ── BUBBLE MAP ENGINE ──
+// ══════════════════════════════════════════════════
+
+let _bubbleMapMoat = null;
+let _bubbleNodes   = [];
+let _bubbleAnimId  = null;
+const _imgCache    = {};
+
+function _loadImg(src) {
+  if (!src) return null;
+  if (_imgCache[src]) return _imgCache[src];
+  const img = new Image();
+  img.crossOrigin = 'anonymous';
+  img.src = src;
+  _imgCache[src] = img;
+  return img;
+}
+
+function renderBubbleMap(moatAddr, force=false) {
+  if (!moatAddr) return;
+  if (_bubbleMapMoat === moatAddr && !force) return;
+  _bubbleMapMoat = moatAddr;
+
+  const canvas = document.getElementById('bubbleMapCanvas');
+  const meta   = MOATS[moatAddr];
+  const m      = moatMap[moatAddr];
+  if (!canvas || !meta || !m || !m.sorted || !m.sorted.length) {
+    const cnt = document.getElementById('bubbleMapCount');
+    if (cnt) cnt.textContent = 'No data yet';
+    return;
+  }
+
+  const sorted = m.sorted.slice(0, 60); // top 60 wallets
+  const total  = m.totalPoints || 1;
+  const col    = meta.color || '#f97316';
+
+  // Build node data
+  const nodes = sorted.map((entry, i) => {
+    const w      = getWallet(entry);
+    const pts    = entry.points || entry.totalPoints || 0;
+    const share  = pts / total;
+    const prof   = getKnownProfile(w);
+    const uname  = entry.username || zephyrNames[w] || (prof ? '@' + prof.twitter : null);
+    const pic    = prof ? prof.pic : RAW + 'photo_2026-03-14_06-11-33.jpg'; // fallback: app logo
+    // Determine dominant activity colour
+    const staked  = entry.staked  || 0;
+    const locked  = entry.locked  || 0;
+    const burned  = entry.burned  || 0;
+    let nodeCol = col;
+    if (burned > staked && burned > locked)       nodeCol = 'var(--red)';
+    else if (locked > staked && locked > burned)  nodeCol = 'var(--gld)';
+    else if (staked > 0)                          nodeCol = col;
+    if (staked > 0 && locked > 0 && burned > 0)  nodeCol = 'var(--pur)';
+
+    return { w, pts, share, prof, uname, pic, nodeCol, rank: i+1, staked, locked, burned, entry };
+  });
+  _bubbleNodes = nodes;
+
+  const dpr    = window.devicePixelRatio || 1;
+  const W      = canvas.offsetWidth  || 600;
+  const H      = 500;
+  canvas.width  = W * dpr;
+  canvas.height = H * dpr;
+  canvas.style.height = H + 'px';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+
+  // Centre = moat logo bubble
+  const cx = W / 2, cy = H / 2;
+  const centerR = Math.min(W, H) * 0.085;
+
+  // Layout: spiral positioning around centre
+  const minR = 12, maxR = Math.min(W, H) * 0.085;
+  const maxPts = nodes[0]?.pts || 1;
+  const rings = [
+    { count: 1,  radius: centerR + maxR * 1.35 + 8 },
+    { count: 5,  radius: centerR + maxR * 1.35 + 8 + maxR * 1.6 + 10 },
+    { count: 10, radius: centerR + maxR * 1.35 + 8 + maxR * 1.6 + 10 + maxR * 1.2 + 10 },
+    { count: 16, radius: centerR + maxR * 1.35 + 8 + maxR * 1.6 + 10 + maxR * 1.2 + 10 + maxR * 0.9 + 10 },
+    { count: 99, radius: centerR + maxR * 1.35 + 8 + maxR * 1.6 + 10 + maxR * 1.2 + 10 + maxR * 0.9 + 10 + maxR * 0.7 + 10 },
+  ];
+
+  let nodeIdx = 0;
+  const positioned = [];
+  for (const ring of rings) {
+    const inRing = Math.min(ring.count, nodes.length - nodeIdx);
+    if (inRing <= 0) break;
+    const angleStep = (2 * Math.PI) / ring.count;
+    const angleOffset = -Math.PI / 2;
+    for (let j = 0; j < inRing; j++) {
+      const node = nodes[nodeIdx++];
+      const r = Math.max(minR, Math.sqrt(node.share) * maxR * 3.5);
+      const angle = angleOffset + j * angleStep;
+      const maxRing = ring.radius;
+      const x = cx + Math.cos(angle) * Math.min(maxRing, W/2 - r - 8);
+      const y = cy + Math.sin(angle) * Math.min(maxRing, H/2 - r - 8);
+      node.x = x; node.y = y; node.r = r;
+      positioned.push(node);
+    }
+    if (nodeIdx >= nodes.length) break;
+  }
+
+  // Preload all profile images
+  positioned.forEach(n => { if (n.pic) _loadImg(n.pic); });
+  if (meta.logo) _loadImg(RAW + meta.logo);
+
+  if (_bubbleAnimId) cancelAnimationFrame(_bubbleAnimId);
+  let hoveredNode = null;
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+
+    // Draw connections from centre to each bubble
+    positioned.forEach(n => {
+      const opacity   = Math.max(0.05, Math.min(0.3, n.share * 8));
+      const lineW     = Math.max(0.5, n.r * 0.12);
+      const nodeColor = n.nodeCol.startsWith('var') ? col : n.nodeCol;
+      ctx.save();
+      // Gradient line: moat colour → bubble colour
+      const grad = ctx.createLinearGradient(cx, cy, n.x, n.y);
+      grad.addColorStop(0, col + '80');
+      grad.addColorStop(1, nodeColor + '40');
+      ctx.strokeStyle = grad;
+      ctx.globalAlpha = opacity;
+      ctx.lineWidth   = lineW;
+      ctx.setLineDash(n.rank > 10 ? [3, 5] : []);
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.lineTo(n.x, n.y);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.restore();
+    });
+
+    // Draw wallet bubbles
+    positioned.forEach(n => {
+      const isHov = hoveredNode === n;
+      const nodeColor = n.nodeCol.startsWith('var(') ? col : n.nodeCol;
+      const r = isHov ? n.r * 1.08 : n.r;
+
+      ctx.save();
+      // Pulse ring for top 3 wallets (animated)
+      if (n.rank <= 3) {
+        const pulse = 0.5 + 0.5 * Math.sin(Date.now() / 400 + n.rank * 1.2);
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(n.x, n.y, r + 4 + pulse * 5, 0, Math.PI * 2);
+        ctx.strokeStyle = nodeColor;
+        ctx.globalAlpha = 0.18 + pulse * 0.12;
+        ctx.lineWidth   = 2;
+        ctx.stroke();
+        ctx.restore();
+      }
+      // Glow on hover
+      if (isHov) {
+        ctx.shadowColor = nodeColor;
+        ctx.shadowBlur  = 20;
+      }
+      // Fill
+      ctx.beginPath();
+      ctx.arc(n.x, n.y, r, 0, Math.PI * 2);
+      ctx.fillStyle = nodeColor + '28';
+      ctx.fill();
+      ctx.strokeStyle = nodeColor;
+      ctx.lineWidth = isHov ? 2.5 : 1.5;
+      ctx.stroke();
+      ctx.restore();
+
+      // Profile picture or initials
+      const img = n.pic ? _imgCache[n.pic] : null;
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(n.x, n.y, r - 2, 0, Math.PI * 2);
+      ctx.clip();
+      if (img && img.complete && img.naturalWidth > 0) {
+        const s = (r - 2) * 2;
+        ctx.drawImage(img, n.x - r + 2, n.y - r + 2, s, s);
+      } else {
+        ctx.fillStyle = nodeColor + '44';
+        ctx.fillRect(n.x - r, n.y - r, r * 2, r * 2);
+        ctx.fillStyle = '#fff';
+        ctx.font = `bold ${Math.max(8, r * 0.55)}px 'Chakra Petch',sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText((n.w[2] || '?').toUpperCase(), n.x, n.y);
+      }
+      ctx.restore();
+
+      // Rank badge (top 3)
+      if (n.rank <= 3 && r > 14) {
+        const badges = ['🥇','🥈','🥉'];
+        ctx.font = `${Math.max(10, r*0.5)}px serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(badges[n.rank-1], n.x + r*0.6, n.y - r*0.6);
+      }
+
+      // Label — only if bubble is large enough
+      if (r > 18) {
+        const label = n.uname ? (n.uname.length > 10 ? n.uname.slice(0,9)+'…' : n.uname)
+                               : n.w.slice(0,4)+'…'+n.w.slice(-3);
+        ctx.save();
+        ctx.fillStyle = '#f0ebe4';
+        ctx.font = `${Math.max(7, r*0.32)}px 'DM Mono',monospace`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.shadowColor = '#000';
+        ctx.shadowBlur  = 4;
+        ctx.fillText(label, n.x, n.y + r + 9);
+        ctx.restore();
+      }
+    });
+
+    // Draw centre moat bubble
+    ctx.save();
+    if (meta.logo && _imgCache[RAW + meta.logo]) {
+      const img = _imgCache[RAW + meta.logo];
+      if (img.complete && img.naturalWidth > 0) {
+        ctx.beginPath();
+        ctx.arc(cx, cy, centerR, 0, Math.PI*2);
+        ctx.fillStyle = col + '22';
+        ctx.fill();
+        ctx.strokeStyle = col;
+        ctx.lineWidth = 2.5;
+        ctx.stroke();
+        ctx.clip();
+        ctx.drawImage(img, cx-centerR, cy-centerR, centerR*2, centerR*2);
+      }
+    } else {
+      ctx.beginPath();
+      ctx.arc(cx, cy, centerR, 0, Math.PI*2);
+      ctx.fillStyle = col + '33';
+      ctx.fill();
+      ctx.strokeStyle = col;
+      ctx.lineWidth = 2.5;
+      ctx.stroke();
+      ctx.fillStyle = '#fff';
+      ctx.font = `bold ${centerR * 0.55}px 'Chakra Petch',sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(meta.emoji || meta.short, cx, cy);
+    }
+    ctx.restore();
+    // Moat label below centre
+    ctx.fillStyle = col;
+    ctx.font = `bold ${Math.max(9,centerR*0.38)}px 'Chakra Petch',sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillText(meta.short, cx, cy + centerR + 4);
+
+    _bubbleAnimId = requestAnimationFrame(draw);
+  }
+  draw();
+
+  // Update count badge
+  const cnt = document.getElementById('bubbleMapCount');
+  if (cnt) cnt.textContent = positioned.length + ' wallets';
+
+  // ── Interaction: hover & click ──
+  function getBubbleAt(mx, my) {
+    for (const n of positioned) {
+      const dx = mx - n.x, dy = my - n.y;
+      if (dx*dx + dy*dy <= n.r*n.r) return n;
+    }
+    return null;
+  }
+
+  function showBubbleDetail(n) {
+    if (!n) { document.getElementById('bubbleMapDetail').style.display='none'; return; }
+    const detail = document.getElementById('bubbleMapDetail');
+    detail.style.display = 'block';
+    setTimeout(()=>detail.scrollIntoView({behavior:'smooth',block:'nearest'}),50);
+
+    const picEl    = document.getElementById('bmd-pic');
+    const prof     = n.prof;
+    const nodeColor = n.nodeCol.startsWith('var(') ? col : n.nodeCol;
+
+    picEl.style.border = '2px solid ' + nodeColor;
+    if (prof) {
+      picEl.innerHTML = `<img src="${prof.pic}" style="width:38px;height:38px;object-fit:cover;border-radius:50%" onerror="this.parentElement.innerHTML='<span style=font-size:1.1rem>${(n.w[2]||'?').toUpperCase()}</span>'">`;
+    } else {
+      picEl.style.background = nodeColor + '33';
+      picEl.innerHTML = `<span style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:1.1rem;color:#fff">${(n.w[2]||'?').toUpperCase()}</span>`;
+    }
+
+    const nameEl = document.getElementById('bmd-name');
+    nameEl.innerHTML = (n.uname || shortA(n.w))
+      + (prof ? ` <a href="https://x.com/${prof.twitter}" target="_blank" style="font-size:.62rem;color:var(--acc);text-decoration:none;margin-left:4px">@${prof.twitter} ↗</a>` : '');
+
+    const addrEl = document.getElementById('bmd-addr');
+    addrEl.innerHTML = `<span style="opacity:.7">${n.w.slice(0,10)}…${n.w.slice(-6)}</span>
+      <button onclick="navigator.clipboard.writeText('${n.w}').then(()=>showAppNotif('Address copied!','success',1500))" style="background:none;border:none;cursor:pointer;color:var(--acc);font-size:.7rem;padding:0 3px" title="Copy address">⧉</button>`;
+    addrEl.dataset.addr = n.w;
+
+    // Staked / locked / burned breakdown
+    const staked  = n.staked  || 0;
+    const locked  = n.locked  || 0;
+    const burned  = n.burned  || 0;
+    const totalTok = staked + locked + burned;
+    const metaM   = MOATS[moatAddr] || {};
+    const ticker  = metaM.ticker || 'tokens';
+
+    const barHtml = totalTok > 0
+      ? `<div style="margin:.5rem 0 .3rem;font-family:'DM Mono',monospace;font-size:.52rem;color:var(--mut);text-transform:uppercase;letter-spacing:.07em">Token Activity</div>
+         <div style="display:flex;height:6px;border-radius:99px;overflow:hidden;gap:1px;margin-bottom:.4rem">
+           ${staked>0 ? `<div style="flex:${staked};background:${col}" title="Staked: ${fmtP(staked)} ${ticker}"></div>` : ''}
+           ${locked>0 ? `<div style="flex:${locked};background:var(--gld)" title="Locked: ${fmtP(locked)} ${ticker}"></div>` : ''}
+           ${burned>0 ? `<div style="flex:${burned};background:var(--red)" title="Burned: ${fmtP(burned)} ${ticker}"></div>` : ''}
+         </div>
+         <div style="display:flex;gap:10px;font-family:'DM Mono',monospace;font-size:.55rem;flex-wrap:wrap">
+           ${staked>0 ? `<span style="color:${col}">🔒 ${fmtP(staked)} staked</span>` : ''}
+           ${locked>0 ? `<span style="color:var(--gld)">⏳ ${fmtP(locked)} locked</span>` : ''}
+           ${burned>0 ? `<span style="color:var(--red)">🔥 ${fmtP(burned)} burned</span>` : ''}
+         </div>`
+      : '';
+
+    const moatsCount = Object.keys(moatMap).filter(a => moatMap[a].sorted?.some(e=>getWallet(e)===n.w)).length || 1;
+    const cs = fmtP(Math.round(n.pts * cMult(moatsCount)));
+
+    const statsEl = document.getElementById('bmd-stats');
+    statsEl.innerHTML = [
+      { label:'Rank',          val:'#' + n.rank,                      c:'var(--gld)' },
+      { label:'Points',        val:fmtP(n.pts),                       c:'var(--acc)' },
+      { label:'Pool Share',    val:(n.pts/total*100).toFixed(3)+'%',  c:'var(--dim)' },
+      { label:'Council Score', val:cs,                                c:'var(--pur)' },
+    ].map(s=>`<div style="background:var(--sur);border:1px solid var(--bor);border-radius:7px;padding:.45rem;text-align:center">
+        <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.82rem;color:${s.c}">${s.val}</div>
+        <div style="font-family:'DM Mono',monospace;font-size:.48rem;color:var(--mut);text-transform:uppercase">${s.label}</div>
+      </div>`).join('')
+    + (barHtml ? `<div style="grid-column:1/-1;background:var(--sur);border:1px solid var(--bor);border-radius:7px;padding:.55rem .7rem">${barHtml}</div>` : '');
+  }
+
+  function evPt(ev) {
+    const rect = canvas.getBoundingClientRect();
+    const x = ((ev.touches?ev.touches[0].clientX:ev.clientX) - rect.left);
+    const y = ((ev.touches?ev.touches[0].clientY:ev.clientY) - rect.top);
+    return {x, y};
+  }
+
+  canvas.onmousemove = ev => {
+    const {x,y} = evPt(ev);
+    const n = getBubbleAt(x, y);
+    hoveredNode = n;
+    canvas.style.cursor = n ? 'pointer' : 'default';
+  };
+  canvas.onclick = ev => {
+    const {x,y} = evPt(ev);
+    const n = getBubbleAt(x, y);
+    if (n) showBubbleDetail(n);
+    else document.getElementById('bubbleMapDetail').style.display='none';
+  };
+  canvas.ontouchend = ev => {
+    const {x,y} = evPt(ev.changedTouches?{touches:ev.changedTouches}:ev);
+    const n = getBubbleAt(x, y);
+    if (n) showBubbleDetail(n);
+  };
+  canvas.onmouseleave = () => { hoveredNode = null; canvas.style.cursor='default'; };
 }
 
 </script>
