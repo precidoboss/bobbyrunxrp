@@ -2867,90 +2867,135 @@ async function loadPrice(addr){
 }
 
 
-// Inject supply rows into token info table + rich distribution panel
+// Inject supply rows + accurate token distribution panel
 async function injectSupplyIntoTable(moatAddr) {
   const meta = MOATS[moatAddr]; if(!meta) return;
+
+  // Ensure supply is fetched
   let supply = getSupply(moatAddr);
   if (!supply) supply = await fetchTokenSupply(meta.tokenAddr);
   const tbl = document.querySelector('#mTokenTbl tbody');
   if (!tbl || !supply) return;
   tbl.querySelectorAll('.supply-row').forEach(r=>r.remove());
-  const m = moatMap[moatAddr] || {};
+
+  // Ensure on-chain token totals are fetched (correct cache key = moatAddr)
+  let totals = moatTokenCache[moatAddr];
+  if (!totals) totals = await fetchMoatTokenTotals(moatAddr);
+
+  const m   = moatMap[moatAddr] || {};
   const ppt = estPtsPerToken(moatAddr);
-  const isDynamic = meta.supplyType === 'dynamic';
+  const isDynamic  = meta.supplyType === 'dynamic';
+  const pxData     = priceCache[moatAddr];
+  const price      = pxData?.price || 0;
+  const totalSupply = supply.totalSupply || 0;
+
+  // ── Accurate figures ──
+  // In Moat = on-chain balanceOf(moatContract) — staked + locked tokens sitting in contract
+  const inMoatRaw  = (totals && totals.staked > 0) ? totals.staked : (m.totalTokens || 0);
+  // Burned = on-chain balanceOf(0xDead)
+  const burnedRaw  = (totals && totals.burned > 0) ? totals.burned : (m.burnTokens || 0);
+  // LP Pool = liquidity USD / token price (gives base token in pool)
+  const liqUsd     = pxData?.liq || 0;
+  // DexScreener liq.usd = both sides; base token ≈ half of USD / price
+  const liqRaw     = (price > 0 && liqUsd > 0) ? (liqUsd / 2 / price) : 0;
+  // Circulating = total - inMoat - burned (LP is subset of circulating, not additive)
+  const nonCirc    = inMoatRaw + burnedRaw;
+  const circRaw    = Math.max(0, totalSupply - nonCirc);
+
+  const pct  = (raw) => totalSupply > 0 && raw > 0 ? (raw / totalSupply * 100) : 0;
+  const fmt1 = (n)   => n > 0.001 ? n.toFixed(2) + '%' : n > 0 ? '<0.01%' : '—';
+
+  const inMoatPct = pct(inMoatRaw);
+  const burnedPct = pct(burnedRaw);
+  const liqPct    = pct(liqRaw);
+  const circPct   = pct(circRaw);
+
+  const calcMcap  = (totalSupply > 0 && price > 0) ? '$' + fmtK(circRaw * price) : '—';
+  const fdvMcap   = (totalSupply > 0 && price > 0) ? '$' + fmtK(totalSupply * price) : '—';
+
   const supplyTypeHtml = isDynamic
     ? '<span style="color:var(--gld);font-size:.58rem">&#9889; Dynamic</span>'
     : '<span style="color:var(--grn);font-size:.58rem">&#128274; Fixed</span>';
-  const pxData = priceCache[moatAddr];
-  const calcMcap = (supply.totalSupply>0 && pxData && pxData.price>0)
-    ? '$'+fmtK(supply.totalSupply * pxData.price) : '—';
 
-  // ── Compute distribution %s ──
-  const totalSupply = supply.totalSupply || 0;
-  // Moat (staked+locked): from onchain totals if available
-  const totals = moatTokenCache ? moatTokenCache[moatAddr+'_'+meta.tokenAddr] || moatTokenCache[moatAddr] : null;
-  const inMoatRaw = (totals && totals.staked > 0) ? totals.staked : (m.totalTokens || 0);
-  const burnedRaw = (totals && totals.burned > 0) ? totals.burned : 0;
-  const liqRaw    = pxData && pxData.pair ? Number(pxData.pair.liquidity?.base || 0) : 0;
+  const dataSource = totals?.source === 'onchain'
+    ? '<span style="color:var(--grn);font-size:.55rem">&#9679; on-chain verified</span>'
+    : '<span style="color:var(--gld);font-size:.55rem">&#9651; estimated</span>';
 
-  const inMoatPct  = totalSupply > 0 && inMoatRaw  > 0 ? (inMoatRaw  / totalSupply * 100) : 0;
-  const burnedPct  = totalSupply > 0 && burnedRaw  > 0 ? (burnedRaw  / totalSupply * 100) : 0;
-  const liqPct     = totalSupply > 0 && liqRaw     > 0 ? (liqRaw     / totalSupply * 100) : 0;
-  const circPct    = Math.max(0, 100 - inMoatPct - burnedPct);
-
-  const fmt1 = n => n > 0 ? n.toFixed(2)+'%' : '—';
-
+  // ── Table rows ──
   const rows = [
-    ['Total Supply',      fmtP(totalSupply)+' '+(supply.symbol||meta.ticker), null],
-    ['Supply Type',       null, supplyTypeHtml],
-    ['Pts/Token (1×)',    ppt!==null ? fmtPrice(ppt) : '—', null],
-    ['Market Cap',        calcMcap, null],
-    ['Decimals',          String(supply.decimals), null],
+    ['Token',          meta.ticker + ' (' + (supply.symbol || meta.ticker) + ')', null],
+    ['Total Supply',   fmtP(totalSupply), null],
+    ['Supply Type',    null, supplyTypeHtml],
+    ['Circ. Market Cap', calcMcap, null],
+    ['FDV',            fdvMcap, null],
+    ['Pts / Token (1×)', ppt !== null ? fmtPrice(ppt) : '—', null],
+    ['Data Source',    null, dataSource],
   ];
 
   rows.forEach(function(row) {
-    var label=row[0], val=row[1], html=row[2];
-    var tr = document.createElement('tr');
-    tr.className = 'supply-row';
+    var [label, val, html] = row;
+    var tr  = document.createElement('tr'); tr.className = 'supply-row';
     var tdL = document.createElement('td'); tdL.className = 'il'; tdL.textContent = label;
     var tdV = document.createElement('td'); tdV.style.cssText = "font-family:'DM Mono',monospace;font-size:.72rem";
     if (html) tdV.innerHTML = html; else tdV.textContent = val;
-    tr.appendChild(tdL); tr.appendChild(tdV);
-    tbl.appendChild(tr);
+    tr.appendChild(tdL); tr.appendChild(tdV); tbl.appendChild(tr);
   });
 
-  // ── Distribution block ──
-  var distTr = document.createElement('tr');
-  distTr.className = 'supply-row';
-  var distTd = document.createElement('td');
-  distTd.colSpan = 2;
-  distTd.style.cssText = 'padding:.7rem 0 .3rem';
+  // ── Distribution visual ──
+  var distTr = document.createElement('tr'); distTr.className = 'supply-row';
+  var distTd = document.createElement('td'); distTd.colSpan = 2; distTd.style.cssText = 'padding:.8rem 0 .4rem';
 
+  // Segments — LP is shown as subset of Circulating (informational), not additive
   var segments = [
-    { label:'In Moat',     pct: inMoatPct, color:'var(--acc)',  val: inMoatRaw },
-    { label:'LP Pool',     pct: liqPct,    color:'var(--cyn)',  val: liqRaw },
-    { label:'Burned',      pct: burnedPct, color:'var(--red)',  val: burnedRaw },
-    { label:'Circulating', pct: circPct,   color:'var(--grn)',  val: null },
-  ].filter(s => s.pct > 0 || s.label === 'Circulating');
+    { label:'In Moat',     pct: inMoatPct, color:'#f97316', val: inMoatRaw  },
+    { label:'Burned 🔥',   pct: burnedPct, color:'#e05252', val: burnedRaw  },
+    { label:'Circulating', pct: circPct,   color:'#6db87a', val: circRaw    },
+  ].filter(s => s.pct > 0.001);
 
-  var barHtml = segments.map(s =>
-    `<div style="flex:${Math.max(s.pct,0.5)};background:${s.color};height:100%;min-width:2px;transition:flex .4s" title="${s.label}: ${fmt1(s.pct)}"></div>`
-  ).join('');
+  // If no segments have data, show a placeholder bar
+  var hasData = segments.some(s => s.pct > 0);
+
+  var barHtml = hasData
+    ? segments.map(s =>
+        `<div style="flex:${Math.max(s.pct, 0.3)};background:${s.color};height:100%;transition:flex .5s ease" title="${s.label}: ${fmt1(s.pct)}"></div>`
+      ).join('<div style="width:1px;background:#141210;flex-shrink:0"></div>')
+    : `<div style="flex:1;background:var(--bor);height:100%;border-radius:6px"></div>`;
 
   var legendHtml = segments.map(s =>
-    `<div style="display:flex;align-items:center;gap:5px">
-      <span style="width:8px;height:8px;border-radius:2px;background:${s.color};flex-shrink:0;display:inline-block"></span>
-      <span style="font-family:'DM Mono',monospace;font-size:.55rem;color:var(--mut)">${s.label}</span>
-      <span style="font-family:'Chakra Petch',sans-serif;font-size:.6rem;font-weight:700;color:var(--txt)">${fmt1(s.pct)}</span>
-      ${s.val !== null && s.val > 0 ? `<span style="font-family:'DM Mono',monospace;font-size:.5rem;color:var(--ash2)">(${fmtP(s.val)})</span>` : ''}
+    `<div style="display:flex;align-items:center;justify-content:space-between;padding:.25rem 0;border-bottom:1px solid var(--bor)">
+      <div style="display:flex;align-items:center;gap:6px">
+        <span style="width:9px;height:9px;border-radius:2px;background:${s.color};flex-shrink:0;display:inline-block"></span>
+        <span style="font-family:'DM Mono',monospace;font-size:.58rem;color:var(--mut)">${s.label}</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:.5rem">
+        <span style="font-family:'DM Mono',monospace;font-size:.55rem;color:var(--ash2)">${fmtP(s.val)}</span>
+        <span style="font-family:'Chakra Petch',sans-serif;font-size:.65rem;font-weight:700;color:var(--txt);min-width:42px;text-align:right">${fmt1(s.pct)}</span>
+      </div>
     </div>`
   ).join('');
 
+  // LP info row (subset note)
+  var lpNote = liqRaw > 0
+    ? `<div style="display:flex;align-items:center;justify-content:space-between;padding:.25rem 0;border-bottom:1px solid var(--bor)">
+        <div style="display:flex;align-items:center;gap:6px">
+          <span style="width:9px;height:9px;border-radius:2px;background:#22d3ee;flex-shrink:0;display:inline-block"></span>
+          <span style="font-family:'DM Mono',monospace;font-size:.58rem;color:var(--mut)">↳ in LP Pool</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:.5rem">
+          <span style="font-family:'DM Mono',monospace;font-size:.55rem;color:var(--ash2)">${fmtP(Math.round(liqRaw))}</span>
+          <span style="font-family:'Chakra Petch',sans-serif;font-size:.65rem;font-weight:700;color:#22d3ee;min-width:42px;text-align:right">${fmt1(liqPct)}</span>
+        </div>
+      </div>`
+    : '';
+
   distTd.innerHTML = `
-    <div style="font-family:'DM Mono',monospace;font-size:.5rem;color:var(--mut);letter-spacing:.1em;margin-bottom:.5rem;text-transform:uppercase">Token Distribution</div>
-    <div style="display:flex;height:10px;border-radius:6px;overflow:hidden;gap:1px;margin-bottom:.6rem;background:var(--bor)">${barHtml}</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.35rem .6rem">${legendHtml}</div>
-    ${(inMoatPct === 0 && burnedPct === 0) ? '<div style="font-family:\'DM Mono\',monospace;font-size:.5rem;color:var(--ash2);margin-top:.4rem">⚠ On-chain totals loading — scroll back after data loads</div>' : ''}
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.55rem">
+      <span style="font-family:'DM Mono',monospace;font-size:.5rem;color:var(--mut);letter-spacing:.1em;text-transform:uppercase">Token Distribution</span>
+      ${!hasData ? '<span style="font-family:\'DM Mono\',monospace;font-size:.5rem;color:var(--ash2)">awaiting on-chain data</span>' : ''}
+    </div>
+    <div style="display:flex;height:11px;border-radius:6px;overflow:hidden;margin-bottom:.65rem;background:var(--sur)">${barHtml}</div>
+    <div style="display:flex;flex-direction:column">${legendHtml}${lpNote}</div>
+    ${liqRaw > 0 ? '<div style="font-family:\'DM Mono\',monospace;font-size:.48rem;color:var(--ash2);margin-top:.4rem">↳ LP tokens are a subset of Circulating supply · est. from pool USD ÷ price ÷ 2</div>' : ''}
   `;
   distTr.appendChild(distTd);
   tbl.appendChild(distTr);
@@ -10592,216 +10637,259 @@ function _guideBoot() {
 
 <!-- ── LIVE PRESENCE PILL ── -->
 <div id="presencePill" onclick="togglePresencePanel()" style="display:flex;align-items:center;justify-content:center;padding:.5rem .85rem 1.1rem;cursor:pointer;user-select:none">
-  <div style="display:inline-flex;align-items:center;gap:7px;background:var(--card);border:1px solid var(--bor);border-radius:99px;padding:.3rem .85rem;transition:border-color .2s;box-shadow:0 2px 12px rgba(0,0,0,.3)" onmouseover="this.style.borderColor='rgba(249,115,22,.3)'" onmouseout="this.style.borderColor='var(--bor)'">
+  <div id="presencePillInner" style="display:inline-flex;align-items:center;gap:7px;background:var(--card);border:1px solid var(--bor);border-radius:99px;padding:.3rem .85rem;transition:border-color .2s;box-shadow:0 2px 12px rgba(0,0,0,.3)" onmouseover="this.style.borderColor='rgba(249,115,22,.3)'" onmouseout="this.style.borderColor='var(--bor)'">
     <span class="ld"></span>
     <span id="pillCount" style="font-family:'DM Mono',monospace;font-size:.58rem;color:var(--mut)">— online</span>
     <span style="font-family:'DM Mono',monospace;font-size:.5rem;color:var(--ash2)">· tap to see who</span>
   </div>
 </div>
 
-<!-- ── PRESENCE PANEL (small slide-up) ── -->
-<div id="presencePanel" style="display:none;position:fixed;bottom:0;left:50%;transform:translateX(-50%);z-index:800;width:min(360px,98vw);background:var(--card);border:1px solid var(--bor);border-top-left-radius:14px;border-top-right-radius:14px;box-shadow:0 -8px 40px rgba(0,0,0,.5);padding:1rem 1.1rem 1.6rem">
-  <div style="width:36px;height:3px;background:var(--bor);border-radius:99px;margin:0 auto .85rem"></div>
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.85rem">
+<!-- ── PRESENCE SLIDE-UP PANEL ── -->
+<div id="presencePanel" style="display:none;position:fixed;bottom:0;left:50%;transform:translateX(-50%);z-index:800;width:min(380px,100vw);background:var(--card);border:1px solid var(--bor);border-top-left-radius:16px;border-top-right-radius:16px;box-shadow:0 -8px 48px rgba(0,0,0,.55);padding:1rem 1.15rem 1.8rem">
+  <!-- Drag handle -->
+  <div style="width:36px;height:3px;background:var(--bor);border-radius:99px;margin:0 auto .9rem"></div>
+  <!-- Header -->
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.9rem">
     <div style="display:flex;align-items:center;gap:7px">
       <span class="ld"></span>
       <span style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.72rem;letter-spacing:.07em;color:var(--txt)">LIVE PRESENCE</span>
+      <span id="todayCount" style="font-family:'DM Mono',monospace;font-size:.52rem;color:var(--mut)"></span>
     </div>
-    <div style="display:flex;align-items:center;gap:.5rem">
-      <span id="todayCount" style="font-family:'DM Mono',monospace;font-size:.54rem;color:var(--mut)">—</span>
-      <button onclick="openPresencePopup();event.stopPropagation()" style="font-family:'Chakra Petch',sans-serif;font-size:.54rem;font-weight:700;letter-spacing:.05em;background:var(--acc);color:#141210;border:none;border-radius:5px;padding:.2rem .55rem;cursor:pointer">CHECK IN</button>
-      <button onclick="togglePresencePanel()" style="background:none;border:none;color:var(--mut);font-size:.85rem;cursor:pointer;padding:0 2px;line-height:1">✕</button>
-    </div>
+    <button onclick="togglePresencePanel()" style="background:none;border:none;color:var(--mut);font-size:.85rem;cursor:pointer;padding:0 2px;line-height:1">✕</button>
   </div>
-  <div style="font-family:'DM Mono',monospace;font-size:.46rem;color:var(--mut);letter-spacing:.1em;margin-bottom:.4rem">ONLINE NOW</div>
-  <div id="onlineList" style="display:flex;flex-wrap:wrap;gap:.35rem;min-height:18px;align-items:center;margin-bottom:.7rem">
+  <!-- Online now -->
+  <div style="font-family:'DM Mono',monospace;font-size:.46rem;color:var(--mut);letter-spacing:.1em;margin-bottom:.42rem;text-transform:uppercase">Online Now</div>
+  <div id="onlineList" style="display:flex;flex-wrap:wrap;gap:.32rem;min-height:22px;align-items:center;margin-bottom:.8rem">
     <span style="font-family:'DM Mono',monospace;font-size:.55rem;color:var(--ash2)">Loading…</span>
   </div>
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:.45rem;margin-bottom:.65rem">
-    <div style="background:var(--sur);border:1px solid var(--bor);border-radius:7px;padding:.5rem .7rem">
-      <div style="font-family:'DM Mono',monospace;font-size:.44rem;color:var(--mut);letter-spacing:.1em;margin-bottom:.2rem">TODAY</div>
-      <div id="todayNum" style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:1.05rem;color:var(--acc)">—</div>
+  <!-- Stats -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:.45rem;margin-bottom:.8rem">
+    <div style="background:var(--sur);border:1px solid var(--bor);border-radius:8px;padding:.5rem .75rem">
+      <div style="font-family:'DM Mono',monospace;font-size:.44rem;color:var(--mut);letter-spacing:.1em;margin-bottom:.18rem">TODAY</div>
+      <div id="todayNum" style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:1.1rem;color:var(--acc)">—</div>
     </div>
-    <div style="background:var(--sur);border:1px solid var(--bor);border-radius:7px;padding:.5rem .7rem">
-      <div style="font-family:'DM Mono',monospace;font-size:.44rem;color:var(--mut);letter-spacing:.1em;margin-bottom:.2rem">ALL TIME</div>
-      <div id="allTimeNum" style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:1.05rem;color:var(--gld)">—</div>
+    <div style="background:var(--sur);border:1px solid var(--bor);border-radius:8px;padding:.5rem .75rem">
+      <div style="font-family:'DM Mono',monospace;font-size:.44rem;color:var(--mut);letter-spacing:.1em;margin-bottom:.18rem">ALL TIME</div>
+      <div id="allTimeNum" style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:1.1rem;color:var(--gld)">—</div>
     </div>
   </div>
-  <div style="font-family:'DM Mono',monospace;font-size:.46rem;color:var(--mut);letter-spacing:.1em;margin-bottom:.38rem">TOP VISITORS</div>
-  <div id="topVisitors" style="display:flex;flex-direction:column;gap:.32rem">
+  <!-- Top visitors -->
+  <div style="font-family:'DM Mono',monospace;font-size:.46rem;color:var(--mut);letter-spacing:.1em;margin-bottom:.4rem;text-transform:uppercase">Top Visitors</div>
+  <div id="topVisitors" style="display:flex;flex-direction:column;gap:.3rem;margin-bottom:.85rem">
     <span style="font-family:'DM Mono',monospace;font-size:.55rem;color:var(--ash2)">No data yet</span>
+  </div>
+  <!-- Inline check-in (no popup) -->
+  <div id="checkinArea">
+    <div style="font-family:'DM Mono',monospace;font-size:.46rem;color:var(--mut);letter-spacing:.1em;margin-bottom:.4rem;text-transform:uppercase">Check In</div>
+    <div style="display:flex;gap:.5rem;align-items:center">
+      <input id="presenceInput" type="text" maxlength="24" placeholder="Your name / handle…"
+        style="flex:1;background:var(--sur);border:1px solid var(--bor);border-radius:6px;padding:.45rem .75rem;font-family:'DM Mono',monospace;font-size:.68rem;color:var(--txt);outline:none;transition:border-color .2s"
+        onfocus="this.style.borderColor='var(--acc)'" onblur="this.style.borderColor='var(--bor)'"
+        onkeydown="if(event.key==='Enter')presenceCheckIn()">
+      <button onclick="presenceCheckIn()" style="font-family:'Chakra Petch',sans-serif;font-size:.6rem;font-weight:700;letter-spacing:.04em;background:var(--acc);color:#141210;border:none;border-radius:6px;padding:.45rem .85rem;cursor:pointer;white-space:nowrap;transition:opacity .2s" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">JOIN →</button>
+    </div>
+    <div id="checkinStatus" style="font-family:'DM Mono',monospace;font-size:.52rem;color:var(--mut);margin-top:.35rem;min-height:.8rem"></div>
   </div>
 </div>
 <div id="presenceBg" onclick="togglePresencePanel()" style="display:none;position:fixed;inset:0;z-index:799;background:rgba(0,0,0,.45)"></div>
 
-<!-- ── PRESENCE POP-UP ── -->
-<div id="presenceOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9000;align-items:center;justify-content:center;backdrop-filter:blur(4px)">
-  <div style="background:var(--card);border:1px solid var(--bor);border-radius:12px;padding:1.8rem 1.6rem;width:min(360px,90vw);box-shadow:0 0 60px rgba(249,115,22,.12)">
-    <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.9rem;letter-spacing:.08em;color:var(--txt);margin-bottom:.3rem">SIGN IN AS PRESENT</div>
-    <div style="font-family:'DM Mono',monospace;font-size:.58rem;color:var(--mut);margin-bottom:1.2rem">Optional — let others know you\'re here</div>
-    <input id="presenceInput" type="text" maxlength="24" placeholder="Enter your username…" style="width:100%;background:var(--sur);border:1px solid var(--bor);border-radius:6px;padding:.6rem .85rem;font-family:'DM Mono',monospace;font-size:.72rem;color:var(--txt);outline:none;margin-bottom:.9rem;transition:border-color .2s" onfocus="this.style.borderColor='var(--acc)'" onblur="this.style.borderColor='var(--bor)'" onkeydown="if(event.key==='Enter')confirmPresence()">
-    <div style="display:flex;gap:.6rem">
-      <button onclick="confirmPresence()" style="flex:1;font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.68rem;letter-spacing:.06em;background:var(--acc);color:#fff;border:none;border-radius:6px;padding:.65rem;cursor:pointer;transition:opacity .2s" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">CHECK IN</button>
-      <button onclick="confirmPresence(true)" style="flex:1;font-family:'Chakra Petch',sans-serif;font-size:.65rem;color:var(--mut);background:transparent;border:1px solid var(--bor);border-radius:6px;padding:.65rem;cursor:pointer" onmouseover="this.style.color='var(--txt)'" onmouseout="this.style.color='var(--mut)'">Skip / Stay Anon</button>
-    </div>
-  </div>
-</div>
-
 <script>
-// ── LIVE PRESENCE ENGINE ──
+// ── LIVE PRESENCE — Supabase backend ──
 (function(){
-  const PRESENCE_TTL = 5 * 60 * 1000; // 5 min active window
-  const REFRESH_MS   = 20 * 1000;      // poll every 20s
-  const TODAY_KEY    = () => 'today-' + new Date().toISOString().slice(0,10);
+  // ─── Supabase config — replace with your project URL + anon key ───
+  const SB_URL = 'https://buzkdndnenirmptfimcd.supabase.co';
+  const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ1emtkbmRuZW5pcm1wdGZpbWNkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ3MTYzNDQsImV4cCI6MjA5MDI5MjM0NH0.mgae38tIrQyB3yyLeyZ1-nP298wKqU-Tq89f7Gn7BQ0
+
+';
+  // ─────────────────────────────────────────────────────────────────
+
+  const PRESENCE_TTL_S = 300; // 5 min in seconds
+  const REFRESH_MS     = 25000;
+  const TODAY          = () => new Date().toISOString().slice(0,10);
 
   let myId   = localStorage.getItem('presence_id');
   let myName = localStorage.getItem('presence_name') || null;
-  let popupShown = localStorage.getItem('presence_asked');
+  if(!myId){ myId = 'u' + Math.random().toString(36).slice(2,10); localStorage.setItem('presence_id', myId); }
 
-  if(!myId){ myId = 'u' + Math.random().toString(36).slice(2,9); localStorage.setItem('presence_id', myId); }
+  const useSupa = SB_URL !== 'https://YOUR_PROJECT.supabase.co';
 
-  // ── helpers ──
-  async function storageGet(key, shared){
-    try{ const r = await window.storage.get(key, shared); return r ? JSON.parse(r.value) : null; }
-    catch(e){ return null; }
+  // ── Supabase REST helpers ──
+  async function sbSelect(table, filter='') {
+    if(!useSupa) return null;
+    try {
+      const r = await fetch(`${SB_URL}/rest/v1/${table}?${filter}`, {
+        headers:{ 'apikey': SB_KEY, 'Authorization': 'Bearer '+SB_KEY, 'Content-Type': 'application/json' }
+      });
+      return r.ok ? r.json() : null;
+    } catch(e){ return null; }
   }
-  async function storageSet(key, val, shared){
-    try{ await window.storage.set(key, JSON.stringify(val), shared); }catch(e){}
+  async function sbUpsert(table, data) {
+    if(!useSupa) return;
+    try {
+      await fetch(`${SB_URL}/rest/v1/${table}`, {
+        method: 'POST',
+        headers:{ 'apikey': SB_KEY, 'Authorization': 'Bearer '+SB_KEY,
+                  'Content-Type': 'application/json', 'Prefer': 'resolution=merge-duplicates' },
+        body: JSON.stringify(data)
+      });
+    } catch(e){}
+  }
+  async function sbRpc(fn, params) {
+    if(!useSupa) return null;
+    try {
+      const r = await fetch(`${SB_URL}/rest/v1/rpc/${fn}`, {
+        method:'POST',
+        headers:{ 'apikey': SB_KEY, 'Authorization': 'Bearer '+SB_KEY, 'Content-Type': 'application/json' },
+        body: JSON.stringify(params)
+      });
+      return r.ok ? r.json() : null;
+    } catch(e){ return null; }
   }
 
-  // ── heartbeat: write my presence to shared store ──
-  async function heartbeat(){
-    if(!myName) return; // only logged-in users emit heartbeat
-    const key = 'presence:' + myId;
-    await storageSet(key, { name: myName, ts: Date.now(), id: myId }, true);
+  // ── Fallback: window.storage (artifact store) ──
+  async function stGet(key){ try{ const r=await window.storage.get(key,true); return r?JSON.parse(r.value):null; }catch(e){return null;} }
+  async function stSet(key,val){ try{ await window.storage.set(key,JSON.stringify(val),true); }catch(e){} }
+  async function stList(prefix){ try{ const r=await window.storage.list(prefix,true); return r?.keys||[]; }catch(e){return[];} }
 
-    // also bump all-time visit count per user
-    const ucKey = 'visitcount:' + myId;
-    const existing = await storageGet(ucKey, true);
-    const count = existing ? existing.count : 0;
-    await storageSet(ucKey, { name: myName, count: count + 1, id: myId }, true);
-
-    // bump today tally
-    const todayKey = TODAY_KEY();
-    const td = await storageGet(todayKey, true) || { visitors: [] };
-    if(!td.visitors.includes(myId)) td.visitors.push(myId);
-    await storageSet(todayKey, td, true);
-  }
-
-  // ── render online list ──
-  async function renderPresence(){
-    // scan presence:* keys
-    let onlineUsers = [];
-    try{
-      const keys = await window.storage.list('presence:', true);
-      if(keys && keys.keys){
-        const now = Date.now();
-        for(const k of keys.keys){
-          const rec = await storageGet(k, true);
-          if(rec && (now - rec.ts) < PRESENCE_TTL){
-            onlineUsers.push(rec);
-          }
-        }
-      }
-    }catch(e){}
-
-    // online list
-    const ol = document.getElementById('onlineList');
-    if(onlineUsers.length === 0){
-      ol.innerHTML = '<span style="font-family:\'DM Mono\',monospace;font-size:.58rem;color:var(--ash2)">No one checked in yet — be first!</span>';
+  // ── Heartbeat — update my presence record ──
+  async function heartbeat() {
+    if(!myName) return;
+    const now = new Date().toISOString();
+    if(useSupa) {
+      await sbUpsert('presence', { id: myId, name: myName, last_seen: now });
+      await sbUpsert('visits', { user_id: myId, name: myName, date: TODAY() });
     } else {
-      ol.innerHTML = onlineUsers.map(u =>
-        `<span style="display:inline-flex;align-items:center;gap:5px;background:var(--sur);border:1px solid var(--bor);border-radius:99px;padding:.25rem .7rem;font-family:'DM Mono',monospace;font-size:.58rem;color:var(--txt)">
-          <span style="width:6px;height:6px;border-radius:50%;background:var(--grn);box-shadow:0 0 5px var(--grn);flex-shrink:0"></span>
-          ${escH(u.name)}
-        </span>`
-      ).join('');
+      await stSet('presence:'+myId, { id:myId, name:myName, ts: Date.now() });
+      const td = await stGet('today:'+TODAY()) || { date: TODAY(), visitors: [] };
+      if(!td.visitors.includes(myId)){ td.visitors.push(myId); await stSet('today:'+TODAY(), td); }
+      const vc = await stGet('vc:'+myId) || { name:myName, id:myId, count:0 };
+      vc.count++; vc.name = myName; await stSet('vc:'+myId, vc);
+    }
+  }
+
+  // ── Render presence panel ──
+  async function renderPresence() {
+    let onlineUsers = [], todayN = 0, allTime = 0, topList = [];
+    const cutoff = new Date(Date.now() - PRESENCE_TTL_S*1000).toISOString();
+
+    if(useSupa) {
+      // Online now
+      const online = await sbSelect('presence', `last_seen=gte.${cutoff}&select=id,name,last_seen`);
+      if(online) onlineUsers = online;
+      // Today count
+      const todayR = await sbSelect('visits', `date=eq.${TODAY()}&select=user_id`);
+      todayN = todayR ? [...new Set(todayR.map(r=>r.user_id))].length : 0;
+      // All time + top
+      const allR = await sbSelect('visits', 'select=user_id,name&order=user_id');
+      if(allR){
+        const byUser = {};
+        allR.forEach(r=>{ if(!byUser[r.user_id]) byUser[r.user_id]={name:r.name,count:0}; byUser[r.user_id].count++; });
+        topList = Object.values(byUser).sort((a,b)=>b.count-a.count);
+        allTime = allR.length;
+      }
+    } else {
+      // Fallback: window.storage
+      const keys = await stList('presence:');
+      const now = Date.now();
+      for(const k of keys){
+        const rec = await stGet(k);
+        if(rec && (now - rec.ts) < PRESENCE_TTL_S*1000) onlineUsers.push(rec);
+      }
+      const td = await stGet('today:'+TODAY());
+      todayN = td ? td.visitors.length : 0;
+      const vcKeys = await stList('vc:');
+      for(const k of vcKeys){
+        const rec = await stGet(k);
+        if(rec){ topList.push(rec); allTime += rec.count; }
+      }
+      topList.sort((a,b)=>b.count-a.count);
     }
 
-    // today count
-    const td = await storageGet(TODAY_KEY(), true);
-    const todayN = td ? td.visitors.length : 0;
-    document.getElementById('todayNum').textContent = todayN;
-    document.getElementById('todayCount').textContent = todayN + ' here today';
-    // update pill
-    const pillOnline = onlineUsers.length;
+    // Pill
     const pc = document.getElementById('pillCount');
-    if(pc) pc.textContent = pillOnline > 0 ? pillOnline + ' online now' : '0 online';
+    if(pc) pc.textContent = onlineUsers.length > 0 ? onlineUsers.length+' online now' : '0 online';
 
-    // all-time + top visitors
-    let allTime = 0;
-    let topList = [];
-    try{
-      const vcKeys = await window.storage.list('visitcount:', true);
-      if(vcKeys && vcKeys.keys){
-        for(const k of vcKeys.keys){
-          const rec = await storageGet(k, true);
-          if(rec){ allTime += rec.count; topList.push(rec); }
-        }
-      }
-    }catch(e){}
+    // Online list
+    const ol = document.getElementById('onlineList');
+    if(ol) ol.innerHTML = onlineUsers.length === 0
+      ? '<span style="font-family:\'DM Mono\',monospace;font-size:.55rem;color:var(--ash2)">No one online — be first!</span>'
+      : onlineUsers.map(u => `<span style="display:inline-flex;align-items:center;gap:5px;background:var(--sur);border:1px solid var(--bor);border-radius:99px;padding:.2rem .6rem;font-family:'DM Mono',monospace;font-size:.56rem;color:var(--txt)"><span style="width:5px;height:5px;border-radius:50%;background:var(--grn);box-shadow:0 0 4px var(--grn);flex-shrink:0"></span>${escH(u.name)}</span>`).join('');
 
-    document.getElementById('allTimeNum').textContent = allTime || '—';
+    // Stats
+    const tn = document.getElementById('todayNum'); if(tn) tn.textContent = todayN || '—';
+    const at = document.getElementById('allTimeNum'); if(at) at.textContent = allTime || '—';
+    const tc = document.getElementById('todayCount'); if(tc) tc.textContent = todayN > 0 ? '· '+todayN+' today' : '';
 
-    topList.sort((a,b) => b.count - a.count);
+    // Top visitors
     const tv = document.getElementById('topVisitors');
-    if(topList.length === 0){
-      tv.innerHTML = '<span style="font-family:\'DM Mono\',monospace;font-size:.58rem;color:var(--ash2)">No data yet</span>';
-    } else {
+    if(tv) {
       const medals = ['🥇','🥈','🥉'];
-      tv.innerHTML = topList.slice(0,5).map((u,i) =>
-        `<div style="display:flex;align-items:center;justify-content:space-between">
-          <span style="font-family:'DM Mono',monospace;font-size:.6rem;color:var(--txt)">${medals[i]||'·'} ${escH(u.name)}</span>
-          <span style="font-family:'DM Mono',monospace;font-size:.55rem;color:var(--acc)">${u.count} visit${u.count!==1?'s':''}</span>
-        </div>`
-      ).join('');
+      tv.innerHTML = topList.length === 0
+        ? '<span style="font-family:\'DM Mono\',monospace;font-size:.55rem;color:var(--ash2)">No visits logged yet</span>'
+        : topList.slice(0,5).map((u,i) =>
+            `<div style="display:flex;align-items:center;justify-content:space-between;padding:.18rem 0">
+              <span style="font-family:'DM Mono',monospace;font-size:.58rem;color:var(--txt)">${medals[i]||'·'} ${escH(u.name)}</span>
+              <span style="font-family:'DM Mono',monospace;font-size:.52rem;color:var(--acc)">${u.count} visit${u.count!==1?'s':''}</span>
+            </div>`
+          ).join('');
+    }
+
+    // Update check-in area based on whether user is already named
+    const ca = document.getElementById('checkinArea');
+    if(ca && myName){
+      ca.innerHTML = `<div style="font-family:'DM Mono',monospace;font-size:.56rem;color:var(--grn)">&#9679; Checked in as <b style="color:var(--txt)">${escH(myName)}</b> <button onclick="presenceChangeName()" style="background:none;border:none;color:var(--mut);font-size:.52rem;cursor:pointer;text-decoration:underline;padding:0;margin-left:4px">change</button></div>`;
     }
   }
 
   function escH(s){ const d=document.createElement('div');d.textContent=s;return d.innerHTML; }
 
-  // ── panel toggle ──
+  // ── Panel toggle ──
   window.togglePresencePanel = function(){
     const panel = document.getElementById('presencePanel');
     const bg    = document.getElementById('presenceBg');
-    const open  = panel.style.display === 'none' || panel.style.display === '';
+    const open  = panel.style.display==='none' || !panel.style.display;
     panel.style.display = open ? 'block' : 'none';
     bg.style.display    = open ? 'block' : 'none';
+    if(open) renderPresence();
   };
 
-  // ── pop-up logic ──
-  window.openPresencePopup = function(){
-    document.getElementById('presenceOverlay').style.display='flex';
-    setTimeout(()=>document.getElementById('presenceInput').focus(),80);
-  };
-
-  window.confirmPresence = async function(anon){
-    const raw = document.getElementById('presenceInput').value.trim();
-    if(!anon && raw){
-      myName = raw.slice(0,24);
-      localStorage.setItem('presence_name', myName);
-    }
-    localStorage.setItem('presence_asked','1');
-    document.getElementById('presenceOverlay').style.display='none';
-    document.getElementById('presenceInput').value='';
+  // ── Inline check-in (no popup) ──
+  window.presenceCheckIn = async function(){
+    const inp = document.getElementById('presenceInput');
+    const raw = (inp?.value||'').trim();
+    const status = document.getElementById('checkinStatus');
+    if(!raw){ if(status) status.textContent = 'Enter a name first'; return; }
+    myName = raw.slice(0,24);
+    localStorage.setItem('presence_name', myName);
+    if(status){ status.style.color='var(--grn)'; status.textContent = 'Checking in…'; }
     await heartbeat();
     await renderPresence();
+    if(status){ status.textContent = ''; }
   };
 
-  // close overlay on backdrop click
-  document.getElementById('presenceOverlay').addEventListener('click', function(e){
-    if(e.target===this) confirmPresence(true);
-  });
+  window.presenceChangeName = function(){
+    myName = null;
+    localStorage.removeItem('presence_name');
+    const ca = document.getElementById('checkinArea');
+    if(ca) ca.innerHTML = `
+      <div style="font-family:'DM Mono',monospace;font-size:.46rem;color:var(--mut);letter-spacing:.1em;margin-bottom:.4rem;text-transform:uppercase">Check In</div>
+      <div style="display:flex;gap:.5rem;align-items:center">
+        <input id="presenceInput" type="text" maxlength="24" placeholder="Your name / handle…"
+          style="flex:1;background:var(--sur);border:1px solid var(--bor);border-radius:6px;padding:.45rem .75rem;font-family:'DM Mono',monospace;font-size:.68rem;color:var(--txt);outline:none;transition:border-color .2s"
+          onfocus="this.style.borderColor='var(--acc)'" onblur="this.style.borderColor='var(--bor)'"
+          onkeydown="if(event.key==='Enter')presenceCheckIn()">
+        <button onclick="presenceCheckIn()" style="font-family:'Chakra Petch',sans-serif;font-size:.6rem;font-weight:700;letter-spacing:.04em;background:var(--acc);color:#141210;border:none;border-radius:6px;padding:.45rem .85rem;cursor:pointer;white-space:nowrap" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">JOIN →</button>
+      </div>
+      <div id="checkinStatus" style="font-family:'DM Mono',monospace;font-size:.52rem;color:var(--mut);margin-top:.35rem;min-height:.8rem"></div>`;
+  };
 
-  // ── init ──
+  // ── Init — silent background refresh, no popup ever ──
   async function init(){
-    await renderPresence();
-    if(!popupShown){
-      setTimeout(openPresencePopup, 1800);
-    } else if(myName){
-      await heartbeat();
-    }
-    setInterval(async()=>{ await heartbeat(); await renderPresence(); }, REFRESH_MS);
+    // Silent heartbeat if already named
+    if(myName) await heartbeat();
+    // Update pill count silently
+    renderPresence();
+    setInterval(async()=>{ if(myName) await heartbeat(); renderPresence(); }, REFRESH_MS);
   }
 
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', init);
