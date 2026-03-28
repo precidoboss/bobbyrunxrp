@@ -622,7 +622,7 @@ main{position:relative;z-index:1;padding:.8rem;max-width:1440px;margin:0 auto}
             <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--gld);margin-right:4px;vertical-align:middle"></span>Locked</span>
             <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--red);margin-right:4px;vertical-align:middle"></span>Burned</span>
             <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--pur);margin-right:4px;vertical-align:middle"></span>Mixed</span>
-            <span style="margin-left:auto;color:var(--dim)">Tap a bubble to see details · Size = points share</span>
+            <span style="margin-left:auto;color:var(--dim)">Size = token share · Label = token amount · 👆 Drag to move · Tap for detail</span>
           </div>
           <canvas id="bubbleMapCanvas" style="width:100%;border-radius:10px;cursor:pointer;touch-action:none;background:var(--sur)" height="500"></canvas>
           <!-- Tooltip / detail panel -->
@@ -1546,15 +1546,15 @@ const LOAD_QUIPS = [
 const DSC_PAIR = 'https://api.dexscreener.com/latest/dex/pairs/avalanche/';
 
 const MOATS = {
-  '0xcf65744c955a292d11de2a4184e9fabedbfc7b40':{name:'HEFE Moat',         short:'HEFE',  ticker:'$hefe',    emoji:'🏔️',color:'#f97316',tokenAddr:'0x18E3605B13F10016901eAC609b9E188CF7c18973',  pairAddr:'0xc4fa66b4839af7379a4fcbe5dd048b18fe99a2ac', altPairAddr:'0xe11e871d312cc9bae9eb24c7bdc2031f8453bf44', lfjPairAddr:'0xe11e871d312cc9bae9eb24c7bdc2031f8453bf44', url:'https://moats.app/moat/0xcf65744c955a292d11de2a4184e9fabedbfc7b40',   logo:'Hefelogo-new.png',              knownSupply:690420000, pharaohPool:true, dexOverride:'pharaoh', odosOnly:true},
-  '0x501f6e7bec3db63d8dacbc9fa0ce42d5d2329d53':{name:'hCASH LP Moat',     short:'hCASH', ticker:'$hcash',   emoji:'💧', color:'#d4a843',tokenAddr:'0x8f961980518bc9ab302948de7948580666dc35d9',  pairAddr:'0x8f961980518bc9ab302948de7948580666dc35d9',  url:'https://moats.app/moat/0x501f6e7bec3db63d8dacbc9fa0ce42d5d2329d53',   logo:'hashcashclub.png',   supplyType:'dynamic',knownSupply:21000000000,note:'LP token moat — add AVAX+hCASH liquidity on Pharaoh, then stake LP here',lpOnly:false,lpUrl:'https://phar.gg'},
-  '0x020c73b55d139d5e259bad89b126f2a446c22ac6':{name:'FREAK Anon Moat',   short:'FREAK', ticker:'$freak',   emoji:'👾', color:'#8c8074',tokenAddr:'0x201d04f88bc9b3bdacdf0519a95e117f25062d38',  pairAddr:'0x0e13283315fd3d996b22ef40f54c38f24c7f4ee0', altPairAddr:'0x90c2ea98d6389cc4eb05ec635ee82c493b2dfaf2', dexOverride:'pharaoh', pharaohPool:true, odosOnly:true, url:'https://moats.app/moat/0x020c73b55d139d5e259bad89b126f2a446c22ac6',   logo:'FREAK_Anon.png',                knownSupply:1000000000},
-  '0x7e1f28c9622aa68001fe0b200f5e5f93f6b35cc9':{name:'Balln Chikn Moat', short:'BALLN', ticker:'$balln',   emoji:'🏀', color:'#f43f5e',tokenAddr:'0x4Afc7838167b77530278483c3d8c1fFe698a912E',  pairAddr:'0xa8f87e026481cf03dc9a68570584a664186b41c7', url:'https://moats.app/moat/0x7e1f28c9622aa68001fe0b200f5e5f93f6b35cc9',    logo:'balln-token.jpg',               knownSupply:100000},
-  '0x464b2817f16f6117602ad05bae446c2fc5ba6fb7':{name:'Supercycle Moat',   short:'SUPER', ticker:'$super',   emoji:'🌀', color:'#818cf8',tokenAddr:'0xCA2e0f72653337d05B1ABceBEA5718A4A3E57a0b',  pairAddr:'0x017c5608a8ab29ab23093726cf7c64e5ef88e191', url:'https://moats.app/moat/0x464b2817f16f6117602ad05bae446c2fc5ba6fb7',    logo:'supercycle.jpg',                knownSupply:10000000000},
-  '0x940b7f7d73a504ec566157eebb0566b81d57e8f8':{name:'Vitrene Moat',      short:'VIT',   ticker:'$vitrene', emoji:'💎', color:'#22d3ee',tokenAddr:'0xde34C06de75FB446b5e7b8dd272D014F2A19009D',  pairAddr:'0x1ed3c7234ed58700cb99dfd5eb1bad4242855ad8',  url:'https://moats.app/moat/0x940b7f7d73a504ec566157eebb0566b81d57e8f8',   logo:'VIT-Logo-Alternative-2.jpg',    knownSupply:10000000000},
-  '0x7a4d20261a765bd9ba67d49fbf8189843eec3393':{name:'Lil Coq Moat',      short:'LIL',   ticker:'$lil',     emoji:'🐓', color:'#fb7185',tokenAddr:'0x22683BbaDD01473969F23709879187705a253763',  pairAddr:'0x8acc49857a1259d25eb3ca0aa15b398d0e149ef2', url:'https://moats.app/moat/0x7a4d20261a765bd9ba67d49fbf8189843eec3393',    logo:'LIL-Coq-Logo.png',              knownSupply:1350000000},
-  '0x93d8cc111233f8c5b9a019df7c159b6f9be7b44b':{name:'Dimish Moat',       short:'DISH',  ticker:'$dimish',  emoji:'🌑', color:'#a78bfa',tokenAddr:'0x40146E96EE5297187022D1ca62A3169B5e45B0a4',  pairAddr:null, geckoPoolAddr:'0x3edc0126e36758419ba7eeb44b2a3a094e7e9bb7', geckoNetwork:'avax', url:'https://moats.app/moat/0x93d8cc111233f8c5b9a019df7c159b6f9be7b44b',   logo:'Dimish1000px.png',              knownSupply:1000000000},
-  '0x3399d03566bb6db0cb4f1e13047589a1499cebbc':{name:'Bensi Box Moat',    short:'BENSI', ticker:'$bensi',   emoji:'📦', color:'#fbbf24',tokenAddr:'0x00697F5F6dc2CA0A17e6c89bCcd1173A61eA24a6',  pairAddr:'0x7984cD0FA3DaA31f8B305A0544b6097BA40Fd3B8', swapViaWavax:true, url:'https://moats.app/moat/0x3399d03566bb6db0cb4f1e13047589a1499cebbc',    logo:'Bensi-Box-logo-new.jpg',        knownSupply:1000000000},
+  '0xcf65744c955a292d11de2a4184e9fabedbfc7b40':{name:'HEFE Moat',         short:'HEFE',  ticker:'$hefe',    emoji:'🏔️',color:'#f97316',tokenAddr:'0x18E3605B13F10016901eAC609b9E188CF7c18973',  pairAddr:'0xc4fa66b4839af7379a4fcbe5dd048b18fe99a2ac', altPairAddr:'0xe11e871d312cc9bae9eb24c7bdc2031f8453bf44', lfjPairAddr:'0xe11e871d312cc9bae9eb24c7bdc2031f8453bf44', url:'https://moats.app/moat/0xcf65744c955a292d11de2a4184e9fabedbfc7b40',   logo:'Hefelogo-new.png',              knownSupply:690420000, pharaohPool:true, dexOverride:'pharaoh', odosOnly:true, twitter:'AvaxHefe'},
+  '0x501f6e7bec3db63d8dacbc9fa0ce42d5d2329d53':{name:'hCASH LP Moat',     short:'hCASH', ticker:'$hcash',   emoji:'💧', color:'#d4a843',tokenAddr:'0x8f961980518bc9ab302948de7948580666dc35d9',  pairAddr:'0x8f961980518bc9ab302948de7948580666dc35d9',  url:'https://moats.app/moat/0x501f6e7bec3db63d8dacbc9fa0ce42d5d2329d53',   logo:'hashcashclub.png',   supplyType:'dynamic',knownSupply:21000000000,note:'LP token moat — add AVAX+hCASH liquidity on Pharaoh, then stake LP here',lpOnly:false,lpUrl:'https://phar.gg', twitter:'clubhashcash'},
+  '0x020c73b55d139d5e259bad89b126f2a446c22ac6':{name:'FREAK Anon Moat',   short:'FREAK', ticker:'$freak',   emoji:'👾', color:'#8c8074',tokenAddr:'0x201d04f88bc9b3bdacdf0519a95e117f25062d38',  pairAddr:'0x0e13283315fd3d996b22ef40f54c38f24c7f4ee0', altPairAddr:'0x90c2ea98d6389cc4eb05ec635ee82c493b2dfaf2', dexOverride:'pharaoh', pharaohPool:true, odosOnly:true, twitter:'LucidThingsNFT', url:'https://moats.app/moat/0x020c73b55d139d5e259bad89b126f2a446c22ac6',   logo:'FREAK_Anon.png',                knownSupply:1000000000},
+  '0x7e1f28c9622aa68001fe0b200f5e5f93f6b35cc9':{name:'Balln Chikn Moat', short:'BALLN', ticker:'$balln',   emoji:'🏀', color:'#f43f5e',tokenAddr:'0x4Afc7838167b77530278483c3d8c1fFe698a912E',  pairAddr:'0xa8f87e026481cf03dc9a68570584a664186b41c7', url:'https://moats.app/moat/0x7e1f28c9622aa68001fe0b200f5e5f93f6b35cc9',    logo:'balln-token.jpg',               knownSupply:100000, twitter:'BallnToken3'},
+  '0x464b2817f16f6117602ad05bae446c2fc5ba6fb7':{name:'Supercycle Moat',   short:'SUPER', ticker:'$super',   emoji:'🌀', color:'#818cf8',tokenAddr:'0xCA2e0f72653337d05B1ABceBEA5718A4A3E57a0b',  pairAddr:'0x017c5608a8ab29ab23093726cf7c64e5ef88e191', url:'https://moats.app/moat/0x464b2817f16f6117602ad05bae446c2fc5ba6fb7',    logo:'supercycle.jpg',                knownSupply:10000000000, twitter:'supercyclereal_'},
+  '0x940b7f7d73a504ec566157eebb0566b81d57e8f8':{name:'Vitrene Moat',      short:'VIT',   ticker:'$vitrene', emoji:'💎', color:'#22d3ee',tokenAddr:'0xde34C06de75FB446b5e7b8dd272D014F2A19009D',  pairAddr:'0x1ed3c7234ed58700cb99dfd5eb1bad4242855ad8',  url:'https://moats.app/moat/0x940b7f7d73a504ec566157eebb0566b81d57e8f8',   logo:'VIT-Logo-Alternative-2.jpg',    knownSupply:10000000000, twitter:'VitreneOnAvax'},
+  '0x7a4d20261a765bd9ba67d49fbf8189843eec3393':{name:'Lil Coq Moat',      short:'LIL',   ticker:'$lil',     emoji:'🐓', color:'#fb7185',tokenAddr:'0x22683BbaDD01473969F23709879187705a253763',  pairAddr:'0x8acc49857a1259d25eb3ca0aa15b398d0e149ef2', url:'https://moats.app/moat/0x7a4d20261a765bd9ba67d49fbf8189843eec3393',    logo:'LIL-Coq-Logo.png',              knownSupply:1350000000, twitter:'LilCoqNft'},
+  '0x93d8cc111233f8c5b9a019df7c159b6f9be7b44b':{name:'Dimish Moat',       short:'DISH',  ticker:'$dimish',  emoji:'🌑', color:'#a78bfa',tokenAddr:'0x40146E96EE5297187022D1ca62A3169B5e45B0a4',  pairAddr:null, geckoPoolAddr:'0x3edc0126e36758419ba7eeb44b2a3a094e7e9bb7', geckoNetwork:'avax', url:'https://moats.app/moat/0x93d8cc111233f8c5b9a019df7c159b6f9be7b44b',   logo:'Dimish1000px.png',              knownSupply:1000000000, twitter:'DimiFW'},
+  '0x3399d03566bb6db0cb4f1e13047589a1499cebbc':{name:'Bensi Box Moat',    short:'BENSI', ticker:'$bensi',   emoji:'📦', color:'#fbbf24',tokenAddr:'0x00697F5F6dc2CA0A17e6c89bCcd1173A61eA24a6',  pairAddr:'0x7984cD0FA3DaA31f8B305A0544b6097BA40Fd3B8', swapViaWavax:true, url:'https://moats.app/moat/0x3399d03566bb6db0cb4f1e13047589a1499cebbc',    logo:'Bensi-Box-logo-new.jpg',        knownSupply:1000000000, twitter:'BensiBox'},
   '0x9c5f177cdc0332e61e423ee9ad9e4f2333f62685':{name:'Where Is Malek Moat',short:'MALEK',ticker:'$malek',   emoji:'🔍', color:'#34d399',tokenAddr:'0xeB55FAB1C23EC0Aa5024Ee593A12edCD031Ecd9b',  pairAddr:'0xa7e81808219cb1a27c71bd56f551a43fc8cad23', arenaToken:'0xB8d7710f7d8349A506b75dD184F05777c82dAd0C', odosOnly:true, url:'https://moats.app/moat/0x9c5f177cdc0332e61e423ee9ad9e4f2333f62685',    logo:'wheremalek.jpg',                knownSupply:10000000000, isNew:true},
 };
 
@@ -1599,6 +1599,12 @@ const KNOWN_PROFILES = {
   '0x488be5ded711572f9fb8568f3013e6e907506b6f': { pic: 'https://raw.githubusercontent.com/precidoboss/my-game-sprites/main/Hax.png', twitter: 'EzHaxx' },
   '0x785a9369cf7918c0a295809962eaf9d8fabde98d': { pic: 'https://raw.githubusercontent.com/precidoboss/my-game-sprites/main/Tigresa.png', twitter: 'LoveCrypto15' },
   '0x0e898ba9e51bc267789747fade63ed57ea5b5431': { pic: 'https://raw.githubusercontent.com/precidoboss/my-game-sprites/main/Opmilo405.png', twitter: 'opmilo405' },
+  // New contacts from note
+  '0xe561fdbceaa225ccfa080bcd4d84382e27f6d9d9': { pic: 'https://raw.githubusercontent.com/precidoboss/my-game-sprites/main/IMG_2970.jpeg', twitter: 'entropy_8' },
+  '0x934efb8896954828851bb52111c27bdb055e0dae': { pic: 'https://raw.githubusercontent.com/precidoboss/my-game-sprites/main/IMG_2974.jpeg', twitter: 'optimas_primeTnT' },
+  '0x6518fdee24ae4f69f8ce085d61e99a6e8d9a78d7': { pic: 'https://raw.githubusercontent.com/precidoboss/my-game-sprites/main/IMG_2972.jpeg', twitter: 'grouchomarx79' },
+  '0x9992e35790176857ff3825554203f6918b8deaea': { pic: 'https://raw.githubusercontent.com/precidoboss/my-game-sprites/main/IMG_2971.jpeg', twitter: 'debledcedric' },
+  '0x798ea572fe90fb7bf49c1058e04e86050b9bde2b': { pic: 'https://raw.githubusercontent.com/precidoboss/my-game-sprites/main/IMG_2973.jpeg', twitter: '71JGzone' },
 };
 
 function getKnownProfile(wallet) {
@@ -7089,7 +7095,11 @@ async function posOpenDetail(moatAddr) {
       <div style="display:flex;gap:0">${logoImg(meta?.logo,'moat-logo',meta?.emoji,col)}</div>
       <div style="flex:1;min-width:0">
         <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:1.15rem">${meta?.name}</div>
-        <div style="font-family:'DM Mono',monospace;font-size:.6rem;color:var(--mut)">${meta?.ticker} · <a href="${meta?.url||'#'}" target="_blank" style="color:var(--acc)">moats.app ↗</a></div>
+        <div style="font-family:'DM Mono',monospace;font-size:.6rem;color:var(--mut);display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <span>${meta?.ticker}</span>
+        <a href="${meta?.url||'#'}" target="_blank" style="color:var(--acc)">moats.app ↗</a>
+        ${meta?.twitter ? `<a href="https://x.com/${meta.twitter}" target="_blank" style="color:var(--dim);text-decoration:none">𝕏 @${meta.twitter}</a>` : ''}
+      </div>
       </div>
       <div style="text-align:right;flex-shrink:0">
         <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:1.4rem;color:${col}">${fmtP(myPts)}</div>
@@ -9322,26 +9332,29 @@ function renderBubbleMap(moatAddr, force=false) {
   const sorted = m.sorted.slice(0, 60); // top 60 wallets
   const total  = m.totalPoints || 1;
   const col    = meta.color || '#f97316';
+  const ticker = meta.ticker || 'tokens';
 
-  // Build node data
+  // Build node data — size by total token activity, not points
   const nodes = sorted.map((entry, i) => {
-    const w      = getWallet(entry);
-    const pts    = entry.points || entry.totalPoints || 0;
-    const share  = pts / total;
-    const prof   = getKnownProfile(w);
-    const uname  = entry.username || zephyrNames[w] || (prof ? '@' + prof.twitter : null);
-    const pic    = prof ? prof.pic : RAW + 'photo_2026-03-14_06-11-33.jpg'; // fallback: app logo
-    // Determine dominant activity colour
+    const w       = getWallet(entry);
+    const pts     = entry.points || entry.totalPoints || 0;
+    const share   = pts / total;
+    const prof    = getKnownProfile(w);
+    const uname   = entry.username || zephyrNames[w] || (prof ? '@' + prof.twitter : null);
+    const pic     = prof ? prof.pic : RAW + 'photo_2026-03-14_06-11-33.jpg';
     const staked  = entry.staked  || 0;
     const locked  = entry.locked  || 0;
     const burned  = entry.burned  || 0;
-    let nodeCol = col;
-    if (burned > staked && burned > locked)       nodeCol = 'var(--red)';
-    else if (locked > staked && locked > burned)  nodeCol = 'var(--gld)';
-    else if (staked > 0)                          nodeCol = col;
-    if (staked > 0 && locked > 0 && burned > 0)  nodeCol = 'var(--pur)';
+    const totalTok = staked + locked + burned;
 
-    return { w, pts, share, prof, uname, pic, nodeCol, rank: i+1, staked, locked, burned, entry };
+    // Colour = dominant action
+    let nodeCol = col;
+    if (burned > staked && burned > locked)      nodeCol = 'var(--red)';
+    else if (locked > staked && locked > burned) nodeCol = 'var(--gld)';
+    else if (staked > 0)                         nodeCol = col;
+    if (staked > 0 && locked > 0 && burned > 0) nodeCol = 'var(--pur)';
+
+    return { w, pts, share, prof, uname, pic, nodeCol, rank: i+1, staked, locked, burned, totalTok, entry };
   });
   _bubbleNodes = nodes;
 
@@ -9484,18 +9497,34 @@ function renderBubbleMap(moatAddr, force=false) {
         ctx.fillText(badges[n.rank-1], n.x + r*0.6, n.y - r*0.6);
       }
 
-      // Label — only if bubble is large enough
-      if (r > 18) {
-        const label = n.uname ? (n.uname.length > 10 ? n.uname.slice(0,9)+'…' : n.uname)
-                               : n.w.slice(0,4)+'…'+n.w.slice(-3);
+      // Label below bubble — name + token amount
+      if (r > 14) {
+        const label = n.uname
+          ? (n.uname.length > 12 ? n.uname.slice(0,11) + '…' : n.uname)
+          : n.w.slice(0,4) + '…' + n.w.slice(-3);
+        const totalTok = n.totalTok || 0;
+        const tokLabel = totalTok > 0
+          ? (totalTok >= 1e9 ? (totalTok/1e9).toFixed(1)+'B'
+            : totalTok >= 1e6 ? (totalTok/1e6).toFixed(1)+'M'
+            : totalTok >= 1e3 ? (totalTok/1e3).toFixed(1)+'K'
+            : totalTok.toFixed(0)) + ' ' + ticker
+          : '';
+        const fontSize = Math.max(7, r * 0.3);
         ctx.save();
-        ctx.fillStyle = '#f0ebe4';
-        ctx.font = `${Math.max(7, r*0.32)}px 'DM Mono',monospace`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
         ctx.shadowColor = '#000';
-        ctx.shadowBlur  = 4;
+        ctx.shadowBlur  = 5;
+        ctx.textAlign = 'center';
+        // Name line
+        ctx.fillStyle = '#f0ebe4';
+        ctx.font = `${fontSize}px 'DM Mono',monospace`;
         ctx.fillText(label, n.x, n.y + r + 9);
+        // Token amount line
+        if (tokLabel && r > 20) {
+          const nodeColor = n.nodeCol.startsWith('var(') ? col : n.nodeCol;
+          ctx.fillStyle = nodeColor;
+          ctx.font = `bold ${Math.max(6, fontSize * 0.85)}px 'DM Mono',monospace`;
+          ctx.fillText(tokLabel, n.x, n.y + r + 9 + fontSize + 2);
+        }
         ctx.restore();
       }
     });
@@ -9619,32 +9648,90 @@ function renderBubbleMap(moatAddr, force=false) {
     + (barHtml ? `<div style="grid-column:1/-1;background:var(--sur);border:1px solid var(--bor);border-radius:7px;padding:.55rem .7rem">${barHtml}</div>` : '');
   }
 
+  // ── Interaction: hover, click, and DRAG ──
   function evPt(ev) {
     const rect = canvas.getBoundingClientRect();
-    const x = ((ev.touches?ev.touches[0].clientX:ev.clientX) - rect.left);
-    const y = ((ev.touches?ev.touches[0].clientY:ev.clientY) - rect.top);
-    return {x, y};
+    const scaleX = W / rect.width;   // account for CSS scaling
+    const scaleY = H / rect.height;
+    const clientX = ev.touches ? ev.touches[0].clientX : ev.changedTouches ? ev.changedTouches[0].clientX : ev.clientX;
+    const clientY = ev.touches ? ev.touches[0].clientY : ev.changedTouches ? ev.changedTouches[0].clientY : ev.clientY;
+    return { x: (clientX - rect.left) * scaleX, y: (clientY - rect.top) * scaleY };
   }
 
-  canvas.onmousemove = ev => {
-    const {x,y} = evPt(ev);
+  function getBubbleAt(mx, my) {
+    // Reverse iterate so topmost drawn bubble is hit first
+    for (let i = positioned.length - 1; i >= 0; i--) {
+      const n = positioned[i];
+      const dx = mx - n.x, dy = my - n.y;
+      if (dx*dx + dy*dy <= n.r*n.r) return n;
+    }
+    return null;
+  }
+
+  let dragNode   = null;
+  let dragOffX   = 0, dragOffY = 0;
+  let isDragging = false;
+  let dragStartX = 0, dragStartY = 0;
+
+  function startDrag(ev) {
+    const {x, y} = evPt(ev);
     const n = getBubbleAt(x, y);
-    hoveredNode = n;
-    canvas.style.cursor = n ? 'pointer' : 'default';
-  };
-  canvas.onclick = ev => {
-    const {x,y} = evPt(ev);
-    const n = getBubbleAt(x, y);
-    if (n) showBubbleDetail(n);
-    else document.getElementById('bubbleMapDetail').style.display='none';
-  };
-  canvas.ontouchend = ev => {
-    const {x,y} = evPt(ev.changedTouches?{touches:ev.changedTouches}:ev);
-    const n = getBubbleAt(x, y);
-    if (n) showBubbleDetail(n);
-  };
-  canvas.onmouseleave = () => { hoveredNode = null; canvas.style.cursor='default'; };
+    if (n) {
+      dragNode   = n;
+      dragOffX   = x - n.x;
+      dragOffY   = y - n.y;
+      isDragging = false;
+      dragStartX = x;
+      dragStartY = y;
+      canvas.style.cursor = 'grabbing';
+      ev.preventDefault();
+    }
+  }
+
+  function moveDrag(ev) {
+    if (!dragNode) {
+      // Just hover
+      const {x, y} = evPt(ev);
+      const n = getBubbleAt(x, y);
+      hoveredNode = n;
+      canvas.style.cursor = n ? 'grab' : 'default';
+      return;
+    }
+    ev.preventDefault();
+    const {x, y} = evPt(ev);
+    const dx = x - dragStartX, dy = y - dragStartY;
+    if (!isDragging && (dx*dx + dy*dy > 16)) isDragging = true;
+    if (isDragging) {
+      dragNode.x = Math.max(dragNode.r + 4, Math.min(W - dragNode.r - 4, x - dragOffX));
+      dragNode.y = Math.max(dragNode.r + 4, Math.min(H - dragNode.r - 4, y - dragOffY));
+    }
+  }
+
+  function endDrag(ev) {
+    if (dragNode && !isDragging) {
+      // It was a click, not a drag — show detail
+      showBubbleDetail(dragNode);
+    } else if (!dragNode) {
+      // Clicked empty canvas
+      const {x, y} = evPt(ev);
+      if (!getBubbleAt(x, y)) {
+        document.getElementById('bubbleMapDetail').style.display = 'none';
+      }
+    }
+    dragNode   = null;
+    isDragging = false;
+    canvas.style.cursor = 'default';
+  }
+
+  canvas.addEventListener('mousedown',  startDrag, { passive: false });
+  canvas.addEventListener('mousemove',  moveDrag,  { passive: true  });
+  canvas.addEventListener('mouseup',    endDrag);
+  canvas.addEventListener('mouseleave', () => { dragNode = null; isDragging = false; hoveredNode = null; canvas.style.cursor = 'default'; });
+  canvas.addEventListener('touchstart', startDrag, { passive: false });
+  canvas.addEventListener('touchmove',  moveDrag,  { passive: false });
+  canvas.addEventListener('touchend',   endDrag,   { passive: true  });
 }
+
 
 </script>
 
