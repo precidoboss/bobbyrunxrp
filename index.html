@@ -1089,7 +1089,7 @@ main{position:relative;z-index:1;padding:.8rem;max-width:1440px;margin:0 auto}
         <button onclick="guidePlay()" id="guidePlayBtn" class="btn btn-sm" style="padding:2px 10px;font-size:.6rem">▶ Auto-Play</button>
       </div>
     </div>
-    <canvas id="guideCanvas" style="width:100%;display:block;cursor:pointer;touch-action:none" height="340"></canvas>
+    <canvas id="guideCanvas" style="width:100%;display:block;cursor:pointer;touch-action:none;border-radius:10px" height="380"></canvas>
     <div style="height:3px;background:var(--bor)">
       <div id="guideProgress" style="height:100%;background:var(--acc);width:12.5%;transition:width .5s ease;border-radius:0 3px 3px 0"></div>
     </div>
@@ -2867,7 +2867,7 @@ async function loadPrice(addr){
 }
 
 
-// Inject supply rows into token info table (called after supply fetch)
+// Inject supply rows into token info table + rich distribution panel
 async function injectSupplyIntoTable(moatAddr) {
   const meta = MOATS[moatAddr]; if(!meta) return;
   let supply = getSupply(moatAddr);
@@ -2877,9 +2877,6 @@ async function injectSupplyIntoTable(moatAddr) {
   tbl.querySelectorAll('.supply-row').forEach(r=>r.remove());
   const m = moatMap[moatAddr] || {};
   const ppt = estPtsPerToken(moatAddr);
-  const moatPct = supply.totalSupply>0 && m.totalTokens>0
-    ? (m.totalTokens/supply.totalSupply*100).toFixed(3)+'%'
-    : (m.hasTokenAmts ? '—' : 'est. only');
   const isDynamic = meta.supplyType === 'dynamic';
   const supplyTypeHtml = isDynamic
     ? '<span style="color:var(--gld);font-size:.58rem">&#9889; Dynamic</span>'
@@ -2888,30 +2885,75 @@ async function injectSupplyIntoTable(moatAddr) {
   const calcMcap = (supply.totalSupply>0 && pxData && pxData.price>0)
     ? '$'+fmtK(supply.totalSupply * pxData.price) : '—';
 
+  // ── Compute distribution %s ──
+  const totalSupply = supply.totalSupply || 0;
+  // Moat (staked+locked): from onchain totals if available
+  const totals = moatTokenCache ? moatTokenCache[moatAddr+'_'+meta.tokenAddr] || moatTokenCache[moatAddr] : null;
+  const inMoatRaw = (totals && totals.staked > 0) ? totals.staked : (m.totalTokens || 0);
+  const burnedRaw = (totals && totals.burned > 0) ? totals.burned : 0;
+  const liqRaw    = pxData && pxData.pair ? Number(pxData.pair.liquidity?.base || 0) : 0;
+
+  const inMoatPct  = totalSupply > 0 && inMoatRaw  > 0 ? (inMoatRaw  / totalSupply * 100) : 0;
+  const burnedPct  = totalSupply > 0 && burnedRaw  > 0 ? (burnedRaw  / totalSupply * 100) : 0;
+  const liqPct     = totalSupply > 0 && liqRaw     > 0 ? (liqRaw     / totalSupply * 100) : 0;
+  const circPct    = Math.max(0, 100 - inMoatPct - burnedPct);
+
+  const fmt1 = n => n > 0 ? n.toFixed(2)+'%' : '—';
+
   const rows = [
-    ['Total Supply',      fmtP(supply.totalSupply)+' '+(supply.symbol||meta.ticker), null],
-    ['Decimals',          String(supply.decimals), null],
+    ['Total Supply',      fmtP(totalSupply)+' '+(supply.symbol||meta.ticker), null],
     ['Supply Type',       null, supplyTypeHtml],
-    ['Est. in Moat',      moatPct, null],
-    ['Pts/Token (1x)',    ppt!==null ? fmtPrice(ppt) : '—', null],
-    ['Calc. Market Cap',  calcMcap, null],
+    ['Pts/Token (1×)',    ppt!==null ? fmtPrice(ppt) : '—', null],
+    ['Market Cap',        calcMcap, null],
+    ['Decimals',          String(supply.decimals), null],
   ];
 
   rows.forEach(function(row) {
     var label=row[0], val=row[1], html=row[2];
     var tr = document.createElement('tr');
     tr.className = 'supply-row';
-    var tdL = document.createElement('td');
-    tdL.className = 'il';
-    tdL.textContent = label;
-    var tdV = document.createElement('td');
-    tdV.style.cssText = "font-family:'DM Mono',monospace;font-size:.72rem";
-    if (html) tdV.innerHTML = html;
-    else tdV.textContent = val;
-    tr.appendChild(tdL);
-    tr.appendChild(tdV);
+    var tdL = document.createElement('td'); tdL.className = 'il'; tdL.textContent = label;
+    var tdV = document.createElement('td'); tdV.style.cssText = "font-family:'DM Mono',monospace;font-size:.72rem";
+    if (html) tdV.innerHTML = html; else tdV.textContent = val;
+    tr.appendChild(tdL); tr.appendChild(tdV);
     tbl.appendChild(tr);
   });
+
+  // ── Distribution block ──
+  var distTr = document.createElement('tr');
+  distTr.className = 'supply-row';
+  var distTd = document.createElement('td');
+  distTd.colSpan = 2;
+  distTd.style.cssText = 'padding:.7rem 0 .3rem';
+
+  var segments = [
+    { label:'In Moat',     pct: inMoatPct, color:'var(--acc)',  val: inMoatRaw },
+    { label:'LP Pool',     pct: liqPct,    color:'var(--cyn)',  val: liqRaw },
+    { label:'Burned',      pct: burnedPct, color:'var(--red)',  val: burnedRaw },
+    { label:'Circulating', pct: circPct,   color:'var(--grn)',  val: null },
+  ].filter(s => s.pct > 0 || s.label === 'Circulating');
+
+  var barHtml = segments.map(s =>
+    `<div style="flex:${Math.max(s.pct,0.5)};background:${s.color};height:100%;min-width:2px;transition:flex .4s" title="${s.label}: ${fmt1(s.pct)}"></div>`
+  ).join('');
+
+  var legendHtml = segments.map(s =>
+    `<div style="display:flex;align-items:center;gap:5px">
+      <span style="width:8px;height:8px;border-radius:2px;background:${s.color};flex-shrink:0;display:inline-block"></span>
+      <span style="font-family:'DM Mono',monospace;font-size:.55rem;color:var(--mut)">${s.label}</span>
+      <span style="font-family:'Chakra Petch',sans-serif;font-size:.6rem;font-weight:700;color:var(--txt)">${fmt1(s.pct)}</span>
+      ${s.val !== null && s.val > 0 ? `<span style="font-family:'DM Mono',monospace;font-size:.5rem;color:var(--ash2)">(${fmtP(s.val)})</span>` : ''}
+    </div>`
+  ).join('');
+
+  distTd.innerHTML = `
+    <div style="font-family:'DM Mono',monospace;font-size:.5rem;color:var(--mut);letter-spacing:.1em;margin-bottom:.5rem;text-transform:uppercase">Token Distribution</div>
+    <div style="display:flex;height:10px;border-radius:6px;overflow:hidden;gap:1px;margin-bottom:.6rem;background:var(--bor)">${barHtml}</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.35rem .6rem">${legendHtml}</div>
+    ${(inMoatPct === 0 && burnedPct === 0) ? '<div style="font-family:\'DM Mono\',monospace;font-size:.5rem;color:var(--ash2);margin-top:.4rem">⚠ On-chain totals loading — scroll back after data loads</div>' : ''}
+  `;
+  distTr.appendChild(distTd);
+  tbl.appendChild(distTr);
 }
 
 function buildPriceChart(addr,price,ch24,vol24,liq,canvasId){
@@ -10077,21 +10119,31 @@ const GUIDE_SLIDES = [
         ctx.fill();
         ctx.restore();
       }
-      // Token being consumed
+      // Token being consumed — use rotating moat logos
       ctx.save();
-      const burnAlpha = 0.4 + 0.4*Math.sin(t*3);
+      const burnAlpha = 0.5 + 0.35*Math.sin(t*3);
+      const tokenIdx = Math.floor(t/3) % Object.values(MOATS).length;
+      const tokenLogoKey = 'logo_' + tokenIdx;
+      const tokenMeta = Object.values(MOATS)[tokenIdx];
+      const tokenColor = tokenMeta ? tokenMeta.color : '#e05252';
+      const tImg = imgs[tokenLogoKey];
       ctx.globalAlpha = burnAlpha;
       ctx.beginPath();
-      ctx.arc(cx, cy+18, 20, 0, Math.PI*2);
-      ctx.fillStyle = '#e0525244';
+      ctx.arc(cx, cy+18, 22, 0, Math.PI*2);
+      ctx.fillStyle = tokenColor+'33';
       ctx.fill();
-      ctx.strokeStyle = '#e05252';
+      ctx.strokeStyle = tokenColor;
       ctx.lineWidth = 2;
       ctx.stroke();
-      ctx.fillStyle = '#e05252';
-      ctx.font = 'bold 12px DM Mono,monospace';
-      ctx.textAlign='center'; ctx.textBaseline='middle';
-      ctx.fillText('$TOKEN', cx, cy+18);
+      if(tImg && tImg.complete && tImg.naturalWidth){
+        ctx.save(); ctx.beginPath(); ctx.arc(cx,cy+18,19,0,Math.PI*2); ctx.clip();
+        ctx.drawImage(tImg,cx-19,cy+18-19,38,38); ctx.restore();
+      } else {
+        ctx.fillStyle = tokenColor;
+        ctx.font = 'bold 9px DM Mono,monospace';
+        ctx.textAlign='center'; ctx.textBaseline='middle';
+        ctx.fillText(tokenMeta?tokenMeta.ticker:'$TOKEN', cx, cy+18);
+      }
       ctx.restore();
       // 10× badge
       ctx.save();
@@ -10270,25 +10322,35 @@ const GUIDE_SLIDES = [
       }
       ctx.restore();
       // Orbiting moat logos
+      const moatLogoKeys = Object.values(MOATS).map((_,i)=>'logo_'+i);
       const moatColors=['#f97316','#d4a843','#8c8074','#f43f5e','#818cf8','#22d3ee','#fb7185','#a78bfa','#fbbf24','#34d399'];
-      const moatEmojis=['🏔️','💧','👾','🏀','🌀','💎','🐓','🌑','📦','🔍'];
+      const moatTickers=['$H','$hC','$F','$B','$S','$V','$L','$D','$BN','$M'];
       const orbitR=105;
-      moatEmojis.forEach((em,i)=>{
-        const angle=t*0.4+(i/moatEmojis.length)*Math.PI*2;
+      moatLogoKeys.forEach((k,i)=>{
+        const angle=t*0.4+(i/moatLogoKeys.length)*Math.PI*2;
         const ox=cx+Math.cos(angle)*orbitR;
         const oy=cy+Math.sin(angle)*orbitR;
         const r=18;
         ctx.save();
-        ctx.beginPath(); ctx.arc(ox,oy,r,0,Math.PI*2);
-        ctx.fillStyle=moatColors[i]+'33'; ctx.fill();
-        ctx.strokeStyle=moatColors[i]+'88'; ctx.lineWidth=1.5; ctx.stroke();
         // connection line
         ctx.strokeStyle=moatColors[i]+'44'; ctx.lineWidth=1;
         ctx.globalAlpha=0.3;
         ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(ox,oy); ctx.stroke();
         ctx.globalAlpha=1;
-        ctx.font='14px serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
-        ctx.fillText(em,ox,oy);
+        // circle bg
+        ctx.beginPath(); ctx.arc(ox,oy,r,0,Math.PI*2);
+        ctx.fillStyle=moatColors[i]+'33'; ctx.fill();
+        ctx.strokeStyle=moatColors[i]+'88'; ctx.lineWidth=1.5; ctx.stroke();
+        // logo or fallback
+        const logoImg=imgs[k];
+        if(logoImg&&logoImg.complete&&logoImg.naturalWidth){
+          ctx.save(); ctx.beginPath(); ctx.arc(ox,oy,r-2,0,Math.PI*2); ctx.clip();
+          ctx.drawImage(logoImg,ox-(r-2),oy-(r-2),(r-2)*2,(r-2)*2); ctx.restore();
+        } else {
+          ctx.fillStyle=moatColors[i]; ctx.font='bold 9px DM Mono,monospace';
+          ctx.textAlign='center'; ctx.textBaseline='middle';
+          ctx.fillText(moatTickers[i],ox,oy);
+        }
         ctx.restore();
       });
       // CTA label
@@ -10346,7 +10408,7 @@ function _guideRender() {
   if (!canvas) { cancelAnimationFrame(_guideAnim); return; }
   const dpr = window.devicePixelRatio || 1;
   const W   = canvas.offsetWidth || 600;
-  const H   = 340;
+  const H   = 380;
   if (canvas.width !== W*dpr || canvas.height !== H*dpr) {
     canvas.width = W*dpr; canvas.height = H*dpr;
     canvas.style.height = H+'px';
@@ -10369,10 +10431,28 @@ function _guideRender() {
 
   // Subtle grid overlay
   ctx.save();
-  ctx.strokeStyle = slide.accent+'0a';
+  ctx.strokeStyle = slide.accent+'09';
   ctx.lineWidth = 0.5;
-  for(let gx=0;gx<W;gx+=40){ ctx.beginPath(); ctx.moveTo(gx,0); ctx.lineTo(gx,H); ctx.stroke(); }
-  for(let gy=0;gy<H;gy+=40){ ctx.beginPath(); ctx.moveTo(0,gy); ctx.lineTo(W,gy); ctx.stroke(); }
+  for(let gx=0;gx<W;gx+=36){ ctx.beginPath(); ctx.moveTo(gx,0); ctx.lineTo(gx,H); ctx.stroke(); }
+  for(let gy=0;gy<H;gy+=36){ ctx.beginPath(); ctx.moveTo(0,gy); ctx.lineTo(W,gy); ctx.stroke(); }
+  ctx.restore();
+
+  // Radial vignette
+  ctx.save();
+  const vign = ctx.createRadialGradient(W/2,H/2,H*0.25,W/2,H/2,H*0.85);
+  vign.addColorStop(0,'rgba(0,0,0,0)');
+  vign.addColorStop(1,'rgba(0,0,0,0.55)');
+  ctx.fillStyle = vign;
+  ctx.fillRect(0,0,W,H);
+  ctx.restore();
+
+  // Accent glow blob (top-right)
+  ctx.save();
+  const blob = ctx.createRadialGradient(W*0.82,H*0.18,0,W*0.82,H*0.18,W*0.32);
+  blob.addColorStop(0, slide.accent+'18');
+  blob.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = blob;
+  ctx.fillRect(0,0,W,H);
   ctx.restore();
 
   // Draw slide content
@@ -10381,24 +10461,44 @@ function _guideRender() {
   ctx.restore();
 
   // Title bar at bottom
-  const titleH = 68;
+  const titleH = 80;
   ctx.save();
   const titleGrad = ctx.createLinearGradient(0,H-titleH,0,H);
   titleGrad.addColorStop(0, '#14121000');
-  titleGrad.addColorStop(0.3, '#141210ee');
+  titleGrad.addColorStop(0.25, '#141210f0');
+  titleGrad.addColorStop(1, '#141210');
   ctx.fillStyle = titleGrad;
   ctx.fillRect(0, H-titleH, W, titleH);
+
+  // Accent left bar
   ctx.fillStyle = slide.accent;
-  ctx.font = 'bold 15px Chakra Petch,sans-serif';
-  ctx.textAlign = 'left';
-  ctx.fillText(slide.title, 16, H-44);
+  ctx.fillRect(0, H-titleH+8, 3, titleH-8);
+
+  // Step badge
+  const stepNum = _guideSlide + 1;
+  const badgeW = 28;
+  ctx.fillStyle = slide.accent+'33';
+  _roundRect(ctx, 14, H-62, badgeW, 18, 4); ctx.fill();
+  ctx.fillStyle = slide.accent;
+  ctx.font = 'bold 9px DM Mono,monospace';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(stepNum+'/'+GUIDE_SLIDES.length, 14+badgeW/2, H-53);
+
+  // Title
+  ctx.fillStyle = slide.accent;
+  ctx.font = 'bold 14px Chakra Petch,sans-serif';
+  ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+  ctx.fillText(slide.title, 52, H-52);
+
+  // Subtitle
   ctx.fillStyle = '#a89880';
-  ctx.font = '10px DM Mono,monospace';
-  ctx.fillText(slide.subtitle, 16, H-28);
-  ctx.fillStyle = '#f0ebe4cc';
-  ctx.font = '10px Barlow,sans-serif';
-  const bodyW = W - 32;
-  _wrapText(ctx, slide.body, 16, H-13, bodyW, 12);
+  ctx.font = '500 9.5px Barlow,sans-serif';
+  ctx.fillText(slide.subtitle, 52, H-38);
+
+  // Body text (wrapped)
+  ctx.fillStyle = '#f0ebe4bb';
+  ctx.font = '9.5px Barlow,sans-serif';
+  _wrapText(ctx, slide.body, 16, H-22, W-32, 12);
   ctx.restore();
 
   ctx.restore();
@@ -10488,6 +10588,225 @@ function _guideBoot() {
   });
 })();
 
+</script>
+
+<!-- ── LIVE PRESENCE PILL ── -->
+<div id="presencePill" onclick="togglePresencePanel()" style="display:flex;align-items:center;justify-content:center;padding:.5rem .85rem 1.1rem;cursor:pointer;user-select:none">
+  <div style="display:inline-flex;align-items:center;gap:7px;background:var(--card);border:1px solid var(--bor);border-radius:99px;padding:.3rem .85rem;transition:border-color .2s;box-shadow:0 2px 12px rgba(0,0,0,.3)" onmouseover="this.style.borderColor='rgba(249,115,22,.3)'" onmouseout="this.style.borderColor='var(--bor)'">
+    <span class="ld"></span>
+    <span id="pillCount" style="font-family:'DM Mono',monospace;font-size:.58rem;color:var(--mut)">— online</span>
+    <span style="font-family:'DM Mono',monospace;font-size:.5rem;color:var(--ash2)">· tap to see who</span>
+  </div>
+</div>
+
+<!-- ── PRESENCE PANEL (small slide-up) ── -->
+<div id="presencePanel" style="display:none;position:fixed;bottom:0;left:50%;transform:translateX(-50%);z-index:800;width:min(360px,98vw);background:var(--card);border:1px solid var(--bor);border-top-left-radius:14px;border-top-right-radius:14px;box-shadow:0 -8px 40px rgba(0,0,0,.5);padding:1rem 1.1rem 1.6rem">
+  <div style="width:36px;height:3px;background:var(--bor);border-radius:99px;margin:0 auto .85rem"></div>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.85rem">
+    <div style="display:flex;align-items:center;gap:7px">
+      <span class="ld"></span>
+      <span style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.72rem;letter-spacing:.07em;color:var(--txt)">LIVE PRESENCE</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:.5rem">
+      <span id="todayCount" style="font-family:'DM Mono',monospace;font-size:.54rem;color:var(--mut)">—</span>
+      <button onclick="openPresencePopup();event.stopPropagation()" style="font-family:'Chakra Petch',sans-serif;font-size:.54rem;font-weight:700;letter-spacing:.05em;background:var(--acc);color:#141210;border:none;border-radius:5px;padding:.2rem .55rem;cursor:pointer">CHECK IN</button>
+      <button onclick="togglePresencePanel()" style="background:none;border:none;color:var(--mut);font-size:.85rem;cursor:pointer;padding:0 2px;line-height:1">✕</button>
+    </div>
+  </div>
+  <div style="font-family:'DM Mono',monospace;font-size:.46rem;color:var(--mut);letter-spacing:.1em;margin-bottom:.4rem">ONLINE NOW</div>
+  <div id="onlineList" style="display:flex;flex-wrap:wrap;gap:.35rem;min-height:18px;align-items:center;margin-bottom:.7rem">
+    <span style="font-family:'DM Mono',monospace;font-size:.55rem;color:var(--ash2)">Loading…</span>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:.45rem;margin-bottom:.65rem">
+    <div style="background:var(--sur);border:1px solid var(--bor);border-radius:7px;padding:.5rem .7rem">
+      <div style="font-family:'DM Mono',monospace;font-size:.44rem;color:var(--mut);letter-spacing:.1em;margin-bottom:.2rem">TODAY</div>
+      <div id="todayNum" style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:1.05rem;color:var(--acc)">—</div>
+    </div>
+    <div style="background:var(--sur);border:1px solid var(--bor);border-radius:7px;padding:.5rem .7rem">
+      <div style="font-family:'DM Mono',monospace;font-size:.44rem;color:var(--mut);letter-spacing:.1em;margin-bottom:.2rem">ALL TIME</div>
+      <div id="allTimeNum" style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:1.05rem;color:var(--gld)">—</div>
+    </div>
+  </div>
+  <div style="font-family:'DM Mono',monospace;font-size:.46rem;color:var(--mut);letter-spacing:.1em;margin-bottom:.38rem">TOP VISITORS</div>
+  <div id="topVisitors" style="display:flex;flex-direction:column;gap:.32rem">
+    <span style="font-family:'DM Mono',monospace;font-size:.55rem;color:var(--ash2)">No data yet</span>
+  </div>
+</div>
+<div id="presenceBg" onclick="togglePresencePanel()" style="display:none;position:fixed;inset:0;z-index:799;background:rgba(0,0,0,.45)"></div>
+
+<!-- ── PRESENCE POP-UP ── -->
+<div id="presenceOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9000;align-items:center;justify-content:center;backdrop-filter:blur(4px)">
+  <div style="background:var(--card);border:1px solid var(--bor);border-radius:12px;padding:1.8rem 1.6rem;width:min(360px,90vw);box-shadow:0 0 60px rgba(249,115,22,.12)">
+    <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.9rem;letter-spacing:.08em;color:var(--txt);margin-bottom:.3rem">SIGN IN AS PRESENT</div>
+    <div style="font-family:'DM Mono',monospace;font-size:.58rem;color:var(--mut);margin-bottom:1.2rem">Optional — let others know you\'re here</div>
+    <input id="presenceInput" type="text" maxlength="24" placeholder="Enter your username…" style="width:100%;background:var(--sur);border:1px solid var(--bor);border-radius:6px;padding:.6rem .85rem;font-family:'DM Mono',monospace;font-size:.72rem;color:var(--txt);outline:none;margin-bottom:.9rem;transition:border-color .2s" onfocus="this.style.borderColor='var(--acc)'" onblur="this.style.borderColor='var(--bor)'" onkeydown="if(event.key==='Enter')confirmPresence()">
+    <div style="display:flex;gap:.6rem">
+      <button onclick="confirmPresence()" style="flex:1;font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.68rem;letter-spacing:.06em;background:var(--acc);color:#fff;border:none;border-radius:6px;padding:.65rem;cursor:pointer;transition:opacity .2s" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">CHECK IN</button>
+      <button onclick="confirmPresence(true)" style="flex:1;font-family:'Chakra Petch',sans-serif;font-size:.65rem;color:var(--mut);background:transparent;border:1px solid var(--bor);border-radius:6px;padding:.65rem;cursor:pointer" onmouseover="this.style.color='var(--txt)'" onmouseout="this.style.color='var(--mut)'">Skip / Stay Anon</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── LIVE PRESENCE ENGINE ──
+(function(){
+  const PRESENCE_TTL = 5 * 60 * 1000; // 5 min active window
+  const REFRESH_MS   = 20 * 1000;      // poll every 20s
+  const TODAY_KEY    = () => 'today-' + new Date().toISOString().slice(0,10);
+
+  let myId   = localStorage.getItem('presence_id');
+  let myName = localStorage.getItem('presence_name') || null;
+  let popupShown = localStorage.getItem('presence_asked');
+
+  if(!myId){ myId = 'u' + Math.random().toString(36).slice(2,9); localStorage.setItem('presence_id', myId); }
+
+  // ── helpers ──
+  async function storageGet(key, shared){
+    try{ const r = await window.storage.get(key, shared); return r ? JSON.parse(r.value) : null; }
+    catch(e){ return null; }
+  }
+  async function storageSet(key, val, shared){
+    try{ await window.storage.set(key, JSON.stringify(val), shared); }catch(e){}
+  }
+
+  // ── heartbeat: write my presence to shared store ──
+  async function heartbeat(){
+    if(!myName) return; // only logged-in users emit heartbeat
+    const key = 'presence:' + myId;
+    await storageSet(key, { name: myName, ts: Date.now(), id: myId }, true);
+
+    // also bump all-time visit count per user
+    const ucKey = 'visitcount:' + myId;
+    const existing = await storageGet(ucKey, true);
+    const count = existing ? existing.count : 0;
+    await storageSet(ucKey, { name: myName, count: count + 1, id: myId }, true);
+
+    // bump today tally
+    const todayKey = TODAY_KEY();
+    const td = await storageGet(todayKey, true) || { visitors: [] };
+    if(!td.visitors.includes(myId)) td.visitors.push(myId);
+    await storageSet(todayKey, td, true);
+  }
+
+  // ── render online list ──
+  async function renderPresence(){
+    // scan presence:* keys
+    let onlineUsers = [];
+    try{
+      const keys = await window.storage.list('presence:', true);
+      if(keys && keys.keys){
+        const now = Date.now();
+        for(const k of keys.keys){
+          const rec = await storageGet(k, true);
+          if(rec && (now - rec.ts) < PRESENCE_TTL){
+            onlineUsers.push(rec);
+          }
+        }
+      }
+    }catch(e){}
+
+    // online list
+    const ol = document.getElementById('onlineList');
+    if(onlineUsers.length === 0){
+      ol.innerHTML = '<span style="font-family:\'DM Mono\',monospace;font-size:.58rem;color:var(--ash2)">No one checked in yet — be first!</span>';
+    } else {
+      ol.innerHTML = onlineUsers.map(u =>
+        `<span style="display:inline-flex;align-items:center;gap:5px;background:var(--sur);border:1px solid var(--bor);border-radius:99px;padding:.25rem .7rem;font-family:'DM Mono',monospace;font-size:.58rem;color:var(--txt)">
+          <span style="width:6px;height:6px;border-radius:50%;background:var(--grn);box-shadow:0 0 5px var(--grn);flex-shrink:0"></span>
+          ${escH(u.name)}
+        </span>`
+      ).join('');
+    }
+
+    // today count
+    const td = await storageGet(TODAY_KEY(), true);
+    const todayN = td ? td.visitors.length : 0;
+    document.getElementById('todayNum').textContent = todayN;
+    document.getElementById('todayCount').textContent = todayN + ' here today';
+    // update pill
+    const pillOnline = onlineUsers.length;
+    const pc = document.getElementById('pillCount');
+    if(pc) pc.textContent = pillOnline > 0 ? pillOnline + ' online now' : '0 online';
+
+    // all-time + top visitors
+    let allTime = 0;
+    let topList = [];
+    try{
+      const vcKeys = await window.storage.list('visitcount:', true);
+      if(vcKeys && vcKeys.keys){
+        for(const k of vcKeys.keys){
+          const rec = await storageGet(k, true);
+          if(rec){ allTime += rec.count; topList.push(rec); }
+        }
+      }
+    }catch(e){}
+
+    document.getElementById('allTimeNum').textContent = allTime || '—';
+
+    topList.sort((a,b) => b.count - a.count);
+    const tv = document.getElementById('topVisitors');
+    if(topList.length === 0){
+      tv.innerHTML = '<span style="font-family:\'DM Mono\',monospace;font-size:.58rem;color:var(--ash2)">No data yet</span>';
+    } else {
+      const medals = ['🥇','🥈','🥉'];
+      tv.innerHTML = topList.slice(0,5).map((u,i) =>
+        `<div style="display:flex;align-items:center;justify-content:space-between">
+          <span style="font-family:'DM Mono',monospace;font-size:.6rem;color:var(--txt)">${medals[i]||'·'} ${escH(u.name)}</span>
+          <span style="font-family:'DM Mono',monospace;font-size:.55rem;color:var(--acc)">${u.count} visit${u.count!==1?'s':''}</span>
+        </div>`
+      ).join('');
+    }
+  }
+
+  function escH(s){ const d=document.createElement('div');d.textContent=s;return d.innerHTML; }
+
+  // ── panel toggle ──
+  window.togglePresencePanel = function(){
+    const panel = document.getElementById('presencePanel');
+    const bg    = document.getElementById('presenceBg');
+    const open  = panel.style.display === 'none' || panel.style.display === '';
+    panel.style.display = open ? 'block' : 'none';
+    bg.style.display    = open ? 'block' : 'none';
+  };
+
+  // ── pop-up logic ──
+  window.openPresencePopup = function(){
+    document.getElementById('presenceOverlay').style.display='flex';
+    setTimeout(()=>document.getElementById('presenceInput').focus(),80);
+  };
+
+  window.confirmPresence = async function(anon){
+    const raw = document.getElementById('presenceInput').value.trim();
+    if(!anon && raw){
+      myName = raw.slice(0,24);
+      localStorage.setItem('presence_name', myName);
+    }
+    localStorage.setItem('presence_asked','1');
+    document.getElementById('presenceOverlay').style.display='none';
+    document.getElementById('presenceInput').value='';
+    await heartbeat();
+    await renderPresence();
+  };
+
+  // close overlay on backdrop click
+  document.getElementById('presenceOverlay').addEventListener('click', function(e){
+    if(e.target===this) confirmPresence(true);
+  });
+
+  // ── init ──
+  async function init(){
+    await renderPresence();
+    if(!popupShown){
+      setTimeout(openPresencePopup, 1800);
+    } else if(myName){
+      await heartbeat();
+    }
+    setInterval(async()=>{ await heartbeat(); await renderPresence(); }, REFRESH_MS);
+  }
+
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+})();
 </script>
 
 <!-- ── GLOBAL FOOTER ── -->
