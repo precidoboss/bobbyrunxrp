@@ -1224,6 +1224,30 @@ main{position:relative;z-index:1;padding:.8rem;max-width:1440px;margin:0 auto}
       <div class="sc"><div class="sl">Pending Rewards</div><div class="sv cgn" id="posPendingRew">—</div></div>
       <div class="sc"><div class="sl">Portfolio Value</div><div class="sv" id="posPortfolioVal">—</div></div>
     </div>
+    <!-- Claim All Rewards button — shown when any moat has rewards -->
+    <div id="posClaimAllBanner" style="display:none;margin-top:.65rem;background:rgba(109,184,122,.07);border:1px solid rgba(109,184,122,.3);border-radius:12px;padding:.85rem 1.1rem">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem">
+        <div>
+          <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.82rem;color:var(--grn)">💰 Rewards Available</div>
+          <div style="font-family:'DM Mono',monospace;font-size:.58rem;color:var(--mut);margin-top:2px" id="posClaimAllDesc">Pending rewards across your moats</div>
+        </div>
+        <div style="display:flex;gap:7px;align-items:center">
+          <button id="posClaimAllBtn" class="btn" style="background:var(--grn);color:#141210;font-size:.75rem;padding:.55rem 1.1rem" onclick="posClaimAllRewards()">💰 Claim All Rewards</button>
+          <button id="posClaimCancelBtn" style="display:none;padding:.5rem .85rem;background:rgba(224,82,82,.1);border:1px solid rgba(224,82,82,.35);border-radius:8px;color:var(--red);font-family:'DM Mono',monospace;font-size:.68rem;cursor:pointer" onclick="posCancelClaimAll()">✕ Cancel</button>
+        </div>
+      </div>
+      <!-- Progress -->
+      <div id="posClaimAllProgress" style="display:none;margin-top:.75rem">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:.4rem">
+          <span class="spin" id="posClaimSpinner"></span>
+          <span id="posClaimStatus" style="font-family:'DM Mono',monospace;font-size:.65rem;color:var(--mut)">Preparing…</span>
+        </div>
+        <div style="height:4px;background:var(--bor);border-radius:2px;overflow:hidden">
+          <div id="posClaimProgressBar" style="height:100%;background:var(--grn);border-radius:2px;transition:width .4s ease;width:0%"></div>
+        </div>
+        <div id="posClaimLog" style="margin-top:.55rem;max-height:120px;overflow-y:auto;font-family:'DM Mono',monospace;font-size:.6rem;color:var(--mut)"></div>
+      </div>
+    </div>
   </div>
 
   <div id="posLoading" style="display:none;text-align:center;padding:2.5rem;color:var(--mut)">
@@ -2996,9 +3020,70 @@ async function injectSupplyIntoTable(moatAddr) {
     <div style="display:flex;height:11px;border-radius:6px;overflow:hidden;margin-bottom:.65rem;background:var(--sur)">${barHtml}</div>
     <div style="display:flex;flex-direction:column">${legendHtml}${lpNote}</div>
     ${liqRaw > 0 ? '<div style="font-family:\'DM Mono\',monospace;font-size:.48rem;color:var(--ash2);margin-top:.4rem">↳ LP tokens are a subset of Circulating supply · est. from pool USD ÷ price ÷ 2</div>' : ''}
+    <div id="distAllPools_${moatAddr}" style="margin-top:.7rem">
+      <div style="font-family:'DM Mono',monospace;font-size:.5rem;color:var(--mut);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.35rem;display:flex;align-items:center;gap:6px">
+        💧 All Liquidity Pools <span class="spin" style="width:8px;height:8px;border-width:1.5px"></span>
+      </div>
+    </div>
   `;
   distTr.appendChild(distTd);
   tbl.appendChild(distTr);
+
+  // ── Query DexScreener for ALL pools of this token ──
+  if (meta.tokenAddr) {
+    fetchAllTokenPools(moatAddr, meta.tokenAddr, price).catch(()=>{});
+  }
+}
+
+async function fetchAllTokenPools(moatAddr, tokenAddr, primaryPrice) {
+  const poolsEl = document.getElementById('distAllPools_' + moatAddr);
+  if (!poolsEl) return;
+  try {
+    const r = await fetch('https://api.dexscreener.com/latest/dex/tokens/' + tokenAddr).then(x=>x.json());
+    const pairs = (r.pairs||[])
+      .filter(p => (p.chainId==='avalanche'||p.chainId==='avax') && Number(p.liquidity?.usd||0)>0)
+      .sort((a,b) => Number(b.liquidity?.usd||0) - Number(a.liquidity?.usd||0));
+
+    if (!pairs.length) {
+      poolsEl.innerHTML = '<div style="font-family:\'DM Mono\',monospace;font-size:.5rem;color:var(--mut);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.35rem">💧 All Liquidity Pools</div><div style="font-family:\'DM Mono\',monospace;font-size:.6rem;color:var(--ash2)">No additional pools found.</div>';
+      return;
+    }
+
+    const totalLiq = pairs.reduce((s,p)=>s+Number(p.liquidity?.usd||0),0);
+    var poolsHtml = '<div style="font-family:\'DM Mono\',monospace;font-size:.5rem;color:var(--mut);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.4rem">'
+      + '💧 All Liquidity Pools <span style="color:var(--cyn)">(' + pairs.length + ' found · ' + fmtK(totalLiq) + ' total)</span></div>';
+    pairs.forEach(function(p, i) {
+      var liq = Number(p.liquidity&&p.liquidity.usd||0);
+      var vol = Number(p.volume&&p.volume.h24||0);
+      var px  = Number(p.priceUsd||0);
+      var dex = p.dexId || 'Unknown';
+      var base = (p.baseToken&&p.baseToken.symbol) || '?';
+      var quote = (p.quoteToken&&p.quoteToken.symbol) || '?';
+      var isPrimary = i === 0;
+      var pctOfTotal = totalLiq > 0 ? (liq/totalLiq*100).toFixed(1) : '0';
+      var bg = isPrimary ? 'rgba(34,211,238,.04)' : 'var(--sur)';
+      var bord = isPrimary ? 'rgba(34,211,238,.25)' : 'var(--bor)';
+      var dexUrl = p.url || ('https://dexscreener.com/avalanche/' + (p.pairAddress||''));
+      poolsHtml += '<div style="background:' + bg + ';border:1px solid ' + bord + ';border-radius:8px;padding:.5rem .65rem;margin-bottom:.3rem">'
+        + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.25rem">'
+        + '<div style="display:flex;align-items:center;gap:5px">'
+        + (isPrimary ? '<span style="font-family:\'DM Mono\',monospace;font-size:.48rem;background:rgba(34,211,238,.15);color:var(--cyn);border-radius:3px;padding:1px 5px">PRIMARY</span>' : '')
+        + '<span style="font-family:\'Chakra Petch\',sans-serif;font-weight:700;font-size:.72rem;color:var(--txt)">' + base + '/' + quote + '</span>'
+        + '<span style="font-family:\'DM Mono\',monospace;font-size:.55rem;color:var(--mut)">' + dex + '</span>'
+        + '</div>'
+        + '<a href="' + dexUrl + '" target="_blank" style="font-family:\'DM Mono\',monospace;font-size:.52rem;color:var(--acc);text-decoration:none">↗ DEX</a>'
+        + '</div>'
+        + '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:.25rem">'
+        + '<div style="text-align:center"><div style="font-family:\'Chakra Petch\',sans-serif;font-weight:700;font-size:.68rem;color:var(--cyn)">' + fmtK(liq) + '</div><div style="font-family:\'DM Mono\',monospace;font-size:.45rem;color:var(--mut)">Liquidity</div></div>'
+        + '<div style="text-align:center"><div style="font-family:\'Chakra Petch\',sans-serif;font-weight:700;font-size:.68rem;color:var(--gld)">' + fmtK(vol) + '</div><div style="font-family:\'DM Mono\',monospace;font-size:.45rem;color:var(--mut)">24h Vol</div></div>'
+        + '<div style="text-align:center"><div style="font-family:\'Chakra Petch\',sans-serif;font-weight:700;font-size:.68rem;color:var(--acc)">$' + fmtPrice(px) + '</div><div style="font-family:\'DM Mono\',monospace;font-size:.45rem;color:var(--mut)">Price</div></div>'
+        + '<div style="text-align:center"><div style="font-family:\'Chakra Petch\',sans-serif;font-weight:700;font-size:.68rem;color:var(--dim)">' + pctOfTotal + '%</div><div style="font-family:\'DM Mono\',monospace;font-size:.45rem;color:var(--mut)">of Liq</div></div>'
+        + '</div></div>';
+    });
+    poolsEl.innerHTML = poolsHtml;
+  } catch(e) {
+    if (poolsEl) poolsEl.innerHTML = '<div style="font-family:\'DM Mono\',monospace;font-size:.5rem;color:var(--mut)">💧 All Liquidity Pools</div><div style="font-family:\'DM Mono\',monospace;font-size:.58rem;color:var(--ash2)">Could not load pool data.</div>';
+  }
 }
 
 function buildPriceChart(addr,price,ch24,vol24,liq,canvasId){
@@ -6337,33 +6422,211 @@ async function cmUpdatePreview() {
   }
 }
 
-// ── STEP RENDERER ──
+// ── STEP RENDERER — 3D Revolving Globe Carousel ──
 let cmSteps = [];
+let _cmGlobeAngle = 0;
+let _cmGlobeAnimId = null;
+let _cmGlobeFocusIdx = 0;
+let _cmGlobeCancelled = false;
+
 function cmAddStep(id, title, detail, state='waiting') {
   cmSteps.push({id, title, detail, state});
-  cmRenderSteps();
+  _cmGlobeFocusIdx = cmSteps.length - 1;
+  cmRenderGlobe();
 }
 function cmUpdateStep(id, state, detail) {
-  if(id==='__posswap__') return; // pos swap uses its own status UI
+  if(id==='__posswap__') return;
   const step = cmSteps.find(s=>s.id===id);
-  if (step) { step.state=state; if(detail!==undefined) step.detail=detail; cmRenderSteps(); }
+  if (step) {
+    step.state=state;
+    if(detail!==undefined) step.detail=detail;
+    if(state==='active') _cmGlobeFocusIdx = cmSteps.indexOf(step);
+    cmRenderGlobe();
+  }
 }
-function cmRenderSteps() {
+
+function cmRenderGlobe() {
   const el = document.getElementById('cmStepsList'); if (!el) return;
-  el.innerHTML = cmSteps.map((s,i) => {
-    const numContent = s.state==='done'?'✓':s.state==='error'?'✕':s.state==='active'?'<span class="spin"></span>':(i+1);
-    const txLinks = (s.detail||'').replace(/(0x[a-fA-F0-9]{64})/g, '<a href="https://snowtrace.io/tx/$1" target="_blank" style="color:var(--acc);font-size:.58rem">$1 ↗</a>');
-    return `<div class="cm-step ${s.state}">
-      <div class="cm-step-num">${numContent}</div>
-      <div class="cm-step-body">
-        <div class="cm-step-title">${s.title}</div>
-        <div class="cm-step-detail">${txLinks}</div>
-      </div>
+  if (!cmSteps.length) { el.innerHTML=''; return; }
+
+  // Build the 3D globe canvas + info panel
+  el.innerHTML = `
+    <div style="position:relative;background:rgba(20,18,16,.95);border:1px solid var(--bor);border-radius:14px;overflow:hidden;margin:.5rem 0">
+      <!-- Navigation arrows -->
+      <button onclick="cmGlobeNav(-1)" style="position:absolute;left:8px;top:50%;transform:translateY(-50%);z-index:10;background:rgba(249,115,22,.15);border:1px solid rgba(249,115,22,.3);border-radius:50%;width:32px;height:32px;color:var(--acc);font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center">◀</button>
+      <button onclick="cmGlobeNav(1)"  style="position:absolute;right:8px;top:50%;transform:translateY(-50%);z-index:10;background:rgba(249,115,22,.15);border:1px solid rgba(249,115,22,.3);border-radius:50%;width:32px;height:32px;color:var(--acc);font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center">▶</button>
+      <!-- Globe canvas -->
+      <canvas id="cmGlobeCanvas" width="320" height="200" style="width:100%;display:block"></canvas>
+      <!-- Focused step info -->
+      <div id="cmGlobeInfo" style="padding:.65rem 1rem .85rem;border-top:1px solid var(--bor)"></div>
+      <!-- Dot nav -->
+      <div id="cmGlobeDots" style="display:flex;justify-content:center;gap:5px;padding:.4rem 0 .7rem"></div>
     </div>`;
-  }).join('');
+
+  _cmDrawGlobe();
+  _cmUpdateGlobeInfo();
+  _cmUpdateGlobeDots();
+
   const done = cmSteps.filter(s=>s.state==='done').length;
   const bar = document.getElementById('cmProgressBar');
   if (bar) bar.style.width = cmSteps.length ? Math.round(done/cmSteps.length*100)+'%' : '0%';
+}
+
+function cmGlobeNav(dir) {
+  _cmGlobeFocusIdx = (_cmGlobeFocusIdx + dir + cmSteps.length) % cmSteps.length;
+  _cmDrawGlobe();
+  _cmUpdateGlobeInfo();
+  _cmUpdateGlobeDots();
+}
+
+function _cmUpdateGlobeDots() {
+  const dotsEl = document.getElementById('cmGlobeDots'); if (!dotsEl) return;
+  dotsEl.innerHTML = cmSteps.map((s,i) => {
+    const col = s.state==='done'?'var(--grn)':s.state==='active'?'var(--acc)':s.state==='error'?'var(--red)':'var(--bor)';
+    const size = i===_cmGlobeFocusIdx ? '10px' : '7px';
+    return `<div onclick="cmGlobeNavTo(${i})" style="width:${size};height:${size};border-radius:50%;background:${col};cursor:pointer;transition:all .2s;flex-shrink:0"></div>`;
+  }).join('');
+}
+
+window.cmGlobeNavTo = function(i) {
+  _cmGlobeFocusIdx = i;
+  _cmDrawGlobe();
+  _cmUpdateGlobeInfo();
+  _cmUpdateGlobeDots();
+};
+
+function _cmUpdateGlobeInfo() {
+  const infoEl = document.getElementById('cmGlobeInfo'); if (!infoEl || !cmSteps.length) return;
+  const s = cmSteps[_cmGlobeFocusIdx] || cmSteps[0];
+  const stateIcon = s.state==='done'?'<span style="color:var(--grn)">✅</span>':s.state==='error'?'<span style="color:var(--red)">❌</span>':s.state==='active'?'<span class="spin"></span>':'<span style="color:var(--mut)">○</span>';
+  const txLinks = (s.detail||'').replace(/(0x[a-fA-F0-9]{64})/g, '<a href="https://snowtrace.io/tx/$1" target="_blank" style="color:var(--acc);font-size:.58rem;word-break:break-all">$1 ↗</a>');
+  infoEl.innerHTML = `
+    <div style="display:flex;align-items:flex-start;gap:8px">
+      <div style="font-size:1.1rem;flex-shrink:0;margin-top:1px">${stateIcon}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.8rem;color:var(--txt);margin-bottom:3px">${s.title}</div>
+        <div style="font-family:'DM Mono',monospace;font-size:.6rem;color:var(--mut);line-height:1.55;word-break:break-all">${txLinks}</div>
+      </div>
+      <div style="font-family:'DM Mono',monospace;font-size:.52rem;color:var(--mut);flex-shrink:0">${_cmGlobeFocusIdx+1}/${cmSteps.length}</div>
+    </div>`;
+}
+
+function _cmDrawGlobe() {
+  const canvas = document.getElementById('cmGlobeCanvas'); if (!canvas) return;
+  if (_cmGlobeAnimId) cancelAnimationFrame(_cmGlobeAnimId);
+
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const cx = W/2, cy = H/2;
+  const R = 72; // globe radius
+  let angle = _cmGlobeAngle;
+
+  const STATE_COLORS = {done:'#6db87a',active:'#f97316',error:'#e05252',waiting:'#4a4540'};
+  const STATE_GLOW   = {done:'#6db87a44',active:'#f9731644',error:'#e0525244',waiting:'transparent'};
+
+  function drawFrame() {
+    ctx.clearRect(0,0,W,H);
+
+    // ── Globe wireframe ──
+    ctx.save();
+    ctx.globalAlpha=0.08;
+    // Latitude lines
+    for(let lat=-60;lat<=60;lat+=30){
+      const y=cy+Math.sin(lat*Math.PI/180)*R;
+      const rx=Math.cos(lat*Math.PI/180)*R;
+      ctx.beginPath();ctx.ellipse(cx,y,rx,rx*0.18,0,0,Math.PI*2);
+      ctx.strokeStyle='#f97316';ctx.lineWidth=0.7;ctx.stroke();
+    }
+    // Longitude lines
+    for(let lon=0;lon<180;lon+=30){
+      const a=lon*Math.PI/180+angle;
+      ctx.beginPath();ctx.ellipse(cx,cy,Math.abs(Math.cos(a))*R,R,0,0,Math.PI*2);
+      ctx.strokeStyle='#f97316';ctx.lineWidth=0.7;ctx.stroke();
+    }
+    ctx.restore();
+
+    // ── Globe sphere glow ──
+    const grd=ctx.createRadialGradient(cx-20,cy-20,10,cx,cy,R);
+    grd.addColorStop(0,'rgba(249,115,22,0.07)');
+    grd.addColorStop(1,'rgba(20,18,16,0)');
+    ctx.beginPath();ctx.arc(cx,cy,R,0,Math.PI*2);
+    ctx.fillStyle=grd;ctx.fill();
+    // Outer ring
+    ctx.beginPath();ctx.arc(cx,cy,R,0,Math.PI*2);
+    ctx.strokeStyle='rgba(249,115,22,0.2)';ctx.lineWidth=1.5;ctx.stroke();
+
+    // ── Place steps on globe surface ──
+    const n=cmSteps.length;
+    const positions=cmSteps.map((_,i)=>{
+      const phi=(i/n)*Math.PI*2 + angle; // longitude
+      const theta=Math.PI*0.3; // fixed latitude for simplicity
+      const x3d=Math.cos(phi)*Math.sin(theta);
+      const y3d=Math.cos(theta);
+      const z3d=Math.sin(phi)*Math.sin(theta);
+      // Project to 2D
+      const px2=cx+x3d*R;
+      const py2=cy-y3d*R*0.55;
+      const scale=0.5+0.5*((z3d+1)/2); // depth scale
+      const depth=z3d; // -1 (back) to +1 (front)
+      return {i,px2,py2,scale,depth,s:cmSteps[i]};
+    });
+
+    // Sort by depth (draw back to front)
+    positions.sort((a,b)=>a.depth-b.depth);
+
+    positions.forEach(pos=>{
+      const {i,px2,py2,scale,depth,s}=pos;
+      const isFocus=i===_cmGlobeFocusIdx;
+      const col=STATE_COLORS[s.state]||'#4a4540';
+      const glow=STATE_GLOW[s.state]||'transparent';
+      const r=isFocus?16*scale:11*scale;
+      const alpha=0.3+0.7*((depth+1)/2);
+
+      ctx.save();
+      ctx.globalAlpha=alpha;
+
+      // Glow halo for active/focused
+      if(isFocus||s.state==='active'){
+        ctx.beginPath();ctx.arc(px2,py2,r+8,0,Math.PI*2);
+        ctx.fillStyle=glow;ctx.fill();
+      }
+
+      // Node circle
+      ctx.beginPath();ctx.arc(px2,py2,r,0,Math.PI*2);
+      ctx.fillStyle=col+'33';ctx.fill();
+      ctx.strokeStyle=col;ctx.lineWidth=isFocus?2:1;ctx.stroke();
+
+      // State icon / number
+      ctx.fillStyle='#f0ebe4';
+      ctx.font=`bold ${Math.max(7,10*scale)}px DM Mono,monospace`;
+      ctx.textAlign='center';ctx.textBaseline='middle';
+      const icon=s.state==='done'?'✓':s.state==='error'?'✕':s.state==='active'?'●':(i+1).toString();
+      ctx.fillText(icon,px2,py2);
+
+      // Label (only for focused + nearby)
+      if(isFocus||depth>0.3){
+        ctx.font=`${Math.max(6,8*scale)}px DM Mono,monospace`;
+        ctx.fillStyle=isFocus?'#f0ebe4':'#8c8074';
+        const label=s.title.slice(0,20)+(s.title.length>20?'…':'');
+        ctx.fillText(label,px2,py2+r+9*scale);
+      }
+      ctx.restore();
+    });
+
+    // Centre label
+    ctx.save();
+    ctx.fillStyle='rgba(249,115,22,0.6)';
+    ctx.font='bold 8px Chakra Petch,sans-serif';
+    ctx.textAlign='center';ctx.textBaseline='middle';
+    const done=cmSteps.filter(s=>s.state==='done').length;
+    ctx.fillText(`${done}/${n} done`,cx,cy);
+    ctx.restore();
+
+    angle+=0.008; // slow continuous rotation
+    _cmGlobeAngle=angle;
+    _cmGlobeAnimId=requestAnimationFrame(drawFrame);
+  }
+  drawFrame();
 }
 
 // ── MAIN EXECUTION ENGINE ──
@@ -6375,8 +6638,10 @@ async function cmExecute() {
   const selected = cmTargetMoats.filter(m => cmSelectedMoats.has(m.addr));
   if (!selected.length) { cmShowInlineError('Select at least one moat'); return; }
 
+  _cmGlobeCancelled = false;
   cmExecuting = true;
   cmSteps = [];
+  _cmGlobeFocusIdx = 0;
   cmRouteCache = {};
   document.getElementById('cmTxProgress').style.display = 'block';
   document.getElementById('cmExecuteBtn').disabled = true;
@@ -6384,10 +6649,33 @@ async function cmExecute() {
   document.getElementById('cmTxTitle').textContent = 'Executing Copy Strategy…';
   document.getElementById('cmTxResult').style.display = 'none';
 
+  // Show cancel button
+  let cancelBtn = document.getElementById('cmCancelExecBtn');
+  if (!cancelBtn) {
+    cancelBtn = document.createElement('button');
+    cancelBtn.id = 'cmCancelExecBtn';
+    cancelBtn.style.cssText = 'margin-top:.55rem;padding:.45rem 1rem;background:rgba(224,82,82,.1);border:1px solid rgba(224,82,82,.3);border-radius:8px;color:var(--red);font-family:\'DM Mono\',monospace;font-size:.68rem;cursor:pointer;display:block;width:100%';
+    cancelBtn.textContent = '✕ Cancel Execution';
+    document.getElementById('cmTxProgress').appendChild(cancelBtn);
+  }
+  cancelBtn.style.display = 'block';
+  cancelBtn.onclick = () => {
+    _cmGlobeCancelled = true;
+    cancelBtn.textContent = 'Cancelling…';
+    cancelBtn.disabled = true;
+    showAppNotif('Cancelling — finishing current transaction…','warn',3000);
+  };
+
   const totalPts = selected.reduce((s,m)=>s+m.pts, 0);
 
   try {
     for (let i = 0; i < selected.length; i++) {
+      // Check for cancellation before each moat
+      if (_cmGlobeCancelled) {
+        document.getElementById('cmTxTitle').textContent = '⚠️ Execution Cancelled';
+        showAppNotif('Execution cancelled by user','warn',3000);
+        break;
+      }
       const m = selected[i];
       const allocPct    = totalPts ? m.pts/totalPts : 1/selected.length;
       const moatUsd     = amtRaw * allocPct;
@@ -6647,7 +6935,13 @@ async function cmExecute() {
     cmShowTxResult(false, msg);
   }
   cmExecuting = false;
+  _cmGlobeCancelled = false;
   document.getElementById('cmExecuteBtn').disabled = false;
+  // Hide cancel button
+  const _cb = document.getElementById('cmCancelExecBtn');
+  if (_cb) { _cb.style.display = 'none'; _cb.disabled = false; _cb.textContent = '✕ Cancel Execution'; }
+  // Stop globe animation when done
+  if (_cmGlobeAnimId) { cancelAnimationFrame(_cmGlobeAnimId); _cmGlobeAnimId = null; }
 }
 
 function cmShowTxResult(success, msg) {
@@ -7035,6 +7329,19 @@ async function posLoadPositions() {
     setTxt('posPendingRew', totalRew>0 ? '~'+fmtP(totalRew)+' tokens' : '—');
     setTxt('posPortfolioVal', portVal>0 ? fmtK(portVal) : '—');
     document.getElementById('posSummary').style.display = 'block';
+
+    // Show Claim All banner if any moat has rewards AND wallet is connected (not read-only)
+    const moatsWithRewards = active.filter(r => r.rewards.length > 0 && !posIsReadOnly);
+    const claimBanner = document.getElementById('posClaimAllBanner');
+    if (claimBanner) {
+      if (moatsWithRewards.length > 0) {
+        claimBanner.style.display = 'block';
+        const desc = document.getElementById('posClaimAllDesc');
+        if (desc) desc.textContent = moatsWithRewards.length + ' moat' + (moatsWithRewards.length>1?'s':'')+' with pending rewards — claim all in one go';
+      } else {
+        claimBanner.style.display = 'none';
+      }
+    }
   }
 
   // Render active section
@@ -7793,6 +8100,87 @@ function backToPositions() {
   document.getElementById('view-positions').classList.add('on');
   document.querySelector('[data-v="positions"]').classList.add('on');
   posActiveMoat = null;
+}
+
+// ── CLAIM ALL REWARDS (sequential, cancellable) ──
+let _claimAllCancelled = false;
+
+async function posClaimAllRewards() {
+  if (!posSigner || !posAddress) { showAppNotif('Connect wallet first','warn'); return; }
+  const moatsWithRewards = Object.values(posLoadedData||{}).filter(r => r.rewards && r.rewards.length > 0 && r.hasPosition);
+  if (!moatsWithRewards.length) { showAppNotif('No rewards to claim','info'); return; }
+
+  _claimAllCancelled = false;
+  const claimBtn   = document.getElementById('posClaimAllBtn');
+  const cancelBtn  = document.getElementById('posClaimCancelBtn');
+  const progress   = document.getElementById('posClaimAllProgress');
+  const spinner    = document.getElementById('posClaimSpinner');
+  const statusEl   = document.getElementById('posClaimStatus');
+  const logEl      = document.getElementById('posClaimLog');
+  const bar        = document.getElementById('posClaimProgressBar');
+
+  if (claimBtn)  claimBtn.disabled = true;
+  if (cancelBtn) cancelBtn.style.display = 'block';
+  if (progress)  progress.style.display = 'block';
+  if (logEl)     logEl.innerHTML = '';
+  if (bar)       bar.style.width = '0%';
+
+  const addLog = (msg, col='var(--mut)') => {
+    if (!logEl) return;
+    const line = document.createElement('div');
+    line.style.color = col;
+    line.style.marginBottom = '2px';
+    line.textContent = msg;
+    logEl.appendChild(line);
+    logEl.scrollTop = logEl.scrollHeight;
+  };
+
+  for (let i = 0; i < moatsWithRewards.length; i++) {
+    if (_claimAllCancelled) {
+      if (statusEl) statusEl.textContent = '❌ Cancelled by user';
+      addLog('Claim cancelled.', 'var(--gld)');
+      break;
+    }
+    const r = moatsWithRewards[i];
+    if (statusEl) statusEl.textContent = `Claiming from ${r.meta.name} (${i+1}/${moatsWithRewards.length})…`;
+    if (bar) bar.style.width = Math.round((i/moatsWithRewards.length)*100) + '%';
+    addLog(`⏳ ${r.meta.name} — sending claim…`);
+    try {
+      const moatContract = new ethers.Contract(r.moatAddr, MOAT_ABI, posSigner);
+      const tx = await moatContract.claimRewards();
+      addLog(`   Tx sent: ${tx.hash.slice(0,12)}… — waiting`, 'var(--dim)');
+      await tx.wait();
+      addLog(`   ✅ ${r.meta.name} rewards claimed!`, 'var(--grn)');
+    } catch(e) {
+      if (_claimAllCancelled) break;
+      const msg = e.reason || e.shortMessage || e.message || String(e);
+      const isReject = msg.includes('user rejected') || msg.includes('ACTION_REJECTED');
+      if (isReject) {
+        addLog(`   ⚠️ ${r.meta.name} — wallet rejected, skipping`, 'var(--gld)');
+      } else {
+        addLog(`   ❌ ${r.meta.name} — ${msg.slice(0,80)}`, 'var(--red)');
+      }
+    }
+  }
+
+  if (!_claimAllCancelled) {
+    if (bar) bar.style.width = '100%';
+    if (statusEl) statusEl.textContent = '✅ All claims processed!';
+    addLog('Done! Refresh to see updated balances.', 'var(--grn)');
+    showTxToast(true, 'All rewards claimed! 🎉', 'Check your wallet for received tokens.', null);
+    setTimeout(posLoadPositions, 3000);
+  }
+
+  if (claimBtn)  claimBtn.disabled = false;
+  if (cancelBtn) cancelBtn.style.display = 'none';
+  if (spinner)   spinner.style.display = 'none';
+}
+
+function posCancelClaimAll() {
+  _claimAllCancelled = true;
+  const cancelBtn = document.getElementById('posClaimCancelBtn');
+  if (cancelBtn) cancelBtn.style.display = 'none';
+  showAppNotif('Claim sequence cancelled','info',2500);
 }
 
 // ── ACTION TAB ──
@@ -10080,8 +10468,63 @@ const GUIDE_SLIDES = [
     accent: '#d4a843',
     draw: (ctx, W, H, t, imgs) => {
       const cx = W/2, cy = H/2 + 15;
-      // Timeline bar
-      const barX = 35, barY = cy, barW = W-70, barH = 14;
+
+      // ── VAULT BOX ──
+      const vx = cx - 52, vy = cy - 95, vw = 104, vh = 80;
+      ctx.save();
+      ctx.fillStyle = '#d4a84314';
+      ctx.strokeStyle = '#d4a843';
+      ctx.lineWidth = 2;
+      _roundRect(ctx, vx, vy, vw, vh, 12);
+      ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#d4a843';
+      ctx.font = 'bold 10px DM Mono,monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('MOAT VAULT', cx, vy+16);
+      ctx.font = '22px serif';
+      ctx.fillText('🏰', cx, vy+50);
+      ctx.restore();
+
+      // ── TOKENS ENTERING VAULT (randomized moat token images) ──
+      const moatLogoKeys = ['logo_0','logo_1','logo_2','logo_3','logo_4','logo_5','logo_6','logo_7','logo_8','logo_9'];
+      const moatColors = ['#f97316','#8c8074','#d4a843','#f43f5e','#818cf8','#22d3ee','#fb7185','#a78bfa','#fbbf24','#34d399'];
+      const moatTickers = ['$H','$F','$hC','$B','$S','$V','$L','$D','$BN','$M'];
+      // 3 tokens fly in at offset times
+      [0, 1.2, 2.4].forEach((offset, idx) => {
+        const phase = ((t * 0.8 + offset) % 3) / 3; // 0..1 journey
+        const tokenIdx = (idx * 3 + Math.floor(t * 0.3 + idx)) % 10;
+        const startX = cx - 145 + idx * 15;
+        const endX = cx - 10;
+        const startY = cy - 58 + idx * 8;
+        const endY = cy - 58;
+        const tx2 = startX + (endX - startX) * Math.min(phase * 1.4, 1);
+        const ty2 = startY + (endY - startY) * Math.min(phase * 1.4, 1);
+        const alpha = phase < 0.85 ? 1 : 1 - (phase - 0.85) / 0.15;
+        if (phase > 0.98) return; // hidden when inside vault
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        ctx.beginPath();
+        ctx.arc(tx2, ty2, 13, 0, Math.PI*2);
+        ctx.fillStyle = moatColors[tokenIdx] + '33';
+        ctx.fill();
+        ctx.strokeStyle = moatColors[tokenIdx];
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+        const logoImg = imgs[moatLogoKeys[tokenIdx]];
+        if (logoImg && logoImg.complete && logoImg.naturalWidth) {
+          ctx.save(); ctx.beginPath(); ctx.arc(tx2, ty2, 11, 0, Math.PI*2); ctx.clip();
+          ctx.drawImage(logoImg, tx2-11, ty2-11, 22, 22); ctx.restore();
+        } else {
+          ctx.fillStyle = moatColors[tokenIdx];
+          ctx.font = 'bold 8px DM Mono,monospace';
+          ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+          ctx.fillText(moatTickers[tokenIdx], tx2, ty2);
+        }
+        ctx.restore();
+      });
+
+      // ── TIMELINE BAR ──
+      const barX = 35, barY = cy + 5, barW = W-70, barH = 14;
       ctx.save();
       ctx.fillStyle = '#332e28';
       _roundRect(ctx, barX, barY, barW, barH, 7);
@@ -10635,6 +11078,19 @@ function _guideBoot() {
 
 </script>
 
+<!-- ── PRESENCE TOGGLE STUB (ensures onclick works before IIFE runs) ── -->
+<script>
+function togglePresencePanel(){
+  const panel=document.getElementById('presencePanel');
+  const bg=document.getElementById('presenceBg');
+  if(!panel||!bg)return;
+  const open=panel.style.display==='none'||!panel.style.display;
+  panel.style.display=open?'block':'none';
+  bg.style.display=open?'block':'none';
+  if(open&&typeof renderPresence==='function')renderPresence();
+}
+</script>
+
 <!-- ── LIVE PRESENCE PILL ── -->
 <div id="presencePill" onclick="togglePresencePanel()" style="display:flex;align-items:center;justify-content:center;padding:.5rem .85rem 1.1rem;cursor:pointer;user-select:none">
   <div id="presencePillInner" style="display:inline-flex;align-items:center;gap:7px;background:var(--card);border:1px solid var(--bor);border-radius:99px;padding:.3rem .85rem;transition:border-color .2s;box-shadow:0 2px 12px rgba(0,0,0,.3)" onmouseover="this.style.borderColor='rgba(249,115,22,.3)'" onmouseout="this.style.borderColor='var(--bor)'">
@@ -10698,9 +11154,7 @@ function _guideBoot() {
 (function(){
   // ─── Supabase config — replace with your project URL + anon key ───
   const SB_URL = 'https://buzkdndnenirmptfimcd.supabase.co';
-  const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ1emtkbmRuZW5pcm1wdGZpbWNkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ3MTYzNDQsImV4cCI6MjA5MDI5MjM0NH0.mgae38tIrQyB3yyLeyZ1-nP298wKqU-Tq89f7Gn7BQ0
-
-';
+  const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ1emtkbmRuZW5pcm1wdGZpbWNkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ3MTYzNDQsImV4cCI6MjA5MDI5MjM0NH0.mgae38tIrQyB3yyLeyZ1-nP298wKqU-Tq89f7Gn7BQ0';
   // ─────────────────────────────────────────────────────────────────
 
   const PRESENCE_TTL_S = 300; // 5 min in seconds
