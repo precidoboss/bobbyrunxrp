@@ -6449,6 +6449,13 @@ function cmRenderGlobe() {
   const el = document.getElementById('cmStepsList'); if (!el) return;
   if (!cmSteps.length) { el.innerHTML=''; return; }
 
+  // Preload moat logos into _imgCache so they're ready for the canvas
+  if (cmTargetMoats && typeof _loadImg === 'function') {
+    cmTargetMoats.forEach(m => {
+      if (m.meta?.logo) _loadImg(RAW + m.meta.logo);
+    });
+  }
+
   // Build the 3D globe canvas + info panel
   el.innerHTML = `
     <div style="position:relative;background:rgba(20,18,16,.95);border:1px solid var(--bor);border-radius:14px;overflow:hidden;margin:.5rem 0">
@@ -6530,14 +6537,12 @@ function _cmDrawGlobe() {
     // ── Globe wireframe ──
     ctx.save();
     ctx.globalAlpha=0.08;
-    // Latitude lines
     for(let lat=-60;lat<=60;lat+=30){
       const y=cy+Math.sin(lat*Math.PI/180)*R;
       const rx=Math.cos(lat*Math.PI/180)*R;
       ctx.beginPath();ctx.ellipse(cx,y,rx,rx*0.18,0,0,Math.PI*2);
       ctx.strokeStyle='#f97316';ctx.lineWidth=0.7;ctx.stroke();
     }
-    // Longitude lines
     for(let lon=0;lon<180;lon+=30){
       const a=lon*Math.PI/180+angle;
       ctx.beginPath();ctx.ellipse(cx,cy,Math.abs(Math.cos(a))*R,R,0,0,Math.PI*2);
@@ -6551,27 +6556,24 @@ function _cmDrawGlobe() {
     grd.addColorStop(1,'rgba(20,18,16,0)');
     ctx.beginPath();ctx.arc(cx,cy,R,0,Math.PI*2);
     ctx.fillStyle=grd;ctx.fill();
-    // Outer ring
     ctx.beginPath();ctx.arc(cx,cy,R,0,Math.PI*2);
     ctx.strokeStyle='rgba(249,115,22,0.2)';ctx.lineWidth=1.5;ctx.stroke();
 
     // ── Place steps on globe surface ──
     const n=cmSteps.length;
     const positions=cmSteps.map((_,i)=>{
-      const phi=(i/n)*Math.PI*2 + angle; // longitude
-      const theta=Math.PI*0.3; // fixed latitude for simplicity
+      const phi=(i/n)*Math.PI*2 + angle;
+      const theta=Math.PI*0.3;
       const x3d=Math.cos(phi)*Math.sin(theta);
       const y3d=Math.cos(theta);
       const z3d=Math.sin(phi)*Math.sin(theta);
-      // Project to 2D
       const px2=cx+x3d*R;
       const py2=cy-y3d*R*0.55;
-      const scale=0.5+0.5*((z3d+1)/2); // depth scale
-      const depth=z3d; // -1 (back) to +1 (front)
+      const scale=0.5+0.5*((z3d+1)/2);
+      const depth=z3d;
       return {i,px2,py2,scale,depth,s:cmSteps[i]};
     });
 
-    // Sort by depth (draw back to front)
     positions.sort((a,b)=>a.depth-b.depth);
 
     positions.forEach(pos=>{
@@ -6579,50 +6581,92 @@ function _cmDrawGlobe() {
       const isFocus=i===_cmGlobeFocusIdx;
       const col=STATE_COLORS[s.state]||'#4a4540';
       const glow=STATE_GLOW[s.state]||'transparent';
-      const r=isFocus?16*scale:11*scale;
-      const alpha=0.3+0.7*((depth+1)/2);
+      const r=isFocus?18*scale:13*scale;
+      const alpha=0.35+0.65*((depth+1)/2);
+
+      // Find the moat meta for this step — step id encodes moat index
+      // Steps are named like "moat_0_swap", "moat_0_approve", "lp_0", etc.
+      // We look up cmTargetMoats by iteration order
+      const moatIdx = parseInt((s.id||'').replace(/[^0-9]/g,'')) || i;
+      const moatMeta = (cmTargetMoats && cmTargetMoats[moatIdx]) ? cmTargetMoats[moatIdx].meta : null;
+      const moatCol = moatMeta?.color || col;
+      const logoSrc = moatMeta?.logo ? (RAW + moatMeta.logo) : null;
+      const logoImg = logoSrc ? (_imgCache[logoSrc] || _loadImg(logoSrc)) : null;
 
       ctx.save();
       ctx.globalAlpha=alpha;
 
-      // Glow halo for active/focused
+      // Glow halo
       if(isFocus||s.state==='active'){
-        ctx.beginPath();ctx.arc(px2,py2,r+8,0,Math.PI*2);
-        ctx.fillStyle=glow;ctx.fill();
+        ctx.beginPath();ctx.arc(px2,py2,r+9,0,Math.PI*2);
+        ctx.fillStyle=(s.state==='active'?'#f9731633':moatCol+'22');
+        ctx.fill();
+        // Animated pulse ring for active
+        if(s.state==='active'){
+          const pulse=0.5+0.5*Math.sin(Date.now()*0.006);
+          ctx.beginPath();ctx.arc(px2,py2,r+5+pulse*6,0,Math.PI*2);
+          ctx.strokeStyle='#f97316';ctx.lineWidth=1;ctx.globalAlpha=alpha*0.4*pulse;ctx.stroke();
+          ctx.globalAlpha=alpha;
+        }
       }
 
-      // Node circle
+      // Node circle background
       ctx.beginPath();ctx.arc(px2,py2,r,0,Math.PI*2);
-      ctx.fillStyle=col+'33';ctx.fill();
-      ctx.strokeStyle=col;ctx.lineWidth=isFocus?2:1;ctx.stroke();
+      ctx.fillStyle=moatCol+'22';ctx.fill();
+      ctx.strokeStyle=s.state==='active'?'#f97316':s.state==='done'?'#6db87a':s.state==='error'?'#e05252':moatCol+'88';
+      ctx.lineWidth=isFocus?2.5:1.5;ctx.stroke();
 
-      // State icon / number
-      ctx.fillStyle='#f0ebe4';
-      ctx.font=`bold ${Math.max(7,10*scale)}px DM Mono,monospace`;
-      ctx.textAlign='center';ctx.textBaseline='middle';
-      const icon=s.state==='done'?'✓':s.state==='error'?'✕':s.state==='active'?'●':(i+1).toString();
-      ctx.fillText(icon,px2,py2);
+      // Draw moat logo if available, else emoji/fallback
+      if(logoImg && logoImg.complete && logoImg.naturalWidth > 0){
+        ctx.save();
+        ctx.beginPath();ctx.arc(px2,py2,r-2,0,Math.PI*2);ctx.clip();
+        ctx.drawImage(logoImg,px2-(r-2),py2-(r-2),(r-2)*2,(r-2)*2);
+        ctx.restore();
+        // State overlay for done/error/active
+        if(s.state!=='waiting'){
+          ctx.beginPath();ctx.arc(px2,py2,r,0,Math.PI*2);
+          ctx.fillStyle=s.state==='done'?'rgba(109,184,122,0.35)':s.state==='error'?'rgba(224,82,82,0.4)':s.state==='active'?'rgba(249,115,22,0.2)':'transparent';
+          ctx.fill();
+        }
+        // State badge (small circle in corner)
+        const bx=px2+r*0.65, by=py2-r*0.65, br=Math.max(4,r*0.38);
+        ctx.beginPath();ctx.arc(bx,by,br,0,Math.PI*2);
+        ctx.fillStyle=s.state==='done'?'#6db87a':s.state==='error'?'#e05252':s.state==='active'?'#f97316':'#332e28';
+        ctx.fill();
+        ctx.fillStyle='#141210';
+        ctx.font='bold '+Math.max(6,br*1.1)+'px DM Mono,monospace';
+        ctx.textAlign='center';ctx.textBaseline='middle';
+        ctx.fillText(s.state==='done'?'✓':s.state==='error'?'✕':s.state==='active'?'●':(i+1).toString(),bx,by);
+      } else {
+        // Fallback: emoji or number
+        ctx.fillStyle='#f0ebe4';
+        ctx.font='bold '+Math.max(7,11*scale)+'px DM Mono,monospace';
+        ctx.textAlign='center';ctx.textBaseline='middle';
+        const icon=s.state==='done'?'✓':s.state==='error'?'✕':s.state==='active'?'●':(i+1).toString();
+        ctx.fillText(moatMeta?.emoji||icon,px2,py2);
+      }
 
-      // Label (only for focused + nearby)
-      if(isFocus||depth>0.3){
-        ctx.font=`${Math.max(6,8*scale)}px DM Mono,monospace`;
+      // Label below node (focused + front-facing)
+      if(isFocus||depth>0.25){
+        ctx.font=(isFocus?'bold ':'')+Math.max(6,8*scale)+'px DM Mono,monospace';
         ctx.fillStyle=isFocus?'#f0ebe4':'#8c8074';
-        const label=s.title.slice(0,20)+(s.title.length>20?'…':'');
-        ctx.fillText(label,px2,py2+r+9*scale);
+        ctx.textAlign='center';ctx.textBaseline='top';
+        const label=(moatMeta?.short||s.title).slice(0,14);
+        ctx.fillText(label,px2,py2+r+3*scale);
       }
       ctx.restore();
     });
 
-    // Centre label
+    // Centre counter
     ctx.save();
-    ctx.fillStyle='rgba(249,115,22,0.6)';
-    ctx.font='bold 8px Chakra Petch,sans-serif';
+    ctx.fillStyle='rgba(249,115,22,0.7)';
+    ctx.font='bold 9px Chakra Petch,sans-serif';
     ctx.textAlign='center';ctx.textBaseline='middle';
     const done=cmSteps.filter(s=>s.state==='done').length;
-    ctx.fillText(`${done}/${n} done`,cx,cy);
+    ctx.fillText(done+'/'+n+' done',cx,cy);
     ctx.restore();
 
-    angle+=0.008; // slow continuous rotation
+    angle+=0.007;
     _cmGlobeAngle=angle;
     _cmGlobeAnimId=requestAnimationFrame(drawFrame);
   }
@@ -8147,7 +8191,7 @@ async function posClaimAllRewards() {
     addLog(`⏳ ${r.meta.name} — sending claim…`);
     try {
       const moatContract = new ethers.Contract(r.moatAddr, MOAT_ABI, posSigner);
-      const tx = await moatContract.claimRewards();
+      const tx = await moatContract.claimAllRewards();
       addLog(`   Tx sent: ${tx.hash.slice(0,12)}… — waiting`, 'var(--dim)');
       await tx.wait();
       addLog(`   ✅ ${r.meta.name} rewards claimed!`, 'var(--grn)');
