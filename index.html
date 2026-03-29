@@ -300,6 +300,65 @@ main{position:relative;z-index:1;padding:.8rem;max-width:1440px;margin:0 auto}
 .mcard .mn{font-family:'DM Mono',monospace;font-size:.54rem;text-transform:uppercase;letter-spacing:.1em;color:var(--mut)}
 .mcard .md{font-size:.63rem;color:var(--mut);margin-top:.28rem;line-height:1.45}
 
+/* ── WHALE FEED ── */
+.whale-feed{max-height:420px;overflow-y:auto;padding:.45rem .75rem}
+.whale-feed::-webkit-scrollbar{width:2px}
+.whale-feed::-webkit-scrollbar-thumb{background:var(--bor);border-radius:99px}
+.whale-item{display:flex;align-items:flex-start;gap:8px;padding:.52rem 0;border-bottom:1px solid rgba(51,46,40,.25);animation:whalein .5s ease}
+@keyframes whalein{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+.whale-item:last-child{border-bottom:none}
+.whale-dot{width:8px;height:8px;border-radius:50%;margin-top:6px;flex-shrink:0}
+.whale-mega{display:inline-flex;align-items:center;gap:3px;background:linear-gradient(90deg,rgba(212,168,67,.2),rgba(249,115,22,.15));border:1px solid rgba(212,168,67,.5);border-radius:99px;padding:1px 7px;font-family:'DM Mono',monospace;font-size:.5rem;font-weight:700;color:var(--gld);letter-spacing:.05em;animation:megapulse 2s ease-in-out infinite}
+@keyframes megapulse{0%,100%{box-shadow:0 0 0 0 rgba(212,168,67,.3)}50%{box-shadow:0 0 8px 3px rgba(212,168,67,.2)}}
+.whale-filters{display:flex;gap:5px;flex-wrap:wrap;align-items:center;padding:.5rem .75rem;background:var(--sur);border-bottom:1px solid var(--bor)}
+.whale-stats-strip{display:grid;grid-template-columns:repeat(3,1fr);gap:.4rem;padding:.55rem .75rem;background:rgba(249,115,22,.04);border-bottom:1px solid var(--bor)}
+.wss-item{text-align:center}
+.wss-val{font-family:'Chakra Petch',sans-serif;font-size:.85rem;font-weight:700}
+.wss-lbl{font-family:'DM Mono',monospace;font-size:.44rem;text-transform:uppercase;letter-spacing:.09em;color:var(--mut);margin-top:1px}
+
+/* ── MOAT STREAK TRACKER ── */
+.streak-row{display:flex;align-items:center;gap:8px;padding:.5rem .75rem;border-bottom:1px solid rgba(51,46,40,.22)}
+.streak-row:last-child{border-bottom:none}
+.streak-pip-row{display:flex;gap:2px;align-items:center}
+.streak-pip{width:9px;height:9px;border-radius:2px;transition:all .2s}
+.streak-pip.active{background:var(--acc);box-shadow:0 0 4px rgba(249,115,22,.5)}
+.streak-pip.inactive{background:var(--bor)}
+.streak-badge{display:inline-flex;align-items:center;gap:2px;font-family:'DM Mono',monospace;font-size:.52rem;padding:1px 5px;border-radius:99px;border:1px solid}
+.badge-fire{color:#fb923c;border-color:rgba(251,146,60,.4);background:rgba(251,146,60,.1)}
+.badge-bolt{color:var(--cyn);border-color:rgba(34,211,238,.4);background:rgba(34,211,238,.1)}
+
+/* ── POSITION HEALTH SCORE ── */
+.health-arc-wrap{position:relative;width:120px;height:70px;margin:0 auto .6rem}
+.health-arc-wrap svg{overflow:visible}
+.health-grade{font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:1.55rem;line-height:1}
+.health-score-num{font-family:'DM Mono',monospace;font-size:.65rem;color:var(--mut)}
+.health-comp-bar{display:flex;align-items:center;gap:7px;margin-bottom:.38rem}
+.health-comp-fill{height:4px;border-radius:99px;background:var(--acc);transition:width .6s ease}
+.health-comp-bg{flex:1;height:4px;background:var(--bor);border-radius:99px;overflow:hidden}
+.health-tip{background:rgba(249,115,22,.06);border:1px solid rgba(249,115,22,.18);border-radius:7px;padding:.5rem .7rem;font-family:'DM Mono',monospace;font-size:.58rem;color:var(--dim);line-height:1.55;margin-bottom:.4rem}
+.health-tip::before{content:'💡 ';color:var(--gld)}
+
+/* ── DAILY INTEL BRIEF ── */
+.intel-brief{background:var(--card);border:1px solid var(--bor);border-radius:14px;overflow:hidden;margin-bottom:.85rem}
+.intel-masthead{background:linear-gradient(135deg,rgba(249,115,22,.12),rgba(212,168,67,.08));border-bottom:1px solid rgba(249,115,22,.2);padding:.75rem 1rem;display:flex;align-items:center;justify-content:space-between}
+.intel-nameplate{font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.95rem;letter-spacing:.07em;color:var(--txt)}
+.intel-nameplate em{color:var(--acc);font-style:normal}
+.intel-date{font-family:'DM Mono',monospace;font-size:.52rem;color:var(--mut)}
+.intel-edition{font-family:'DM Mono',monospace;font-size:.48rem;color:var(--gld);text-transform:uppercase;letter-spacing:.1em;margin-top:1px}
+.intel-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:0}
+@media(min-width:580px){.intel-grid{grid-template-columns:repeat(3,1fr)}}
+.intel-card{padding:.7rem .85rem;border-right:1px solid rgba(51,46,40,.3);border-bottom:1px solid rgba(51,46,40,.3)}
+.intel-card:nth-child(2n){border-right:none}
+@media(min-width:580px){.intel-card:nth-child(2n){border-right:1px solid rgba(51,46,40,.3)}.intel-card:nth-child(3n){border-right:none}}
+.intel-card-lbl{font-family:'DM Mono',monospace;font-size:.44rem;text-transform:uppercase;letter-spacing:.12em;color:var(--mut);margin-bottom:.25rem}
+.intel-card-val{font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.82rem;color:var(--txt);line-height:1.2}
+.intel-card-sub{font-family:'DM Mono',monospace;font-size:.55rem;color:var(--dim);margin-top:2px;line-height:1.4}
+.intel-headline{font-family:'Chakra Petch',sans-serif;font-size:.7rem;font-weight:600;color:var(--acc);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.18rem}
+.intel-breaking{background:rgba(224,82,82,.08);border-left:2px solid var(--red);padding:.35rem .6rem;font-family:'DM Mono',monospace;font-size:.58rem;color:var(--dim);line-height:1.5;margin:.5rem 0}
+
+/* ── LAST SEEN ── */
+.last-seen-badge{display:inline-flex;align-items:center;gap:4px;background:rgba(34,211,238,.07);border:1px solid rgba(34,211,238,.2);border-radius:6px;padding:2px 8px;font-family:'DM Mono',monospace;font-size:.56rem;color:var(--cyn)}
+
 
 /* ── MODALS ── */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(6px);z-index:500;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s}
@@ -480,9 +539,6 @@ main{position:relative;z-index:1;padding:.8rem;max-width:1440px;margin:0 auto}
     <div class="tab"    data-v="guide"       onclick="nav(this)">💡 Guide</div>
     <div class="tab"    data-v="copymoat"    onclick="nav(this)">📋 Copy Moat</div>
     <div class="tab"    data-v="positions"   onclick="nav(this)">🏦 My Positions</div>
-    <div class="tab"    data-v="whales"      onclick="nav(this)">🐋 Whales</div>
-    <div class="tab"    data-v="race"        onclick="nav(this)">🏎️ Council Race</div>
-    <div class="tab"    data-v="intel"       onclick="nav(this)">📰 Daily Intel</div>
     <div class="tab"    data-v="debug"       onclick="nav(this)">🛠️ Debug</div>
   </nav>
   <div class="hdr-r">
@@ -503,26 +559,31 @@ main{position:relative;z-index:1;padding:.8rem;max-width:1440px;margin:0 auto}
     <div class="sc"><div class="sl">Total Events</div><div class="sv cgn" id="ovEv">—</div></div>
     <div class="sc"><div class="sl">Top Wallet</div><div class="sv ca" style="font-size:.72rem;font-family:'DM Mono',monospace" id="ovTop">—</div></div>
   </div>
-
-  <!-- Today's Highlights strip -->
-  <div id="ovHighlights" style="display:grid;grid-template-columns:repeat(4,1fr);gap:.55rem;margin-bottom:.85rem">
-    <div onclick="nav(document.querySelector('[data-v=whales]'))" style="background:var(--card);border:1px solid var(--bor);border-radius:10px;padding:.7rem .85rem;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:8px" onmouseover="this.style.borderColor='var(--acc)'" onmouseout="this.style.borderColor='var(--bor)'">
-      <span style="font-size:1.3rem">🐋</span>
-      <div><div style="font-family:'DM Mono',monospace;font-size:.52rem;color:var(--mut);text-transform:uppercase">Whale Moves</div><div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.85rem;color:var(--acc)" id="ovWhaleCount">—</div></div>
+  <!-- ── DAILY INTEL BRIEF ── -->
+  <div class="intel-brief" id="intelBrief">
+    <div class="intel-masthead">
+      <div>
+        <div class="intel-nameplate">⬡ MOAT <em>INTEL</em> DISPATCH</div>
+        <div class="intel-edition">BREAKING INTELLIGENCE · FORIFI EDITION</div>
+      </div>
+      <div style="text-align:right">
+        <div class="intel-date" id="intelDate">—</div>
+        <div style="font-family:'DM Mono',monospace;font-size:.45rem;color:var(--mut);margin-top:2px">Today in Moats</div>
+      </div>
     </div>
-    <div onclick="nav(document.querySelector('[data-v=race]'))" style="background:var(--card);border:1px solid var(--bor);border-radius:10px;padding:.7rem .85rem;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:8px" onmouseover="this.style.borderColor='var(--gld)'" onmouseout="this.style.borderColor='var(--bor)'">
-      <span style="font-size:1.3rem">🏎️</span>
-      <div><div style="font-family:'DM Mono',monospace;font-size:.52rem;color:var(--mut);text-transform:uppercase">Race Leader</div><div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.72rem;color:var(--gld);font-family:'DM Mono',monospace" id="ovRaceLeader">—</div></div>
+    <div class="intel-grid" id="intelGrid">
+      <div class="intel-card"><div class="intel-card-lbl">🏰 Most Active Moat</div><div class="intel-card-val" id="ibActiveMoat">—</div><div class="intel-card-sub" id="ibActiveMoatSub">loading…</div></div>
+      <div class="intel-card"><div class="intel-card-lbl">🐳 Biggest Mover</div><div class="intel-card-val" id="ibBigMover">—</div><div class="intel-card-sub" id="ibBigMoverSub">loading…</div></div>
+      <div class="intel-card"><div class="intel-card-lbl">🔥 All-Time Biggest Burn</div><div class="intel-card-val" id="ibBigBurn">—</div><div class="intel-card-sub" id="ibBigBurnSub">loading…</div></div>
+      <div class="intel-card"><div class="intel-card-lbl">🌱 New Entrants (24h)</div><div class="intel-card-val ca" id="ibNewEntrants">—</div><div class="intel-card-sub" id="ibNewEntrantsSub">first-time wallets today</div></div>
+      <div class="intel-card"><div class="intel-card-lbl">👥 Active Wallets (24h)</div><div class="intel-card-val cg" id="ibActiveWallets">—</div><div class="intel-card-sub" id="ibActiveWalletsSub">interacted with any moat</div></div>
+      <div class="intel-card"><div class="intel-card-lbl">🐋 Whale of the Day</div><div class="intel-card-val cd" id="ibWhaleDay">—</div><div class="intel-card-sub" id="ibWhaleDaySub">loading…</div></div>
     </div>
-    <div onclick="nav(document.querySelector('[data-v=intel]'))" style="background:var(--card);border:1px solid var(--bor);border-radius:10px;padding:.7rem .85rem;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:8px" onmouseover="this.style.borderColor='var(--cyn)'" onmouseout="this.style.borderColor='var(--bor)'">
-      <span style="font-size:1.3rem">🔥</span>
-      <div><div style="font-family:'DM Mono',monospace;font-size:.52rem;color:var(--mut);text-transform:uppercase">Top Streak</div><div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.85rem;color:var(--cyn)" id="ovTopStreak">—</div></div>
-    </div>
-    <div onclick="nav(document.querySelector('[data-v=intel]'))" style="background:var(--card);border:1px solid var(--bor);border-radius:10px;padding:.7rem .85rem;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:8px" onmouseover="this.style.borderColor='var(--grn)'" onmouseout="this.style.borderColor='var(--bor)'">
-      <span style="font-size:1.3rem">📰</span>
-      <div><div style="font-family:'DM Mono',monospace;font-size:.52rem;color:var(--mut);text-transform:uppercase">Active 24h</div><div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.85rem;color:var(--grn)" id="ovActive24">—</div></div>
+    <div id="intelHeadline" style="padding:.55rem .85rem;font-family:'DM Mono',monospace;font-size:.6rem;color:var(--mut);border-top:1px solid rgba(51,46,40,.3)">
+      <span style="color:var(--acc);font-weight:700;font-family:'Chakra Petch',sans-serif;font-size:.62rem">BREAKING</span>&nbsp;—&nbsp;<span id="intelHeadlineText">Computing today's intelligence…</span>
     </div>
   </div>
+
   <div class="gsb">
     <div>
       <div class="panel">
@@ -703,6 +764,57 @@ main{position:relative;z-index:1;padding:.8rem;max-width:1440px;margin:0 auto}
     <div class="ph"><div class="ptitle">📊 Opportunity Matrix</div><span style="font-family:'DM Mono',monospace;font-size:.58rem;color:var(--mut)">lower eco share = higher upside</span></div>
     <div class="pb0 tw"><table class="tbl" id="oppTbl"><thead><tr><th>Moat</th><th>Eco Share</th><th>Wallets</th><th>Avg Points</th><th>Opportunity Score</th><th>Signal</th></tr></thead><tbody></tbody></table></div>
   </div>
+
+  <!-- ══ WHALE ALERT FEED ══ -->
+  <div class="panel" style="margin-top:.85rem">
+    <div class="ph" style="flex-wrap:wrap;gap:6px">
+      <div class="ptitle">🐳 Whale Alert Feed</div>
+      <div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center">
+        <select id="whaleFeedTypeFilter" onchange="renderWhaleFeed()" style="padding:3px 7px;background:var(--sur);border:1px solid var(--bor);border-radius:5px;color:var(--dim);font-family:'DM Mono',monospace;font-size:.56rem;outline:none">
+          <option value="">All Types</option>
+          <option value="burned">🔥 Burned</option>
+          <option value="staked">🔒 Staked</option>
+          <option value="locked">⏳ Locked</option>
+        </select>
+        <select id="whaleFeedThreshold" onchange="renderWhaleFeed()" style="padding:3px 7px;background:var(--sur);border:1px solid var(--bor);border-radius:5px;color:var(--dim);font-family:'DM Mono',monospace;font-size:.56rem;outline:none">
+          <option value="10000">10K+</option>
+          <option value="100000" selected>100K+</option>
+          <option value="500000">500K+</option>
+          <option value="1000000">1M+</option>
+        </select>
+        <span class="live"><span class="ld"></span>live</span>
+      </div>
+    </div>
+    <!-- Stats strip -->
+    <div class="whale-stats-strip">
+      <div class="wss-item"><div class="wss-val ca" id="wss24hCount">—</div><div class="wss-lbl">24h Whales</div></div>
+      <div class="wss-item"><div class="wss-val cr" id="wssBigBurn">—</div><div class="wss-lbl">Biggest Burn</div></div>
+      <div class="wss-item"><div class="wss-val cg" id="wssWhaleDay">—</div><div class="wss-lbl">Whale of the Day</div></div>
+    </div>
+    <div class="whale-feed" id="whaleFeedEl">
+      <div style="text-align:center;padding:1.5rem;font-family:'DM Mono',monospace;font-size:.62rem;color:var(--mut)"><span class="spin"></span> Loading whale data…</div>
+    </div>
+  </div>
+
+  <!-- ══ MOAT STREAK TRACKER ══ -->
+  <div class="panel" style="margin-top:.85rem">
+    <div class="ph">
+      <div class="ptitle">🔥 Moat Streak Tracker</div>
+      <span style="font-family:'DM Mono',monospace;font-size:.56rem;color:var(--mut)">top 20 · consecutive weeks active</span>
+    </div>
+    <!-- Header row -->
+    <div style="display:flex;align-items:center;gap:8px;padding:.4rem .75rem;border-bottom:1px solid var(--bor);font-family:'DM Mono',monospace;font-size:.48rem;color:var(--mut);text-transform:uppercase;letter-spacing:.08em">
+      <div style="width:28px;flex-shrink:0">#</div>
+      <div style="flex:1">Wallet</div>
+      <div style="display:flex;gap:2px;margin-right:6px">
+        <span>8w history →</span>
+      </div>
+      <div style="width:38px;text-align:right">Streak</div>
+    </div>
+    <div id="streakTrackerEl">
+      <div style="text-align:center;padding:1.5rem;font-family:'DM Mono',monospace;font-size:.62rem;color:var(--mut)"><span class="spin"></span> Computing streaks…</div>
+    </div>
+  </div>
 </div>
 
 <!-- ══ EVENTS ══ -->
@@ -791,6 +903,21 @@ main{position:relative;z-index:1;padding:.8rem;max-width:1440px;margin:0 auto}
         <div class="ccard"><div class="ctit">📈 Wallet Stats</div><div id="wSt"></div></div>
         <div class="ccard"><div class="ctit">🏰 Fort Score</div><div id="wFS"></div><div style="font-size:.63rem;color:var(--mut);margin-top:.45rem;line-height:1.55">Fort Score = all your Moat Points summed. Determines Early User Airdrop share.</div></div>
         <div class="ccard"><div class="ctit">🔬 Wallet Signals</div><div id="wSig"></div></div>
+        <div class="ccard" id="wHealthCard" style="display:none">
+          <div class="ctit">🏥 Position Health Score</div>
+          <div style="text-align:center;margin-bottom:.7rem">
+            <div class="health-arc-wrap">
+              <svg viewBox="0 0 120 70" width="120" height="70">
+                <path d="M10,65 A55,55 0 0,1 110,65" fill="none" stroke="var(--bor)" stroke-width="10" stroke-linecap="round"/>
+                <path id="healthArcFill" d="M10,65 A55,55 0 0,1 110,65" fill="none" stroke="var(--acc)" stroke-width="10" stroke-linecap="round" stroke-dasharray="0 172.8"/>
+              </svg>
+            </div>
+            <div class="health-grade" id="healthGrade" style="color:var(--acc)">—</div>
+            <div class="health-score-num"><span id="healthScore">0</span>/100</div>
+          </div>
+          <div id="healthComps" style="margin-bottom:.65rem"></div>
+          <div id="healthTips"></div>
+        </div>
       </div>
     </div>
   </div>
@@ -1585,223 +1712,9 @@ main{position:relative;z-index:1;padding:.8rem;max-width:1440px;margin:0 auto}
   </div>
 </div>
 
-
-<!-- ══ WHALE ALERTS ══ -->
-<div id="view-whales" class="view">
-  <div class="sh">
-    <div class="sh-t">🐋 Whale Alerts Feed</div>
-    <div class="live"><span class="ld"></span>live big moves</div>
-  </div>
-  <div class="sg" style="grid-template-columns:repeat(3,1fr);margin-bottom:.85rem">
-    <div class="sc"><div class="sl">Whale Txns (24h)</div><div class="sv ca" id="whaleCount">—</div></div>
-    <div class="sc"><div class="sl">Biggest Burn</div><div class="sv cr" id="whaleBigBurn">—</div></div>
-    <div class="sc"><div class="sl">Whale of Day</div><div class="sv cg" id="whaleOfDay" style="font-size:.72rem;font-family:'DM Mono',monospace">—</div></div>
-  </div>
-  <div class="panel">
-    <div class="ph">
-      <div class="ptitle">🐋 Big Moves Feed</div>
-      <div style="display:flex;gap:5px;align-items:center">
-        <select id="whaleTypeFilter" onchange="renderWhales()" style="padding:3px 7px;background:var(--sur);border:1px solid var(--bor);border-radius:5px;color:var(--dim);font-family:'DM Mono',monospace;font-size:.56rem;outline:none">
-          <option value="">All Moves</option>
-          <option value="burned">🔥 Burns</option>
-          <option value="staked">🔒 Stakes</option>
-          <option value="locked">⏳ Locks</option>
-        </select>
-        <select id="whaleThreshold" onchange="renderWhales()" style="padding:3px 7px;background:var(--sur);border:1px solid var(--bor);border-radius:5px;color:var(--dim);font-family:'DM Mono',monospace;font-size:.56rem;outline:none">
-          <option value="100000">100K+ tokens</option>
-          <option value="500000">500K+ tokens</option>
-          <option value="1000000">1M+ tokens</option>
-          <option value="10000">10K+ tokens</option>
-        </select>
-      </div>
-    </div>
-    <div id="whaleFeed" style="max-height:520px;overflow-y:auto;padding:.55rem .85rem">
-      <div class="empty"><div class="ico">🐋</div>Loading whale moves…</div>
-    </div>
-  </div>
-  <!-- Streak Tracker panel -->
-  <div class="panel" style="margin-top:.85rem">
-    <div class="ph">
-      <div class="ptitle">🔥 Moat Streak Tracker</div>
-      <span style="font-family:'DM Mono',monospace;font-size:.56rem;color:var(--mut)">consecutive weeks active</span>
-    </div>
-    <div id="streakBoard" style="padding:.85rem">
-      <div class="empty"><div class="ico">🔥</div>Loading streaks…</div>
-    </div>
-  </div>
-</div>
-
-<!-- ══ COUNCIL RACE ══ -->
-<div id="view-race" class="view">
-  <div class="sh">
-    <div class="sh-t">🏎️ Council Race</div>
-    <div class="live"><span class="ld"></span>live standings</div>
-  </div>
-  <div style="background:var(--card);border:1px solid var(--bor);border-radius:14px;overflow:hidden;margin-bottom:.85rem">
-    <div class="ph">
-      <div class="ptitle">🏁 Top 10 Council Score — Live Race</div>
-      <div style="display:flex;gap:6px;align-items:center">
-        <span id="raceWalletHint" style="font-family:'DM Mono',monospace;font-size:.56rem;color:var(--mut)">Enter your wallet to highlight position</span>
-        <input id="raceWalletInput" type="text" placeholder="0x… to track" style="padding:3px 8px;background:var(--sur);border:1px solid var(--bor);border-radius:5px;color:var(--dim);font-family:'DM Mono',monospace;font-size:.56rem;outline:none;width:130px" oninput="renderRace()">
-      </div>
-    </div>
-    <div id="raceTrack" style="padding:1.1rem .7rem;min-height:340px;position:relative;background:linear-gradient(180deg,rgba(249,115,22,.03) 0%,transparent 100%)">
-      <div class="empty"><div class="ico">🏎️</div>Loading race data…</div>
-    </div>
-    <div id="raceYourPos" style="display:none;padding:.7rem 1.1rem;border-top:1px solid var(--bor);background:rgba(249,115,22,.04)">
-      <div style="font-family:'DM Mono',monospace;font-size:.63rem;color:var(--acc)" id="raceYourPosText"></div>
-    </div>
-  </div>
-</div>
-
-<!-- ══ DAILY INTEL ══ -->
-<div id="view-intel" class="view">
-  <div class="sh">
-    <div class="sh-t">📰 Daily Intel Brief</div>
-    <div style="font-family:'DM Mono',monospace;font-size:.58rem;color:var(--mut)" id="intelDate"></div>
-  </div>
-  <!-- Health Score -->
-  <div class="g2" style="margin-bottom:.85rem">
-    <div class="panel">
-      <div class="ph"><div class="ptitle">💯 My Position Health Score</div></div>
-      <div style="padding:1.1rem">
-        <div style="display:flex;gap:10px;margin-bottom:.85rem">
-          <input id="healthWallet" type="text" placeholder="Enter wallet 0x…" style="flex:1;padding:.5rem .75rem;background:var(--sur);border:1px solid var(--bor);border-radius:7px;color:var(--txt);font-family:'DM Mono',monospace;font-size:.66rem;outline:none" onfocus="this.style.borderColor='var(--acc)'" onblur="this.style.borderColor='var(--bor)'" onkeydown="if(event.key==='Enter')calcHealthScore()">
-          <button onclick="calcHealthScore()" class="btn" style="padding:.5rem 1rem;font-size:.7rem;white-space:nowrap">Score →</button>
-        </div>
-        <div id="healthResult" style="display:none">
-          <div style="display:flex;align-items:center;gap:1.2rem;margin-bottom:.9rem">
-            <div style="position:relative;width:100px;height:100px;flex-shrink:0">
-              <svg viewBox="0 0 100 100" style="width:100px;height:100px;transform:rotate(-90deg)">
-                <circle cx="50" cy="50" r="42" fill="none" stroke="var(--bor)" stroke-width="10"/>
-                <circle cx="50" cy="50" r="42" fill="none" stroke="var(--acc)" stroke-width="10" stroke-dasharray="264" id="healthArc" stroke-dashoffset="264" stroke-linecap="round" style="transition:stroke-dashoffset 1.2s cubic-bezier(.4,0,.2,1)"/>
-              </svg>
-              <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">
-                <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:1.4rem;line-height:1;color:var(--acc)" id="healthScore">—</div>
-                <div style="font-family:'DM Mono',monospace;font-size:.45rem;color:var(--mut);text-transform:uppercase">health</div>
-              </div>
-            </div>
-            <div style="flex:1">
-              <div id="healthGrade" style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:1.1rem;margin-bottom:.3rem">—</div>
-              <div id="healthSummary" style="font-family:'DM Mono',monospace;font-size:.62rem;color:var(--dim);line-height:1.6">—</div>
-            </div>
-          </div>
-          <div id="healthBreakdown" style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-bottom:.8rem"></div>
-          <div id="healthAdvice" style="background:rgba(249,115,22,.07);border:1px solid rgba(249,115,22,.2);border-radius:8px;padding:.75rem"></div>
-          <!-- Achievement Badges -->
-          <div style="margin-top:.85rem">
-            <div style="font-family:'DM Mono',monospace;font-size:.52rem;text-transform:uppercase;letter-spacing:.1em;color:var(--mut);margin-bottom:.5rem">🏅 Achievement Badges</div>
-            <div id="healthBadges" style="display:flex;flex-wrap:wrap;gap:.4rem"></div>
-          </div>
-        </div>
-        <div id="healthEmpty" class="empty" style="padding:1.2rem 0;display:block"><div class="ico">💯</div>Enter your wallet to compute a 0–100 health score across diversity, lock depth, eco share, and burn ratio.</div>
-      </div>
-    </div>
-    <!-- Liquidity Depth Heatmap -->
-    <div class="panel">
-      <div class="ph">
-        <div class="ptitle">🌡️ Liquidity Depth Heatmap</div>
-        <span style="font-family:'DM Mono',monospace;font-size:.56rem;color:var(--mut)">LP concentration per moat</span>
-      </div>
-      <div id="liqHeatmap" style="padding:.85rem">
-        <div class="empty"><div class="ico">🌡️</div>Loading heatmap…</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Today in Moats digest -->
-  <div class="panel">
-    <div class="ph">
-      <div class="ptitle">📰 Today in Moats</div>
-      <button onclick="buildIntelBrief()" class="rfbtn">↺ Refresh</button>
-    </div>
-    <div id="intelBrief" style="padding:.85rem">
-      <div class="empty"><div class="ico">📰</div>Loading today's brief…</div>
-    </div>
-  </div>
-</div>
-
 </main>
 
-<style>
-/* ── WHALE FEED ── */
-.wh-item{display:flex;align-items:flex-start;gap:10px;padding:.65rem .8rem;border-bottom:1px solid rgba(51,46,40,.25);animation:whalePop .5s ease forwards;position:relative;overflow:hidden}
-.wh-item:last-child{border-bottom:none}
-@keyframes whalePop{0%{opacity:0;transform:translateX(-10px)}100%{opacity:1;transform:translateX(0)}}
-.wh-item::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px}
-.wh-burn::before{background:var(--red)}
-.wh-stake::before{background:var(--acc)}
-.wh-lock::before{background:var(--gld)}
-.wh-icon{font-size:1.5rem;flex-shrink:0;margin-top:1px}
-.wh-body{flex:1;min-width:0}
-.wh-headline{font-family:'DM Mono',monospace;font-size:.7rem;color:var(--txt);line-height:1.45}
-.wh-sub{font-family:'DM Mono',monospace;font-size:.58rem;color:var(--mut);margin-top:2px}
-.wh-badge{display:inline-flex;align-items:center;gap:3px;padding:1px 6px;border-radius:99px;font-family:'DM Mono',monospace;font-size:.5rem;font-weight:600}
-.wh-mega{font-size:.6rem;color:var(--gld);background:rgba(212,168,67,.12);border:1px solid rgba(212,168,67,.25);border-radius:4px;padding:1px 5px;margin-left:5px}
-/* STREAK */
-.streak-row{display:flex;align-items:center;justify-content:space-between;padding:.55rem .7rem;border-bottom:1px solid rgba(51,46,40,.25);transition:background .15s}
-.streak-row:last-child{border-bottom:none}
-.streak-row:hover{background:rgba(249,115,22,.03)}
-.streak-fire{font-size:.9rem}
-.streak-pips{display:flex;gap:3px;align-items:center}
-.streak-pip{width:10px;height:10px;border-radius:2px;flex-shrink:0}
-.streak-pip.on{background:var(--acc);box-shadow:0 0 4px rgba(249,115,22,.5)}
-.streak-pip.off{background:var(--bor)}
-/* RACE TRACK */
-.race-car{display:flex;align-items:center;gap:0;margin-bottom:.45rem;position:relative;height:46px}
-.race-lane{flex:1;height:44px;background:linear-gradient(90deg,rgba(30,27,22,.9) 0%,rgba(20,18,16,.4) 100%);border:1px solid var(--bor);border-radius:8px;position:relative;overflow:hidden;transition:border-color .3s}
-.race-lane.selected{border-color:var(--acc);box-shadow:0 0 12px rgba(249,115,22,.2)}
-.race-lane::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent,transparent 19px,rgba(51,46,40,.18) 20px)}
-.race-finish{position:absolute;right:0;top:0;bottom:0;width:24px;background:repeating-linear-gradient(45deg,rgba(255,255,255,.07),rgba(255,255,255,.07) 3px,transparent 3px,transparent 6px);border-left:2px solid rgba(255,255,255,.15)}
-.race-car-icon{position:absolute;top:50%;transform:translateY(-50%);left:2px;white-space:nowrap;font-size:1.25rem;z-index:2;line-height:1}
-.race-car-icon.animated{transition:left 1.6s cubic-bezier(.25,.46,.45,.94)}
-.race-rank-label{position:absolute;top:50%;transform:translateY(-50%);left:6px;font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.62rem;color:rgba(255,255,255,.3);z-index:1}
-.race-info{width:185px;flex-shrink:0;padding-left:10px;display:flex;align-items:center;gap:5px}
-@media(max-width:600px){.race-info{width:120px}}
-.race-addr{font-family:'DM Mono',monospace;font-size:.58rem;color:var(--txt)}
-.race-pts{font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.72rem;color:var(--acc)}
-/* HEALTH */
-.health-bar-row{background:var(--sur);border:1px solid var(--bor);border-radius:8px;padding:.6rem .75rem}
-.health-bar-label{font-family:'DM Mono',monospace;font-size:.52rem;color:var(--mut);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.3rem;display:flex;justify-content:space-between}
-.health-bar-track{height:6px;background:var(--bor);border-radius:99px;overflow:hidden}
-.health-bar-fill{height:100%;border-radius:99px;transition:width 1s cubic-bezier(.4,0,.2,1)}
-/* BADGES */
-.badge{display:inline-flex;align-items:center;gap:5px;padding:.3rem .65rem;border-radius:99px;font-family:'DM Mono',monospace;font-size:.56rem;border:1px solid;transition:all .2s;cursor:default}
-.badge-gold{background:rgba(212,168,67,.12);border-color:rgba(212,168,67,.35);color:var(--gld)}
-.badge-fire{background:rgba(239,68,68,.1);border-color:rgba(239,68,68,.3);color:#ef4444}
-.badge-blue{background:rgba(34,211,238,.08);border-color:rgba(34,211,238,.25);color:var(--cyn)}
-.badge-pur{background:rgba(167,139,250,.1);border-color:rgba(167,139,250,.3);color:var(--pur)}
-.badge-grn{background:rgba(109,184,122,.1);border-color:rgba(109,184,122,.3);color:var(--grn)}
-.badge.locked{opacity:.3;filter:grayscale(1)}
-/* HEATMAP */
-.hm-row{display:flex;align-items:center;gap:8px;margin-bottom:.6rem}
-.hm-bar-wrap{flex:1;height:22px;background:var(--sur);border-radius:5px;overflow:hidden;position:relative;border:1px solid var(--bor)}
-.hm-bar-fill{height:100%;border-radius:5px;transition:width 1.1s ease}
-.hm-label{font-family:'DM Mono',monospace;font-size:.58rem;color:var(--txt);min-width:60px}
-.hm-pct{font-family:'DM Mono',monospace;font-size:.56rem;min-width:36px;text-align:right}
-.hm-warn{font-size:.8rem;margin-left:4px}
-/* INTEL BRIEF */
-.brief-card{background:var(--sur);border:1px solid var(--bor);border-radius:10px;padding:.85rem;margin-bottom:.65rem;display:flex;align-items:flex-start;gap:.75rem}
-.brief-icon{font-size:1.6rem;flex-shrink:0}
-.brief-hed{font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.8rem;margin-bottom:2px}
-.brief-val{font-family:'DM Mono',monospace;font-size:.66rem;color:var(--acc)}
-.brief-sub{font-family:'DM Mono',monospace;font-size:.58rem;color:var(--mut);margin-top:3px;line-height:1.5}
-/* LAST SEEN */
-.last-seen-dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:5px;flex-shrink:0;vertical-align:middle}
-.ls-fresh{background:var(--grn);box-shadow:0 0 5px var(--grn)}
-.ls-stale{background:var(--gld)}
-.ls-dead{background:var(--mut)}
-/* OVERVIEW HIGHLIGHTS */
-#ovHighlights{display:grid;grid-template-columns:repeat(4,1fr);gap:.55rem;margin-bottom:.85rem}
-@media(max-width:700px){#ovHighlights{grid-template-columns:repeat(2,1fr)}}
-@media(max-width:420px){#ovHighlights{grid-template-columns:1fr 1fr}}
-/* BRIEF CARDS GRID */
-#intelBrief .brief-card{cursor:default}
-@media(max-width:500px){#intelBrief>div:nth-child(2){grid-template-columns:1fr}}
-</style>
-
 <script>
-
 // ── STATE (declared first to prevent temporal dead zone errors) ──
 let allPts=[], allEvs=[], moatMap={}, wMap={}, charts={};
 let evPage=1, evTotal=0, evLoading=false;
@@ -2001,9 +1914,6 @@ function nav(el, _skipRoute=false){
   if(v==='copymoat')initCopyMoat();
   if(v==='positions')initPositions();
   if(v==='pos-detail'){} // handled by posOpenDetail
-  if(v==='whales'){renderWhales();renderStreaks();}
-  if(v==='race')renderRace();
-  if(v==='intel'){buildIntelBrief();renderLiqHeatmap();setIntelDate();}
   // Update URL + meta (skip during boot to avoid double-push)
   if(!_skipRoute && typeof routeFromTab === 'function') routeFromTab(v);
 }
@@ -2230,6 +2140,7 @@ async function loadAll(){
     renderOverview(freshEids);
     renderEvs(freshEids);
     renderSignals();
+    initNewFeatures();
     updateTicker();
     const activeV=document.querySelector('.tab.on')?.dataset.v;
     if(activeV==='leaderboard')renderLB();
@@ -3135,7 +3046,13 @@ async function loadPrice(addr){
 async function injectSupplyIntoTable(moatAddr) {
   const meta = MOATS[moatAddr]; if(!meta) return;
 
-  // Ensure supply is fetched
+  // ── hCASH LP Moat special handling ──
+  // hCASH LP moat tokens ARE the LP tokens from the AVAX+hCASH Pharaoh pool.
+  // They are inherently volatile (their value tracks AVAX + hCASH price).
+  // Distribution should show: LP tokens staked in moat vs total LP supply — NOT raw hCASH supply.
+  const isHcash = isHcashMoat(moatAddr);
+
+  // Ensure supply is fetched (for hCASH this is LP token supply)
   let supply = getSupply(moatAddr);
   if (!supply) supply = await fetchTokenSupply(meta.tokenAddr);
   const tbl = document.querySelector('#mTokenTbl tbody');
@@ -3148,21 +3065,21 @@ async function injectSupplyIntoTable(moatAddr) {
 
   const m   = moatMap[moatAddr] || {};
   const ppt = estPtsPerToken(moatAddr);
-  const isDynamic  = meta.supplyType === 'dynamic';
+  const isDynamic  = meta.supplyType === 'dynamic' || isHcash; // hCASH LP is always dynamic
   const pxData     = priceCache[moatAddr];
   const price      = pxData?.price || 0;
   const totalSupply = supply.totalSupply || 0;
 
-  // ── Accurate figures ──
-  // In Moat = on-chain balanceOf(moatContract) — staked + locked tokens sitting in contract
+  // For hCASH: In Moat = LP tokens staked. totalSupply = total LP tokens.
+  // LP tokens in pool ARE the volatile component — don't subtract them as "not circulating".
   const inMoatRaw  = (totals && totals.staked > 0) ? totals.staked : (m.totalTokens || 0);
-  // Burned = on-chain balanceOf(0xDead)
   const burnedRaw  = (totals && totals.burned > 0) ? totals.burned : (m.burnTokens || 0);
-  // LP Pool = liquidity USD / token price (gives base token in pool)
+  // LP Pool liquidity USD / token price (for regular tokens only; hCASH LP price IS the LP token price)
   const liqUsd     = pxData?.liq || 0;
-  // DexScreener liq.usd = both sides; base token ≈ half of USD / price
-  const liqRaw     = (price > 0 && liqUsd > 0) ? (liqUsd / 2 / price) : 0;
-  // Circulating = total - inMoat - burned (LP is subset of circulating, not additive)
+  const liqRaw     = (!isHcash && price > 0 && liqUsd > 0) ? (liqUsd / 2 / price) : 0;
+
+  // For hCASH: circulating = total LP supply - LP tokens locked in moat - burned
+  // The "pool" is external and separate from what's staked in the moat
   const nonCirc    = inMoatRaw + burnedRaw;
   const circRaw    = Math.max(0, totalSupply - nonCirc);
 
@@ -3174,11 +3091,12 @@ async function injectSupplyIntoTable(moatAddr) {
   const liqPct    = pct(liqRaw);
   const circPct   = pct(circRaw);
 
+  // For hCASH LP: market cap is based on LP token price × LP supply (not raw hCASH count)
   const calcMcap  = (totalSupply > 0 && price > 0) ? '$' + fmtK(circRaw * price) : '—';
   const fdvMcap   = (totalSupply > 0 && price > 0) ? '$' + fmtK(totalSupply * price) : '—';
 
   const supplyTypeHtml = isDynamic
-    ? '<span style="color:var(--gld);font-size:.58rem">&#9889; Dynamic</span>'
+    ? '<span style="color:var(--gld);font-size:.58rem">&#9889; Dynamic' + (isHcash ? ' · LP Pool Token' : '') + '</span>'
     : '<span style="color:var(--grn);font-size:.58rem">&#128274; Fixed</span>';
 
   const dataSource = totals?.source === 'onchain'
@@ -3187,21 +3105,23 @@ async function injectSupplyIntoTable(moatAddr) {
 
   // ── Table rows ──
   const rows = [
-    ['Token',          meta.ticker + ' (' + (supply.symbol || meta.ticker) + ')', null],
-    ['Total Supply',   fmtP(totalSupply), null],
-    ['Supply Type',    null, supplyTypeHtml],
+    ['Token',     (isHcash ? 'LP Token (WAVAX/hCASH)' : meta.ticker + ' (' + (supply.symbol || meta.ticker) + ')'), null],
+    ['Total LP Supply', isHcash ? fmtP(totalSupply) + ' LP tokens' : null, null],
+    ...(!isHcash ? [['Total Supply', fmtP(totalSupply), null]] : []),
+    ['Supply Type', null, supplyTypeHtml],
+    ...(isHcash ? [['Underlying Assets','WAVAX + hCASH (volatile LP)', null]] : []),
     ['Circ. Market Cap', calcMcap, null],
     ['FDV',            fdvMcap, null],
-    ['Pts / Token (1×)', ppt !== null ? fmtPrice(ppt) : '—', null],
+    ['Pts / LP Token (1×)', ppt !== null ? fmtPrice(ppt) : '—', null],
     ['Data Source',    null, dataSource],
-  ];
+  ].filter(r=>r[1]!==null||r[2]!==null);
 
   rows.forEach(function(row) {
     var [label, val, html] = row;
     var tr  = document.createElement('tr'); tr.className = 'supply-row';
     var tdL = document.createElement('td'); tdL.className = 'il'; tdL.textContent = label;
     var tdV = document.createElement('td'); tdV.style.cssText = "font-family:'DM Mono',monospace;font-size:.72rem";
-    if (html) tdV.innerHTML = html; else tdV.textContent = val;
+    if (html) tdV.innerHTML = html; else tdV.textContent = val||'—';
     tr.appendChild(tdL); tr.appendChild(tdV); tbl.appendChild(tr);
   });
 
@@ -3209,14 +3129,17 @@ async function injectSupplyIntoTable(moatAddr) {
   var distTr = document.createElement('tr'); distTr.className = 'supply-row';
   var distTd = document.createElement('td'); distTd.colSpan = 2; distTd.style.cssText = 'padding:.8rem 0 .4rem';
 
-  // Segments — LP is shown as subset of Circulating (informational), not additive
-  var segments = [
+  // hCASH LP: segments show LP tokens staked in moat vs remaining LP tokens in wallets
+  var segments = isHcash ? [
+    { label:'Staked in Moat (LP)', pct: inMoatPct, color:'#d4a843', val: inMoatRaw },
+    { label:'In Wallets / Pool',   pct: circPct,   color:'#22d3ee', val: circRaw   },
+    ...(burnedRaw>0 ? [{ label:'Burned 🔥', pct: burnedPct, color:'#e05252', val: burnedRaw }] : []),
+  ].filter(s=>s.pct>0.001) : [
     { label:'In Moat',     pct: inMoatPct, color:'#f97316', val: inMoatRaw  },
     { label:'Burned 🔥',   pct: burnedPct, color:'#e05252', val: burnedRaw  },
     { label:'Circulating', pct: circPct,   color:'#6db87a', val: circRaw    },
   ].filter(s => s.pct > 0.001);
 
-  // If no segments have data, show a placeholder bar
   var hasData = segments.some(s => s.pct > 0);
 
   var barHtml = hasData
@@ -3238,8 +3161,8 @@ async function injectSupplyIntoTable(moatAddr) {
     </div>`
   ).join('');
 
-  // LP info row (subset note)
-  var lpNote = liqRaw > 0
+  // LP info row (subset note) — only for non-hCASH moats
+  var lpNote = (!isHcash && liqRaw > 0)
     ? `<div style="display:flex;align-items:center;justify-content:space-between;padding:.25rem 0;border-bottom:1px solid var(--bor)">
         <div style="display:flex;align-items:center;gap:6px">
           <span style="width:9px;height:9px;border-radius:2px;background:#22d3ee;flex-shrink:0;display:inline-block"></span>
@@ -3252,14 +3175,21 @@ async function injectSupplyIntoTable(moatAddr) {
       </div>`
     : '';
 
+  const hcashNote = isHcash
+    ? `<div style="margin-top:.5rem;background:rgba(212,168,67,.07);border:1px solid rgba(212,168,67,.2);border-radius:7px;padding:.45rem .65rem;font-family:'DM Mono',monospace;font-size:.52rem;color:var(--gld);line-height:1.55">
+        💧 hCASH LP Moat: distribution is based on <b>WAVAX/hCASH LP tokens</b>, not raw hCASH supply. LP token count is volatile — it changes as users add/remove liquidity from the Pharaoh pool. Points are earned per LP token staked.
+       </div>`
+    : '';
+
   distTd.innerHTML = `
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.55rem">
-      <span style="font-family:'DM Mono',monospace;font-size:.5rem;color:var(--mut);letter-spacing:.1em;text-transform:uppercase">Token Distribution</span>
+      <span style="font-family:'DM Mono',monospace;font-size:.5rem;color:var(--mut);letter-spacing:.1em;text-transform:uppercase">${isHcash?'LP Token Distribution':'Token Distribution'}</span>
       ${!hasData ? '<span style="font-family:\'DM Mono\',monospace;font-size:.5rem;color:var(--ash2)">awaiting on-chain data</span>' : ''}
     </div>
     <div style="display:flex;height:11px;border-radius:6px;overflow:hidden;margin-bottom:.65rem;background:var(--sur)">${barHtml}</div>
     <div style="display:flex;flex-direction:column">${legendHtml}${lpNote}</div>
-    ${liqRaw > 0 ? '<div style="font-family:\'DM Mono\',monospace;font-size:.48rem;color:var(--ash2);margin-top:.4rem">↳ LP tokens are a subset of Circulating supply · est. from pool USD ÷ price ÷ 2</div>' : ''}
+    ${!isHcash && liqRaw > 0 ? '<div style="font-family:\'DM Mono\',monospace;font-size:.48rem;color:var(--ash2);margin-top:.4rem">↳ LP tokens are a subset of Circulating supply · est. from pool USD ÷ price ÷ 2</div>' : ''}
+    ${hcashNote}
     <div id="distAllPools_${moatAddr}" style="margin-top:.7rem">
       <div style="font-family:'DM Mono',monospace;font-size:.5rem;color:var(--mut);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.35rem;display:flex;align-items:center;gap:6px">
         💧 All Liquidity Pools <span class="spin" style="width:8px;height:8px;border-width:1.5px"></span>
@@ -4005,8 +3935,8 @@ async function gotoW(addr,silent=false){
     ${sr('Moats Joined',mCnt,'var(--acc)')}
     ${sr('Global Rank',rank?'#'+rank:'Unranked','var(--dim)')}
     ${sr('Top Percentile',rank?'Top '+(100-pct)+'%':'—','var(--grn)')}
-    ${sr('Eco Share',ecoTot?(totPts/ecoTot*100).toFixed(4)+'%':'—','var(--txt)')}`;
-
+    ${sr('Eco Share',ecoTot?(totPts/ecoTot*100).toFixed(4)+'%':'—','var(--txt)')}
+    <div class="rr"><span class="rl">Last Seen</span><span id="wLastSeen" style="font-family:'DM Mono',monospace;font-size:.65rem;color:var(--cyn)">computing…</span></div>`;
   // Known profile: show avatar + X link
   const knownP = getKnownProfile(norm);
   const wKnown = document.getElementById('wKnownProfile');
@@ -4050,15 +3980,389 @@ async function gotoW(addr,silent=false){
     var clk=t.action?' onclick="'+t.action+'"':'';
     return '<div style="'+cls+'"'+clk+'><b style="color:var(--acc)">'+t.t+'</b><br><span style="color:var(--dim)">'+t.b+'</span></div>';
   }).join('')||'<div style="color:var(--mut);font-size:.72rem">No specific signals.</div>';
-  buildWChart(moatPts);
+  buildWChart(moatPts, norm);
 }
-function buildWChart(pts){
+function buildWChart(pts, walletAddr){
   const ctx=document.getElementById('wChart'); if(!ctx)return;
   if(charts.wc)charts.wc.destroy();
   const s=pts.slice().sort((a,b)=>b.points-a.points);
   const labels=s.map(p=>{const m=MOATS[p.contractAddress];return m?m.short||m.name:shortA(p.contractAddress);});
   const cols=s.map(p=>{const m=MOATS[p.contractAddress];return m?m.color:'#6b5f54';});
   charts.wc=new Chart(ctx,{type:'doughnut',data:{labels,datasets:[{data:s.map(p=>p.points),backgroundColor:cols.map(c=>c+'55'),borderColor:cols,borderWidth:1.5}]},options:dopts()});
+  const addr = walletAddr || document.getElementById('wIn')?.value?.trim();
+  if (addr) { renderHealthScore(pts, addr); renderLastSeen(addr); }
+}
+
+// ══════════════════════════════════════════════════════
+// ── POSITION HEALTH SCORE ──
+// ══════════════════════════════════════════════════════
+function computeHealthScore(moatPts, wallet) {
+  const norm = wallet.toLowerCase();
+  const mCnt = new Set(moatPts.map(p=>p.contractAddress)).size;
+  const ecoTot = allPts.reduce((s,p)=>s+p.points,0);
+  const totPts = moatPts.reduce((s,p)=>s+p.points,0);
+
+  // 1. Diversity: 4+ moats = 25pts, scale down
+  const diversityScore = Math.min(25, Math.round(mCnt / 4 * 25));
+
+  // 2. Lock Depth: check if wallet has any lock events in allEvs (avg duration)
+  const walletEvs = allEvs.filter(e=>(e.wallet||'').toLowerCase()===norm);
+  const lockEvs = walletEvs.filter(e=>['locked','lock'].includes((e.eventType||'').toLowerCase()) && e.lockDays>0);
+  const avgLock = lockEvs.length ? lockEvs.reduce((s,e)=>s+(e.lockDays||0),0)/lockEvs.length : 0;
+  const lockScore = Math.min(25, Math.round(avgLock/730*25));
+
+  // 3. Eco Share: how much of total ecosystem points they own (higher = more established)
+  const ecoSharePct = ecoTot>0 ? totPts/ecoTot : 0;
+  const ecoScore = Math.min(25, Math.round(Math.log10(1+ecoSharePct*1000)*12.5));
+
+  // 4. Burn Ratio: burned tokens / total volume
+  const burnEvs = walletEvs.filter(e=>['burned','burn'].includes((e.eventType||'').toLowerCase()));
+  const burnAmt = burnEvs.reduce((s,e)=>s+(e.tokenAmount||0),0);
+  const totalEvAmt = walletEvs.reduce((s,e)=>s+(e.tokenAmount||0),0);
+  const burnRatio = totalEvAmt>0 ? burnAmt/totalEvAmt : 0;
+  const burnScore = Math.min(25, Math.round(burnRatio*25));
+
+  const total = diversityScore + lockScore + ecoScore + burnScore;
+  return { total, diversityScore, lockScore, ecoScore, burnScore, mCnt, avgLock, ecoSharePct, burnRatio };
+}
+
+function renderHealthScore(moatPts, wallet) {
+  const hCard = document.getElementById('wHealthCard');
+  if (!hCard) return;
+  if (!moatPts.length) { hCard.style.display='none'; return; }
+  hCard.style.display = 'block';
+
+  const h = computeHealthScore(moatPts, wallet);
+  const score = h.total;
+
+  // Grade
+  const grade = score>=85?'S':score>=70?'A':score>=55?'B':score>=40?'C':score>=25?'D':'F';
+  const gradeCol = score>=85?'var(--grn)':score>=55?'var(--acc)':score>=25?'var(--gld)':'var(--red)';
+
+  // Arc fill: path length = 172.8 (half circle). score/100 * 172.8
+  const arcLen = (score/100*172.8).toFixed(1);
+  const arcEl = document.getElementById('healthArcFill');
+  if (arcEl) { arcEl.setAttribute('stroke-dasharray', arcLen+' 172.8'); arcEl.setAttribute('stroke', gradeCol); }
+  const grEl = document.getElementById('healthGrade');
+  if (grEl) { grEl.textContent=grade; grEl.style.color=gradeCol; }
+  const scEl = document.getElementById('healthScore');
+  if (scEl) scEl.textContent=score;
+
+  // Component bars
+  const comps = [
+    { label:'🌐 Diversity',    score:h.diversityScore, max:25, note:h.mCnt+' moat'+(h.mCnt!==1?'s':'') },
+    { label:'⏳ Lock Depth',   score:h.lockScore,      max:25, note:h.avgLock>0?h.avgLock.toFixed(0)+'d avg lock':'no locks yet' },
+    { label:'🌊 Eco Share',    score:h.ecoScore,       max:25, note:(h.ecoSharePct*100).toFixed(4)+'%' },
+    { label:'🔥 Burn Ratio',   score:h.burnScore,      max:25, note:(h.burnRatio*100).toFixed(1)+'% of volume' },
+  ];
+  const compsEl = document.getElementById('healthComps');
+  if (compsEl) compsEl.innerHTML = comps.map(c=>`
+    <div class="health-comp-bar">
+      <div style="font-family:'DM Mono',monospace;font-size:.54rem;color:var(--mut);width:100px;flex-shrink:0">${c.label}</div>
+      <div class="health-comp-bg"><div class="health-comp-fill" style="width:${c.score/c.max*100}%;background:${gradeCol}"></div></div>
+      <div style="font-family:'DM Mono',monospace;font-size:.54rem;color:var(--txt);width:28px;text-align:right;flex-shrink:0">${c.score}/${c.max}</div>
+    </div>
+    <div style="font-family:'DM Mono',monospace;font-size:.48rem;color:var(--mut);margin-bottom:.35rem;padding-left:100px">${c.note}</div>
+  `).join('');
+
+  // Tips
+  const tips = [];
+  if (h.mCnt < 4) tips.push(`Join ${4-h.mCnt} more moat${4-h.mCnt>1?'s':''} for full Diversity bonus (+${(4-h.mCnt)*Math.round(25/4)} pts)`);
+  if (h.avgLock < 90) tips.push('Lock for 90+ days to boost Lock Depth score');
+  if (h.burnRatio < 0.1) tips.push('Burn a portion of your holdings for permanent 10× point boost');
+  const tipsEl = document.getElementById('healthTips');
+  if (tipsEl) tipsEl.innerHTML = tips.length
+    ? tips.map(t=>`<div class="health-tip">${t}</div>`).join('')
+    : '<div style="font-family:\'DM Mono\',monospace;font-size:.6rem;color:var(--grn)">✅ Excellent position health!</div>';
+}
+
+// ══════════════════════════════════════════════════════
+// ── LAST SEEN ──
+// ══════════════════════════════════════════════════════
+function computeLastSeen(wallet) {
+  const norm = wallet.toLowerCase();
+  // Find latest event for this wallet across allEvs
+  const walletEvs = allEvs.filter(e=>(e.wallet||'').toLowerCase()===norm && e.timestamp);
+  if (!walletEvs.length) return null;
+  const latest = walletEvs.reduce((best,e)=>Number(e.timestamp)>Number(best.timestamp)?e:best);
+  const ts = Number(latest.timestamp);
+  if (!ts) return null;
+  const ms = ts < 1e12 ? ts*1000 : ts;
+  const d = new Date(ms);
+  if (isNaN(d.getTime())) return null;
+  const now = Date.now();
+  const diff = now - ms;
+  const mins = Math.floor(diff/60000);
+  const hrs = Math.floor(diff/3600000);
+  const days = Math.floor(diff/86400000);
+  let rel = days>30 ? d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})
+           : days>0 ? days+'d ago'
+           : hrs>0  ? hrs+'h ago'
+           : mins>0 ? mins+'m ago'
+           : 'just now';
+  return { rel, date: d.toLocaleString('en-GB',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}), type: latest.eventType };
+}
+
+function renderLastSeen(wallet) {
+  const el = document.getElementById('wLastSeen');
+  if (!el) return;
+  const ls = computeLastSeen(wallet);
+  if (!ls) { el.textContent = 'no activity found'; el.style.color='var(--mut)'; return; }
+  el.innerHTML = `<span class="last-seen-badge" title="${ls.date} · ${ls.type||'activity'}">🕐 ${ls.rel}</span>`;
+}
+
+// ══════════════════════════════════════════════════════
+// ── WHALE ALERT FEED ──
+// ══════════════════════════════════════════════════════
+const WHALE_THRESHOLDS = { 10000:'10K', 100000:'100K', 500000:'500K', 1000000:'1M' };
+
+function getWhaleEvents() {
+  const threshold = Number(document.getElementById('whaleFeedThreshold')?.value||100000);
+  const typeFilter = document.getElementById('whaleFeedTypeFilter')?.value||'';
+  const moatEvs = allEvs.filter(e=>{
+    const amt = e.tokenAmount||0;
+    if (amt < threshold) return false;
+    const t = (e.eventType||'').toLowerCase();
+    if (typeFilter && !t.includes(typeFilter)) return false;
+    const isWhaleType = ['burned','burn','staked','stake','locked','lock'].some(x=>t.includes(x));
+    return isWhaleType;
+  });
+  return moatEvs.sort((a,b)=>Number(b.timestamp||0)-Number(a.timestamp||0));
+}
+
+function renderWhaleFeed() {
+  const el = document.getElementById('whaleFeedEl'); if (!el) return;
+  const whales = getWhaleEvents();
+
+  // Stats strip
+  const now24h = Date.now()/1000 - 86400;
+  const whales24h = whales.filter(e=>Number(e.timestamp||0)>now24h);
+  const burnEvs = whales.filter(e=>['burned','burn'].includes((e.eventType||'').toLowerCase()));
+  const bigBurn = burnEvs.length ? burnEvs.reduce((b,e)=>e.tokenAmount>b.tokenAmount?e:b,burnEvs[0]) : null;
+
+  // Whale of the day = biggest single move in last 24h
+  const wotd = whales24h.length ? whales24h.reduce((b,e)=>e.tokenAmount>b.tokenAmount?e:b,whales24h[0]) : whales[0]||null;
+
+  const setTxtEl = (id,v)=>{ const x=document.getElementById(id); if(x)x.textContent=v; };
+  setTxtEl('wss24hCount', whales24h.length || '—');
+  setTxtEl('wssBigBurn', bigBurn ? fmtP(bigBurn.tokenAmount)+(MOATS[bigBurn.contractAddress]?.ticker?` ${MOATS[bigBurn.contractAddress].ticker}`:'') : '—');
+  setTxtEl('wssWhaleDay', wotd ? (getWalletDisplayName(wotd.wallet||'')) : '—');
+  // Also update intel brief whale of day
+  setTxtEl('ibWhaleDay', wotd ? getWalletDisplayName(wotd.wallet||'') : '—');
+  if (wotd) { const ibWDS=document.getElementById('ibWhaleDaySub'); if(ibWDS)ibWDS.textContent=wotd.tokenAmount?fmtP(wotd.tokenAmount)+' tokens moved':'biggest single move'; }
+
+  if (!whales.length) {
+    el.innerHTML = `<div style="text-align:center;padding:1.5rem;font-family:'DM Mono',monospace;font-size:.62rem;color:var(--mut)">No whale moves above this threshold yet.</div>`;
+    return;
+  }
+
+  el.innerHTML = whales.slice(0,60).map(e=>{
+    const t = (e.eventType||'activity').toLowerCase();
+    const meta = e.contractAddress ? MOATS[e.contractAddress] : null;
+    const col = t.includes('burn')?'var(--red)':t.includes('lock')?'var(--gld)':'var(--acc)';
+    const icon = t.includes('burn')?'🔥':t.includes('lock')?'⏳':'🔒';
+    const verb = t.includes('burn')?'burned':t.includes('lock')?'locked':'staked';
+    const amt = e.tokenAmount||0;
+    const isMega = amt >= 1000000;
+    const ticker = meta?.ticker||'tokens';
+    const w = (e.wallet||'').toLowerCase();
+    const wName = getWalletDisplayName(w);
+    const ts = fmtTs(e.timestamp);
+    const moatTot = meta && moatMap[e.contractAddress]?.totalTokens>0 ? moatMap[e.contractAddress].totalTokens : 0;
+    const poolPct = moatTot>0 ? (amt/moatTot*100).toFixed(2)+'% of pool' : '';
+    return `<div class="whale-item">
+      <div class="whale-dot" style="background:${col};box-shadow:0 0 5px ${col}"></div>
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-bottom:2px">
+          <span style="font-family:'DM Mono',monospace;font-size:.6rem;color:${col};font-weight:600">${icon} ${verb}</span>
+          ${isMega?'<span class="whale-mega">🔱 MEGA</span>':''}
+          ${meta?`<span style="font-family:'DM Mono',monospace;font-size:.52rem;background:${meta.color}18;border:1px solid ${meta.color}44;border-radius:99px;padding:1px 6px;color:${meta.color}">${meta.short}</span>`:''}
+          ${poolPct?`<span style="font-family:'DM Mono',monospace;font-size:.5rem;color:var(--mut)">${poolPct}</span>`:''}
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:2px">
+          <span class="wa" onclick="gotoW('${w}')" style="font-family:'DM Mono',monospace;font-size:.62rem;color:var(--acc);cursor:pointer">${wName}</span>
+          <span style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.75rem;color:${col}">${fmtP(amt)} ${ticker}</span>
+        </div>
+        ${ts?`<div style="font-family:'DM Mono',monospace;font-size:.52rem;color:var(--mut)">${ts}</div>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function getWalletDisplayName(w) {
+  if (!w) return '—';
+  const norm = w.toLowerCase();
+  const prof = getKnownProfile(norm);
+  if (prof) return '@'+prof.twitter;
+  const zn = zephyrNames[norm];
+  if (zn) return zn;
+  return shortA(norm);
+}
+
+// ══════════════════════════════════════════════════════
+// ── MOAT STREAK TRACKER ──
+// ══════════════════════════════════════════════════════
+function computeStreaks() {
+  // Build a map of wallet → set of ISO week strings they were active
+  const weekMap = {};
+  const now = Date.now();
+  const WEEK_MS = 7*24*3600*1000;
+
+  allEvs.forEach(e=>{
+    const w = (e.wallet||'').toLowerCase();
+    if (!w) return;
+    const ts = Number(e.timestamp||0);
+    if (!ts) return;
+    const ms = ts<1e12?ts*1000:ts;
+    if (isNaN(ms)||ms<1e12) return;
+    // ISO week key: year-week
+    const d = new Date(ms);
+    const startOfYear = new Date(d.getFullYear(),0,1);
+    const week = Math.ceil(((d-startOfYear)/86400000+startOfYear.getDay()+1)/7);
+    const key = d.getFullYear()+'-W'+String(week).padStart(2,'0');
+    if (!weekMap[w]) weekMap[w] = new Set();
+    weekMap[w].add(key);
+  });
+
+  // Get current week and 8 prior weeks
+  const currentDate = new Date();
+  const weeks = [];
+  for (let i=7;i>=0;i--) {
+    const d = new Date(now - i*WEEK_MS);
+    const soy = new Date(d.getFullYear(),0,1);
+    const wk = Math.ceil(((d-soy)/86400000+soy.getDay()+1)/7);
+    weeks.push(d.getFullYear()+'-W'+String(wk).padStart(2,'0'));
+  }
+
+  // Score each wallet
+  const scores = Object.entries(weekMap).map(([wallet, wkSet])=>{
+    const history = weeks.map(w=>wkSet.has(w));
+    // Consecutive streak from latest week backwards
+    let streak = 0;
+    for (let i=history.length-1;i>=0;i--) {
+      if (history[i]) streak++;
+      else break;
+    }
+    return { wallet, history, streak };
+  });
+
+  return scores.sort((a,b)=>b.streak-a.streak||b.history.filter(Boolean).length-a.history.filter(Boolean).length).slice(0,20);
+}
+
+function renderStreakTracker() {
+  const el = document.getElementById('streakTrackerEl'); if (!el) return;
+  if (!allEvs.length) { el.innerHTML='<div style="text-align:center;padding:1rem;font-family:\'DM Mono\',monospace;font-size:.6rem;color:var(--mut)">No event data yet.</div>'; return; }
+
+  const streaks = computeStreaks();
+  if (!streaks.length) { el.innerHTML='<div style="text-align:center;padding:1rem;font-family:\'DM Mono\',monospace;font-size:.6rem;color:var(--mut)">No activity data yet.</div>'; return; }
+
+  const medals = ['🥇','🥈','🥉'];
+  el.innerHTML = streaks.map((s,i)=>{
+    const prof = getKnownProfile(s.wallet);
+    const zn = zephyrNames[s.wallet];
+    const name = prof?'@'+prof.twitter:zn||shortA(s.wallet);
+    const isFire = s.streak >= 5;
+    const isBolt = s.streak >= 3 && !isFire;
+    const rankBadge = i<3 ? `<span style="font-size:.95rem">${medals[i]}</span>` : `<span style="font-family:'DM Mono',monospace;font-size:.58rem;color:var(--mut)">#${i+1}</span>`;
+    const pipHtml = s.history.map((active,wi)=>`<div class="streak-pip ${active?'active':'inactive'}" title="Week ${wi+1}: ${active?'active':'inactive'}"></div>`).join('');
+    const streakBadge = isFire ? `<span class="streak-badge badge-fire">🔥 ${s.streak}w</span>`
+                       : isBolt ? `<span class="streak-badge badge-bolt">⚡ ${s.streak}w</span>`
+                       : `<span style="font-family:'DM Mono',monospace;font-size:.58rem;color:var(--mut)">${s.streak}w</span>`;
+    const pic = prof?`<img src="${prof.pic}" style="width:22px;height:22px;border-radius:50%;object-fit:cover;border:1px solid var(--bor);flex-shrink:0" onerror="this.style.display='none'">`
+                    :`<div style="width:22px;height:22px;border-radius:50%;background:var(--bor);display:flex;align-items:center;justify-content:center;font-size:.55rem;color:var(--dim);flex-shrink:0">${(s.wallet[2]||'?').toUpperCase()}</div>`;
+    return `<div class="streak-row">
+      <div style="width:28px;flex-shrink:0;text-align:center">${rankBadge}</div>
+      ${pic}
+      <div class="wa" onclick="gotoW('${s.wallet}')" style="flex:1;min-width:0;font-family:'DM Mono',monospace;font-size:.62rem;color:var(--acc);cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${name}</div>
+      <div class="streak-pip-row">${pipHtml}</div>
+      <div style="width:50px;text-align:right;flex-shrink:0">${streakBadge}</div>
+    </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════════════════
+// ── DAILY INTEL BRIEF ──
+// ══════════════════════════════════════════════════════
+function renderDailyIntelBrief() {
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('en-GB',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
+  const dateEl = document.getElementById('intelDate'); if (dateEl) dateEl.textContent = dateStr;
+
+  // Most active moat by event count in last 24h
+  const cutoff24 = Date.now()/1000 - 86400;
+  const recent = allEvs.filter(e=>Number(e.timestamp||0)>cutoff24);
+  const moatCounts = {};
+  recent.forEach(e=>{ if(e.contractAddress) moatCounts[e.contractAddress]=(moatCounts[e.contractAddress]||0)+1; });
+  const topMoatAddr = Object.keys(moatCounts).sort((a,b)=>moatCounts[b]-moatCounts[a])[0]||null;
+  const topMoat = topMoatAddr ? MOATS[topMoatAddr] : null;
+  setTxtId('ibActiveMoat', topMoat?topMoat.name:'—');
+  setTxtId('ibActiveMoatSub', topMoat?(moatCounts[topMoatAddr]+' events in 24h'):'no recent activity');
+
+  // Biggest mover (single event by tokenAmount)
+  const bigEv = recent.filter(e=>e.tokenAmount>0).sort((a,b)=>b.tokenAmount-a.tokenAmount)[0]||null;
+  setTxtId('ibBigMover', bigEv?getWalletDisplayName(bigEv.wallet||''):'—');
+  setTxtId('ibBigMoverSub', bigEv?(fmtP(bigEv.tokenAmount)+' '+(MOATS[bigEv.contractAddress]?.ticker||'tokens')+' '+((bigEv.eventType||'').toLowerCase())):'no moves today');
+
+  // All-time biggest burn
+  const allBurns = allEvs.filter(e=>['burned','burn'].includes((e.eventType||'').toLowerCase())&&e.tokenAmount>0);
+  const atBigBurn = allBurns.sort((a,b)=>b.tokenAmount-a.tokenAmount)[0]||null;
+  setTxtId('ibBigBurn', atBigBurn?fmtP(atBigBurn.tokenAmount):'—');
+  setTxtId('ibBigBurnSub', atBigBurn?getWalletDisplayName(atBigBurn.wallet||'')+(MOATS[atBigBurn.contractAddress]?' · '+MOATS[atBigBurn.contractAddress].short:''):'no burns yet');
+
+  // New entrants (24h) — wallets that appear in recent but NOT in older events
+  const oldWallets = new Set(allEvs.filter(e=>Number(e.timestamp||0)<=cutoff24).map(e=>(e.wallet||'').toLowerCase()));
+  const newWallets = new Set(recent.map(e=>(e.wallet||'').toLowerCase()).filter(w=>w&&!oldWallets.has(w)));
+  setTxtId('ibNewEntrants', String(newWallets.size||0));
+  setTxtId('ibNewEntrantsSub', newWallets.size>0?'first time in any moat today':'no newcomers yet');
+
+  // 24h active wallets
+  const activeWallets24h = new Set(recent.map(e=>(e.wallet||'').toLowerCase()).filter(Boolean));
+  setTxtId('ibActiveWallets', String(activeWallets24h.size||0));
+  setTxtId('ibActiveWalletsSub', activeWallets24h.size+' unique wallets today');
+
+  // Whale of the day already set in renderWhaleFeed, but set fallback here
+  if (!bigEv) { setTxtId('ibWhaleDay','—'); setTxtId('ibWhaleDaySub','no activity'); }
+
+  // Breaking headline — Forifi/Moat/Knight wordplay
+  const headlines = [];
+  if (topMoat) headlines.push(`The ${topMoat.name} Fortress is under siege — ${moatCounts[topMoatAddr]} attacks in the last 24h. Knights are mobilizing.`);
+  if (atBigBurn) headlines.push(`FORTIFI DISPATCH: The largest burn the Moats have ever seen — ${fmtP(atBigBurn.tokenAmount)} tokens sent to the void. The Moat grows deeper.`);
+  if (newWallets.size>5) headlines.push(`INTELLIGENCE: ${newWallets.size} new knights crossed the drawbridge today. The kingdom expands.`);
+  if (bigEv) headlines.push(`MOAT CHRONICLE: ${getWalletDisplayName(bigEv.wallet||'')} made a power move — ${fmtP(bigEv.tokenAmount)} tokens ${(bigEv.eventType||'').toLowerCase()} in one strike.`);
+  if (!headlines.length) headlines.push('MOAT INTEL DISPATCH: All quiet on the Avalanche front. Knights stand ready. The moats hold.');
+  const headlineEl = document.getElementById('intelHeadlineText');
+  if (headlineEl) headlineEl.textContent = headlines[Math.floor(Math.random()*headlines.length)];
+}
+
+function setTxtId(id, val) { const el=document.getElementById(id); if(el)el.textContent=val; }
+
+// ══════════════════════════════════════════════════════
+// ── HCASH LP: Fix token distribution calculation ──
+// In the moat token distribution, hCASH moat tokens are LP pool tokens
+// so the "In Moat" figure should reflect LP tokens staked, and
+// "Token Distribution" for hCASH must show LP token breakdown, not raw hcash supply
+// ══════════════════════════════════════════════════════
+function isHcashMoat(moatAddr) {
+  return moatAddr && moatAddr.toLowerCase() === '0x501f6e7bec3db63d8dacbc9fa0ce42d5d2329d53';
+}
+
+// Override for Quick Points Estimator: hCASH uses LP tokens, not base token count
+function getEffectiveTokensForCalc(moatAddr, tokenAmt) {
+  // For hCASH LP moat, token amount entered = LP tokens, not raw hCASH
+  // LP tokens represent a share of the AVAX+hCASH pool; treat 1:1 for points
+  return tokenAmt; // points are based on LP tokens staked
+}
+
+// ══════════════════════════════════════════════════════
+// ── HOOK: render new features after data loads ──
+// ══════════════════════════════════════════════════════
+const _origRenderEvs = window.renderEvs;
+// We patch via setTimeout post-load in initNewFeatures()
+
+function initNewFeatures() {
+  renderDailyIntelBrief();
+  renderWhaleFeed();
+  renderStreakTracker();
 }
 
 // ── INVESTMENT ALLOCATOR ──
@@ -4482,6 +4786,7 @@ async function runAllocatorCalc() {
     const fortShare = ecoTot ? (pts/(ecoTot+pts)*100).toFixed(5) : '0';
     const supply = getSupply(addr);
     const supplyPct = supply?.totalSupply>0&&tokens>0 ? (tokens/supply.totalSupply*100).toFixed(4) : null;
+    const supplyPctLabel = isHcashMoat(addr) ? (supplyPct ? supplyPct+'% of LP supply' : null) : (supplyPct ? supplyPct+'%' : null);
     const ch24 = px?.ch24||0;
     const liq = px?.liq||0;
 
@@ -4998,24 +5303,22 @@ function onMoatSelChange(){
   const meta = MOATS[addr]  || {};
   if (ctx) ctx.style.display = 'block';
 
-  // Use knownSupply as primary source — NEVER await anything, UI stays instant
+  const isHcash = isHcashMoat(addr);
   const knownSup = meta.knownSupply || 0;
-  // Try supplyCache first (may have been enriched), fall back to knownSupply
   const cached = getSupply(addr);
   const sup    = (cached && cached.totalSupply > 0) ? cached : (knownSup ? {totalSupply:knownSup, symbol:meta.ticker, decimals:18} : null);
-
-  // Estimated pts-per-token for rank preview
   const ppt = (knownSup > 0) ? (1000000 / knownSup) : (estPtsPerToken(addr) || null);
 
-  const dynTag = meta.supplyType === 'dynamic'
-    ? '<span style="color:var(--gld)">⚡ Dynamic</span>'
+  const dynTag = (meta.supplyType === 'dynamic' || isHcash)
+    ? '<span style="color:var(--gld)">⚡ Dynamic' + (isHcash ? ' · LP Token' : '') + '</span>'
     : '<span style="color:var(--grn)">🔒 Fixed</span>';
 
   const supplyLine = sup && sup.totalSupply > 0
-    ? '<div style="grid-column:1/-1;margin-top:5px;font-family:monospace;font-size:.56rem;color:var(--dim);display:flex;align-items:center;gap:8px">'
-      + '<span>Supply: <b style="color:var(--txt)">'+fmtP(sup.totalSupply)+' '+(sup.symbol||meta.ticker||'')+'</b></span>'
+    ? '<div style="grid-column:1/-1;margin-top:5px;font-family:monospace;font-size:.56rem;color:var(--dim);display:flex;align-items:center;gap:8px;flex-wrap:wrap">'
+      + '<span>Supply: <b style="color:var(--txt)">'+fmtP(sup.totalSupply)+' '+(isHcash?'LP tokens':sup.symbol||meta.ticker||'')+'</b></span>'
       + dynTag
-      + (ppt ? '<span style="color:var(--acc)">~'+fmtPrice(ppt)+' pts/token (stake)</span>' : '')
+      + (ppt ? '<span style="color:var(--acc)">~'+fmtPrice(ppt)+' pts/'+(isHcash?'LP':'token')+' (stake)</span>' : '')
+      + (isHcash ? '<span style="color:var(--gld);background:rgba(212,168,67,.1);border:1px solid rgba(212,168,67,.22);border-radius:4px;padding:1px 5px;font-size:.5rem">Amount = LP tokens, not raw hCASH</span>' : '')
       + '</div>'
     : '';
 
@@ -5025,21 +5328,20 @@ function onMoatSelChange(){
     +`<div style="text-align:center"><div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.88rem;color:var(--gld)">${Math.round(m.avgPoints||0)}</div><div style="font-family:'DM Mono',monospace;font-size:.5rem;color:var(--mut);text-transform:uppercase">Avg Pts</div></div>`
     + supplyLine;
 
-  calcPts(); // always synchronous
+  calcPts();
 }
 function calcPts(){
   const t    = Number(document.getElementById('cTok').value) || 0;
   const a    = document.getElementById('cAct').value;
   const addr = document.getElementById('cMoatSel').value;
   const meta = MOATS[addr] || {};
+  const isHcash = isHcashMoat(addr);
   document.getElementById('lockRow').style.display = a === 'lock' ? 'block' : 'none';
   if (!t) { document.getElementById('pRes').style.display = 'none'; return; }
 
   const days       = Number(document.getElementById('cDays').value) || 180;
   const multiplier = a === 'burn' ? 10 : a === 'lock' ? lockM(days) : 1;
 
-  // pts-per-token: knownSupply is the ground truth (hardcoded from moats.app docs)
-  // Formula: 1,000,000 base pts allocated per full token supply — standard Moats mechanic
   const knownSup = meta.knownSupply || 0;
   const cached   = getSupply(addr);
   const supply   = (cached && cached.totalSupply > 0) ? cached.totalSupply : knownSup;
@@ -5047,41 +5349,41 @@ function calcPts(){
   let pptSource  = '';
   if (supply > 0) {
     ppt       = 1000000 / supply;
-    pptSource = 'hardcoded supply';
+    pptSource = isHcash ? 'LP token supply' : 'hardcoded supply';
   } else if (addr) {
     ppt       = estPtsPerToken(addr);
     pptSource = 'live estimate';
   }
 
+  // For hCASH: t = LP tokens entered; points calc is the same (LP tokens × pts/LP × mult)
+  const tokenLabel = isHcash ? 'LP tokens' : (meta.ticker||'tokens');
   const pts = ppt !== null ? t * ppt * multiplier : t * multiplier;
 
-  // Formula note
   let ptsNote = '';
   if (ppt !== null) {
-    ptsNote = fmtP(t) + ' ' + (meta.ticker||'tokens') + ' × ' + fmtPrice(ppt) + ' pts/token (base) × ' + multiplier + '×';
+    ptsNote = fmtP(t) + ' ' + tokenLabel + ' × ' + fmtPrice(ppt) + ' pts/LP (base) × ' + multiplier + '×';
     if (a === 'lock') ptsNote += ' — ' + days + 'd lock';
     if (a === 'burn') ptsNote += ' — permanent 🔥';
+    if (isHcash) ptsNote += ' · hCASH LP moat';
   } else {
     ptsNote = fmtP(t) + ' × ' + multiplier + '× — no supply data yet';
   }
 
   document.getElementById('pRes').style.display = 'block';
-  setTxt('rT',  fmtP(t));
+  setTxt('rT',  fmtP(t) + (isHcash ? ' LP' : ''));
   setTxt('rM',  multiplier + '×');
   setTxt('rPt', fmtP(pts));
   const ptsnEl    = document.getElementById('rPtNote');
   const ptsnRowEl = document.getElementById('rPtNoteRow');
   if (ptsnEl) { ptsnEl.textContent = ptsNote; if (ptsnRowEl) ptsnRowEl.style.display = 'flex'; }
 
-  // Live rank projection using real leaderboard data
   const rR = document.getElementById('rRankRow');
   const rS = document.getElementById('rShareRow');
   if (addr && moatMap[addr]) {
     const md     = moatMap[addr];
     const sorted = (md.sorted || []).slice();
-    // Find rank: count how many wallets have MORE pts than our projection
     let rank = sorted.filter(w => (w.points || w.totalPoints || 0) > pts).length + 1;
-    const totalWallets  = (md.walletCount || sorted.length) + 1; // +1 for this wallet
+    const totalWallets  = (md.walletCount || sorted.length) + 1;
     const newPool       = (md.totalPoints || 0) + pts;
     const share         = newPool > 0 ? (pts / newPool * 100).toFixed(3) : '100';
     const percentile    = totalWallets > 1 ? (100 - ((rank - 1) / totalWallets * 100)).toFixed(1) : '100';
@@ -11632,542 +11934,6 @@ function togglePresencePanel(){
 
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', init);
   else init();
-})();
-</script>
-
-<script>
-// ════════════════════════════════════════════════════════
-//  NEW FEATURES: Whale Alerts · Streak Tracker · Council Race
-//  Daily Intel · Health Score · Liquidity Heatmap · Badges
-// ════════════════════════════════════════════════════════
-
-// ── HELPERS ──────────────────────────────────────────────
-function fmtK(n){if(!n&&n!==0)return'—';if(n>=1e9)return(n/1e9).toFixed(1)+'B';if(n>=1e6)return(n/1e6).toFixed(1)+'M';if(n>=1e3)return(n/1e3).toFixed(1)+'K';return n.toLocaleString();}
-function timeAgo(ts){if(!ts)return'unknown';const s=Math.floor((Date.now()-ts*1000)/1000);if(s<60)return s+'s ago';if(s<3600)return Math.floor(s/60)+'m ago';if(s<86400)return Math.floor(s/3600)+'h ago';return Math.floor(s/86400)+'d ago';}
-function lastSeenDot(ts){const h=(Date.now()-(ts||0)*1000)/3600000;if(h<4)return'ls-fresh';if(h<72)return'ls-stale';return'ls-dead';}
-function lastSeenText(ts){if(!ts)return'Never';const h=(Date.now()-ts*1000)/3600000;if(h<1)return Math.round(h*60)+'m ago';if(h<24)return Math.round(h)+'h ago';return Math.round(h/24)+'d ago';}
-
-// ── WHALE ALERTS ─────────────────────────────────────────
-const WHALE_THRESH = 100000; // default token threshold
-const WHALE_VERBS = {burned:'🔥 burned',staked:'🔒 staked',locked:'⏳ locked',unstake:'↩ withdrew',reward:'💰 claimed'};
-
-function getWhaleMoves(threshold=100000, typeFilter=''){
-  if(!allEvs||!allEvs.length) return [];
-  return allEvs.filter(e=>{
-    const amt = Number(e.tokenAmount||e.amount||0);
-    if(amt < threshold) return false;
-    if(typeFilter && e.type !== typeFilter) return false;
-    return true;
-  }).sort((a,b)=>(b.timestamp||0)-(a.timestamp||0));
-}
-
-function renderWhales(){
-  const thresh = Number(document.getElementById('whaleThreshold')?.value||100000);
-  const typeF  = document.getElementById('whaleTypeFilter')?.value||'';
-  const moves  = getWhaleMoves(thresh, typeF);
-  const now    = Date.now()/1000;
-
-  // Stats
-  const whale24h = getWhaleMoves(thresh,'').filter(e=>(now-(e.timestamp||0))<86400);
-  const wc=document.getElementById('whaleCount'); if(wc) wc.textContent=whale24h.length||'0';
-  const burns = allEvs.filter(e=>e.type==='burned').sort((a,b)=>Number(b.tokenAmount||0)-Number(a.tokenAmount||0));
-  const bb=document.getElementById('whaleBigBurn'); if(bb) bb.textContent=burns[0]?fmtK(Number(burns[0].tokenAmount||0))+' '+getMoatShort(burns[0].moatAddress):'—';
-  const topWhal=computeWhaleOfDay();
-  const wd=document.getElementById('whaleOfDay'); if(wd) wd.textContent=topWhal?shortA(topWhal):'—';
-
-  const fd=document.getElementById('whaleFeed'); if(!fd) return;
-  if(!moves.length){
-    fd.innerHTML='<div class="empty"><div class="ico">🐋</div>No moves above '+fmtK(thresh)+' tokens yet.<br><span style="font-size:.65rem;color:var(--mut)">Try lowering the threshold filter above.</span></div>';
-    return;
-  }
-
-  fd.innerHTML = moves.slice(0,80).map((e,idx)=>{
-    const amt    = Number(e.tokenAmount||e.amount||0);
-    const moat   = getMoat(e.moatAddress);
-    const pct    = computePoolPct(e.moatAddress, amt);
-    const typeClass = e.type==='burned'?'wh-burn':e.type==='locked'?'wh-lock':'wh-stake';
-    const verb   = WHALE_VERBS[e.type]||e.type||'moved';
-    const isMega = amt >= 1000000;
-    const ageS   = now-(e.timestamp||0);
-    const isNew  = ageS < 3600; // last hour
-    const wallet = (e.address||e.walletAddress||'').toLowerCase();
-
-    const newBadge = isNew ? `<span style="display:inline-block;background:var(--grn);color:#141210;font-family:'DM Mono',monospace;font-size:.42rem;font-weight:700;padding:1px 5px;border-radius:3px;margin-left:5px;vertical-align:middle;animation:pulse 1.8s ease-in-out infinite">NEW</span>` : '';
-    const megaBadge= isMega? `<span class="wh-mega">🔱 MEGA</span>` : '';
-    const poolNote = pct ? ` — <span style="color:var(--gld)"><b>${pct}%</b> of pool</span>` : '';
-
-    return `<div class="wh-item ${typeClass}" style="animation-delay:${Math.min(idx,15)*30}ms">
-      <div class="wh-icon">${e.type==='burned'?'🔥':e.type==='locked'?'⏳':e.type==='staked'?'🔒':'💸'}</div>
-      <div class="wh-body">
-        <div class="wh-headline">
-          <span class="wa" onclick="gotoW('${wallet}')" style="color:var(--acc)">${shortA(wallet)}</span>
-          ${verb}
-          <span style="color:var(--txt);font-weight:600">${fmtK(amt)} ${moat?.ticker||'tokens'}</span>${megaBadge}${newBadge}${poolNote}
-        </div>
-        <div class="wh-sub">
-          ${moat?`<span style="color:${moat.color}">${moat.emoji} ${moat.name}</span> · `:''}
-          <span style="color:var(--mut)">${timeAgo(e.timestamp)}</span>
-          ${isMega?` · <span style="color:var(--gld)">Top ${pct?pct+'% of pool':''}</span>`:''}
-        </div>
-      </div>
-    </div>`;
-  }).join('');
-}
-
-function computeWhaleOfDay(){
-  const since = Date.now()/1000 - 86400;
-  const vol = {};
-  allEvs.filter(e=>(e.timestamp||0)>since).forEach(e=>{
-    const w=e.address||e.walletAddress||''; if(!w)return;
-    vol[w]=(vol[w]||0)+Number(e.tokenAmount||0);
-  });
-  return Object.entries(vol).sort((a,b)=>b[1]-a[1])[0]?.[0]||null;
-}
-
-function getMoat(addr){return addr?MOATS[addr?.toLowerCase()]||null:null;}
-function getMoatShort(addr){return getMoat(addr)?.short||'?';}
-function computePoolPct(moatAddr, amt){
-  const m=getMoat(moatAddr); if(!m||!m.knownSupply) return null;
-  return ((amt/m.knownSupply)*100).toFixed(2);
-}
-
-// ── STREAK TRACKER ───────────────────────────────────────
-function computeStreaks(){
-  // build week buckets per (wallet, moat)
-  const WEEK=7*86400*1000;
-  const now=Date.now();
-  const buckets={}; // addr -> set of week-keys
-  allEvs.forEach(e=>{
-    const w=e.address||e.walletAddress||''; if(!w)return;
-    const ts=(e.timestamp||0)*1000;
-    const wk=Math.floor((now-ts)/WEEK);
-    if(wk>12)return; // only last 12 weeks
-    if(!buckets[w])buckets[w]=new Set();
-    buckets[w].add(wk);
-  });
-  // streak = max consecutive weeks from 0
-  const streaks=Object.entries(buckets).map(([addr,wks])=>{
-    let streak=0; for(let i=0;i<12;i++){if(wks.has(i))streak++;else break;}
-    return {addr,streak,weeks:[...Array(8)].map((_,i)=>wks.has(i))};
-  }).sort((a,b)=>b.streak-a.streak);
-  return streaks.slice(0,20);
-}
-
-function renderStreaks(){
-  const sb=document.getElementById('streakBoard'); if(!sb) return;
-  const streaks=computeStreaks();
-  if(!streaks.length){sb.innerHTML='<div class="empty"><div class="ico">🔥</div>No streak data — events loading.</div>';return;}
-
-  const weekLabels=['Now','1w','2w','3w','4w','5w','6w','7w'];
-  const header=`<div style="display:flex;align-items:center;gap:0;padding:.3rem .7rem;border-bottom:1px solid rgba(51,46,40,.35);margin-bottom:.35rem">
-    <div style="flex:1;font-family:'DM Mono',monospace;font-size:.48rem;color:var(--mut);text-transform:uppercase;letter-spacing:.08em">Wallet</div>
-    <div style="display:flex;gap:3px;align-items:center;margin-right:7px">
-      ${weekLabels.map(l=>`<div style="width:10px;font-family:'DM Mono',monospace;font-size:.42rem;color:var(--mut);text-align:center">${l}</div>`).join('')}
-    </div>
-    <div style="min-width:36px;font-family:'DM Mono',monospace;font-size:.48rem;color:var(--mut);text-align:right">Streak</div>
-  </div>`;
-
-  sb.innerHTML = header + streaks.map((s,i)=>{
-    const medal = i===0?'🥇':i===1?'🥈':i===2?'🥉':null;
-    const streakEmoji = s.streak>=8?'🔥':s.streak>=5?'⚡':s.streak>=3?'✨':'';
-    const streakColor = s.streak>=6?'var(--gld)':s.streak>=3?'var(--acc)':'var(--mut)';
-    return `<div class="streak-row">
-      <div style="display:flex;align-items:center;gap:6px;flex:1;min-width:0">
-        ${medal?`<span style="font-size:.9rem">${medal}</span>`:`<span style="font-family:'DM Mono',monospace;font-size:.56rem;color:var(--mut);min-width:14px">${i+1}</span>`}
-        <span class="wa" onclick="gotoW('${s.addr}')" style="font-size:.6rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:120px">${shortA(s.addr)}</span>
-      </div>
-      <div style="display:flex;align-items:center;gap:3px;margin-right:7px">
-        <div class="streak-pips">${s.weeks.slice(0,8).map(on=>`<div class="streak-pip ${on?'on':'off'}" title="${on?'Active':'Inactive'}"></div>`).join('')}</div>
-      </div>
-      <div style="min-width:36px;text-align:right;display:flex;align-items:center;justify-content:flex-end;gap:3px">
-        <span style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.78rem;color:${streakColor}">${s.streak}w</span>
-        <span style="font-size:.85rem">${streakEmoji}</span>
-      </div>
-    </div>`;
-  }).join('');
-}
-
-// ── COUNCIL RACE ─────────────────────────────────────────
-const CAR_EMOJIS=['🏎️','🚗','🚕','🚙','🏍️','🚓','🚑','🚒','🚐','🚌'];
-
-function computeCouncilScores(){
-  const byWallet={};
-  allPts.forEach(r=>{
-    const w=r.address||r.walletAddress||''; if(!w)return;
-    if(!byWallet[w])byWallet[w]={wallet:w,totalPts:0,moatCount:0};
-    byWallet[w].totalPts+=Number(r.points||0);
-    byWallet[w].moatCount++;
-  });
-  const divMult=[0,1,1.1,1.25,1.5]; // 0,1,2,3,4+ moats
-  return Object.values(byWallet).map(w=>{
-    const dm=divMult[Math.min(w.moatCount,4)];
-    return {...w,councilScore:Math.round(w.totalPts*dm),diversityMult:dm};
-  }).sort((a,b)=>b.councilScore-a.councilScore);
-}
-
-function renderRace(){
-  const track=document.getElementById('raceTrack'); if(!track) return;
-  const scores=computeCouncilScores().slice(0,10);
-  if(!scores.length){track.innerHTML='<div class="empty"><div class="ico">🏎️</div>Race data loading…</div>';return;}
-
-  const myWallet=(document.getElementById('raceWalletInput')?.value||'').trim().toLowerCase();
-  const maxScore=scores[0].councilScore||1;
-  const rankColors=['#d4a843','#9aa0a8','#a07050'];
-
-  // Legend row at top
-  let html=`<div style="display:flex;align-items:center;gap:6px;margin-bottom:.9rem;padding:0 .3rem">
-    <div style="width:28px"></div>
-    <div style="flex:1;font-family:'DM Mono',monospace;font-size:.5rem;color:var(--mut);text-transform:uppercase;letter-spacing:.1em;display:flex;justify-content:space-between;padding:0 28px 0 6px">
-      <span>START</span><span>FINISH LINE 🏁</span>
-    </div>
-    <div style="width:185px"></div>
-  </div>`;
-
-  html+=scores.map((s,i)=>{
-    const targetPct=Math.max(8,Math.round((s.councilScore/maxScore)*86));
-    const isMe=myWallet&&s.wallet===myWallet;
-    const car=CAR_EMOJIS[i]||'🚗';
-    const rankC=i<3?rankColors[i]:'var(--mut)';
-    const meLabel=isMe?`<span style="background:var(--acc);color:#141210;font-family:'DM Mono',monospace;font-size:.42rem;padding:1px 4px;border-radius:3px;margin-right:3px">YOU</span>`:'';
-    return `<div class="race-car">
-      <div style="width:28px;flex-shrink:0;font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.85rem;color:${rankC};text-align:center;line-height:1">${i===0?'🏆':i===1?'🥈':i===2?'🥉':'#'+(i+1)}</div>
-      <div class="race-lane${isMe?' selected':''}">
-        <span class="race-car-icon" id="rcar-${i}" data-target="${targetPct}" style="left:2px">${car}</span>
-        <div class="race-finish"></div>
-      </div>
-      <div class="race-info">
-        <div style="min-width:0">
-          <div class="race-addr">${meLabel}<span class="wa" onclick="gotoW('${s.wallet}')" style="font-size:.56rem;max-width:90px;display:inline-block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${shortA(s.wallet)}</span></div>
-          <div class="race-pts">${fmtK(s.councilScore)}</div>
-          ${i>0?`<div style="font-family:'DM Mono',monospace;font-size:.46rem;color:var(--mut)">-${fmtK(scores[0].councilScore-s.councilScore)}</div>`:`<div style="font-family:'DM Mono',monospace;font-size:.48rem;color:var(--gld)">Leader 👑</div>`}
-        </div>
-      </div>
-    </div>`;
-  }).join('');
-
-  track.innerHTML=html;
-
-  // Animate cars from left after short delay
-  requestAnimationFrame(()=>setTimeout(()=>{
-    scores.forEach((_,i)=>{
-      const icon=document.getElementById('rcar-'+i);
-      if(!icon) return;
-      const pct=Number(icon.dataset.target);
-      icon.classList.add('animated');
-      icon.style.left=`calc(${pct}% - 22px)`;
-    });
-  },80));
-
-  // Your position banner
-  if(myWallet){
-    const allScores=computeCouncilScores();
-    const myIdx=allScores.findIndex(s=>s.wallet===myWallet);
-    const yp=document.getElementById('raceYourPos');
-    const ypt=document.getElementById('raceYourPosText');
-    if(yp&&ypt){
-      if(myIdx>=0){
-        yp.style.display='block';
-        const myS=allScores[myIdx];
-        const gap=myIdx>0?allScores[myIdx-1].councilScore-myS.councilScore:0;
-        const gapNext=myIdx<allScores.length-1?myS.councilScore-allScores[myIdx+1].councilScore:0;
-        ypt.innerHTML=`🏎️ You are <b style="color:var(--acc)">#${myIdx+1}</b> of ${allScores.length} wallets · Council Score: <b style="color:var(--acc)">${fmtK(myS.councilScore)}</b>${gap>0?` · <span style="color:var(--gld)">⬆ ${fmtK(gap)} pts to overtake #${myIdx}</span>`:''}${gapNext>0?` · <span style="color:var(--mut)">⬇ ${fmtK(gapNext)} lead over #${myIdx+2}</span>`:''}`;
-      } else {
-        yp.style.display='block';
-        ypt.innerHTML=`<span style="color:var(--mut)">Wallet not found in leaderboard yet. Keep staking!</span>`;
-      }
-    }
-  } else {
-    const yp=document.getElementById('raceYourPos'); if(yp) yp.style.display='none';
-  }
-}
-
-// ── DAILY INTEL BRIEF ────────────────────────────────────
-function setIntelDate(){
-  const d=document.getElementById('intelDate');
-  if(d) d.textContent = new Date().toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
-}
-
-function buildIntelBrief(){
-  const el=document.getElementById('intelBrief'); if(!el) return;
-  if(!allEvs.length&&!allPts.length){el.innerHTML='<div class="empty"><div class="ico">📰</div>Loading data…</div>';return;}
-
-  const since24=Date.now()/1000-86400;
-  const evs24=allEvs.filter(e=>(e.timestamp||0)>since24);
-
-  // Biggest mover
-  const wEvCt={}; evs24.forEach(e=>{const w=e.address||e.walletAddress||'';if(w)wEvCt[w]=(wEvCt[w]||0)+1;});
-  const bigMoverEntry=Object.entries(wEvCt).sort((a,b)=>b[1]-a[1])[0];
-
-  // Most active moat
-  const mEvCt={}; evs24.forEach(e=>{const m=e.moatAddress||e.moat_address;if(m)mEvCt[m]=(mEvCt[m]||0)+1;});
-  const topMoatAddr=Object.entries(mEvCt).sort((a,b)=>b[1]-a[1])[0];
-  const topMoat=topMoatAddr?getMoat(topMoatAddr[0]):null;
-
-  // Biggest burn ever
-  const bigBurnEv=allEvs.filter(e=>e.type==='burned').sort((a,b)=>Number(b.tokenAmount||0)-Number(a.tokenAmount||0))[0];
-
-  // New entrants
-  const wAllCt={}; allEvs.forEach(e=>{const w=e.address||e.walletAddress||'';if(w)wAllCt[w]=(wAllCt[w]||0)+1;});
-  const newEntrants=Object.entries(wAllCt).filter(([,c])=>c===1).length;
-
-  // Active 24h
-  const active24=new Set(evs24.map(e=>e.address||e.walletAddress||'').filter(Boolean)).size;
-
-  // Whale of day
-  const whale=computeWhaleOfDay();
-
-  // Biggest single event in 24h
-  const biggest24=evs24.sort((a,b)=>Number(b.tokenAmount||0)-Number(a.tokenAmount||0))[0];
-
-  // Trending moat (most new wallets in 24h)
-  const moatNewW={}; evs24.forEach(e=>{const m=e.moatAddress||e.moat_address;const w=e.address||e.walletAddress||'';if(m&&w){if(!moatNewW[m])moatNewW[m]=new Set();moatNewW[m].add(w);}});
-  const trendingMoat=Object.entries(moatNewW).sort((a,b)=>b[1].size-a[1].size)[0];
-  const trendMoat=trendingMoat?getMoat(trendingMoat[0]):null;
-
-  // Build headline
-  const headline = topMoat ? `${topMoat.emoji} ${topMoat.name} leads today with ${topMoatAddr[1]} events — ${active24} wallets active across all moats` : `${active24} wallets active in the last 24 hours`;
-
-  const cards=[
-    {icon:'🌀',hed:'Most Active Moat',val:topMoat?`${topMoat.emoji} ${topMoat.name}`:'—',sub:topMoatAddr?`${topMoatAddr[1]} events in the past 24h`:'—',color:'var(--acc)'},
-    {icon:'📈',hed:'Trending Moat',val:trendMoat?`${trendMoat.emoji} ${trendMoat.name}`:'—',sub:trendingMoat?`${trendingMoat[1].size} unique wallets active`:'—',color:'var(--cyn)'},
-    {icon:'🏃',hed:'Biggest Mover (24h)',val:bigMoverEntry?shortA(bigMoverEntry[0]):'—',sub:bigMoverEntry?`${bigMoverEntry[1]} on-chain actions`:'—',color:'var(--grn)',click:bigMoverEntry?`gotoW('${bigMoverEntry[0]}')`:''},
-    {icon:'💥',hed:'Biggest Move (24h)',val:biggest24?fmtK(Number(biggest24.tokenAmount||0))+' '+getMoatShort(biggest24.moatAddress||biggest24.moat_address):'—',sub:biggest24?`${biggest24.type||'move'} by ${shortA(biggest24.address||biggest24.walletAddress||'')} · ${timeAgo(biggest24.timestamp)}`:'—',color:'var(--gld)'},
-    {icon:'🔥',hed:'All-Time Biggest Burn',val:bigBurnEv?fmtK(Number(bigBurnEv.tokenAmount||0))+' '+getMoatShort(bigBurnEv.moatAddress||bigBurnEv.moat_address):'—',sub:bigBurnEv?`By ${shortA(bigBurnEv.address||bigBurnEv.walletAddress||'')} — permanent, gone forever`:'—',color:'var(--red)'},
-    {icon:'🆕',hed:'New Entrants (All Time)',val:newEntrants.toLocaleString(),sub:'Wallets with exactly one on-chain action — still early',color:'var(--pur)'},
-    {icon:'⚡',hed:'Active Wallets (24h)',val:active24.toLocaleString(),sub:'Unique wallets that made at least one move today',color:'var(--grn)'},
-    {icon:'🐋',hed:'Whale of the Day',val:whale?shortA(whale):'—',sub:'Highest token volume moved in the past 24h',color:'var(--cyn)',click:whale?`gotoW('${whale}')`:''},
-  ];
-
-  el.innerHTML=`
-    <div style="background:linear-gradient(135deg,rgba(249,115,22,.08),rgba(212,168,67,.04));border:1px solid rgba(249,115,22,.18);border-radius:10px;padding:.85rem 1rem;margin-bottom:.85rem;display:flex;align-items:center;gap:.75rem">
-      <span style="font-size:1.6rem">📰</span>
-      <div>
-        <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.8rem;color:var(--txt);margin-bottom:2px">Today's Headline</div>
-        <div style="font-family:'DM Mono',monospace;font-size:.65rem;color:var(--dim);line-height:1.55">${headline}</div>
-      </div>
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem">
-      ${cards.map(c=>`<div class="brief-card" style="cursor:${c.click?'pointer':'default'}" ${c.click?`onclick="${c.click}"`:''}">
-        <div class="brief-icon">${c.icon}</div>
-        <div style="flex:1;min-width:0">
-          <div class="brief-hed">${c.hed}</div>
-          <div class="brief-val" style="color:${c.color||'var(--acc)'}">${c.val}</div>
-          <div class="brief-sub">${c.sub}</div>
-        </div>
-      </div>`).join('')}
-    </div>
-    <div style="margin-top:.7rem;font-family:'DM Mono',monospace;font-size:.52rem;color:var(--mut);text-align:center">
-      Auto-generated from live on-chain data · ${new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'})} update
-    </div>`;
-}
-
-// ── LIQUIDITY DEPTH HEATMAP ──────────────────────────────
-function renderLiqHeatmap(){
-  const hm=document.getElementById('liqHeatmap'); if(!hm) return;
-  // Use allPts to estimate concentration: max single holder share per moat
-  const moatHolderShares={};
-  const moatTotals={};
-  allPts.forEach(r=>{
-    const m=r.moatAddress||r.moat_address; if(!m)return;
-    if(!moatTotals[m])moatTotals[m]=0;
-    moatTotals[m]+=Number(r.points||0);
-    if(!moatHolderShares[m])moatHolderShares[m]={};
-    const w=r.address||r.walletAddress||''; if(!w)return;
-    moatHolderShares[m][w]=(moatHolderShares[m][w]||0)+Number(r.points||0);
-  });
-
-  const rows=Object.entries(MOATS).map(([addr,m])=>{
-    const total=moatTotals[addr]||0;
-    const holders=moatHolderShares[addr]||{};
-    const maxHolderShare=total?Math.max(...Object.values(holders))/total*100:0;
-    const top3Share=total?Object.values(holders).sort((a,b)=>b-a).slice(0,3).reduce((s,v)=>s+v,0)/total*100:0;
-    return {addr,m,maxHolderShare,top3Share,total};
-  }).sort((a,b)=>b.maxHolderShare-a.maxHolderShare);
-
-  if(!rows.some(r=>r.total>0)){hm.innerHTML='<div class="empty"><div class="ico">🌡️</div>Loading LP data…</div>';return;}
-
-  hm.innerHTML='<div style="font-family:\'DM Mono\',monospace;font-size:.52rem;color:var(--mut);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.65rem;display:flex;justify-content:space-between"><span>Moat</span><span>Top-3 LP share</span></div>'+rows.map(({addr,m,maxHolderShare,top3Share,total})=>{
-    if(!total)return'';
-    const risk=top3Share>70?'⚠️':top3Share>50?'🟡':'';
-    const barColor=top3Share>70?'#e05252':top3Share>50?'#d4a843':'var(--grn)';
-    return `<div class="hm-row">
-      <div class="hm-label" style="display:flex;align-items:center;gap:5px">${logoImg(m.logo,'moat-logo-sm',m.emoji,m.color)}<span style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.65rem">${m.short}</span></div>
-      <div class="hm-bar-wrap">
-        <div class="hm-bar-fill" style="width:${Math.min(100,top3Share).toFixed(1)}%;background:${barColor};opacity:.75"></div>
-        <div style="position:absolute;inset:0;display:flex;align-items:center;padding-left:6px;font-family:'DM Mono',monospace;font-size:.52rem;color:var(--txt)">${top3Share.toFixed(1)}% ${risk}</div>
-      </div>
-      <div class="hm-pct" style="color:${barColor}">${maxHolderShare.toFixed(1)}% max</div>
-    </div>`;
-  }).filter(Boolean).join('')+'<div style="font-family:\'DM Mono\',monospace;font-size:.52rem;color:var(--mut);margin-top:.65rem;line-height:1.6">⚠️ = Top-3 holders own >70% of pool — high exit risk</div>';
-}
-
-// ── HEALTH SCORE ─────────────────────────────────────────
-const BADGES_DEF = [
-  {id:'diamond_burner',label:'Diamond Burner',emoji:'💎',desc:'Burned in 3+ moats',cls:'badge-fire',check:(w,pts,evs)=>new Set(evs.filter(e=>(e.address||e.walletAddress||'')===w&&e.type==='burned').map(e=>e.moatAddress)).size>=3},
-  {id:'council_elder',label:'Council Elder',emoji:'👑',desc:'Top 50 council score',cls:'badge-gold',check:(w,pts,evs)=>{const scores=computeCouncilScores();const idx=scores.findIndex(s=>s.wallet===w);return idx>=0&&idx<50;}},
-  {id:'diversified',label:'Diversified',emoji:'🌐',desc:'Active in 4+ moats',cls:'badge-blue',check:(w,pts)=>new Set(pts.filter(p=>(p.address||p.walletAddress||'')===w).map(p=>p.moatAddress||p.moat_address)).size>=4},
-  {id:'early_adopter',label:'Early Adopter',emoji:'⚡',desc:'Joined early ecosystem',cls:'badge-pur',check:(w,pts,evs)=>{const wEvs=evs.filter(e=>(e.address||e.walletAddress||'')===w);if(!wEvs.length)return false;const earliest=Math.min(...wEvs.map(e=>e.timestamp||Infinity));const totalW=new Set(allEvs.filter(e=>(e.timestamp||0)<earliest+86400).map(e=>e.address||e.walletAddress||'')).size;return totalW<200;}},
-  {id:'whale',label:'Whale',emoji:'🐋',desc:'Moved 1M+ tokens total',cls:'badge-grn',check:(w,pts,evs)=>evs.filter(e=>(e.address||e.walletAddress||'')===w).reduce((s,e)=>s+Number(e.tokenAmount||0),0)>=1000000},
-];
-
-function calcHealthScore(){
-  const wIn=document.getElementById('healthWallet')?.value?.trim()?.toLowerCase();
-  if(!wIn){return;}
-  const res=document.getElementById('healthResult');
-  const emp=document.getElementById('healthEmpty');
-  if(!res||!emp) return;
-
-  const myPts=allPts.filter(p=>(p.address||p.walletAddress||'').toLowerCase()===wIn);
-  const myEvs=allEvs.filter(e=>(e.address||e.walletAddress||'').toLowerCase()===wIn);
-
-  if(!myPts.length&&!myEvs.length){emp.innerHTML='<div class="ico">❓</div>Wallet not found in Moats data.';return;}
-
-  // Components (0-25 each)
-  const moatCount=new Set(myPts.map(p=>p.moatAddress||p.moat_address)).size;
-  const diversityScore=Math.min(25,moatCount*6.25); // 4+ moats = 25
-
-  const locks=myEvs.filter(e=>e.type==='locked');
-  const avgLockDays=locks.length?locks.reduce((s,e)=>s+Number(e.lockDays||e.duration||0),0)/locks.length:0;
-  const lockScore=Math.min(25,avgLockDays/730*25);
-
-  const myTotalPts=myPts.reduce((s,p)=>s+Number(p.points||0),0);
-  const allTotal=allPts.reduce((s,p)=>s+Number(p.points||0),0)||1;
-  const ecoShare=(myTotalPts/allTotal)*100;
-  const ecoScore=Math.min(25,ecoShare<0.01?25:ecoShare<0.1?20:ecoShare<1?15:ecoShare<5?8:3);
-
-  const burns=myEvs.filter(e=>e.type==='burned');
-  const burnVol=burns.reduce((s,e)=>s+Number(e.tokenAmount||0),0);
-  const totalVol=myEvs.reduce((s,e)=>s+Number(e.tokenAmount||0),0)||1;
-  const burnRatio=burnVol/totalVol;
-  const burnScore=Math.min(25,burnRatio*100);
-
-  const total=Math.round(diversityScore+lockScore+ecoScore+burnScore);
-  const grade=total>=85?'S':total>=70?'A':total>=55?'B':total>=40?'C':total>=25?'D':'F';
-  const gradeColor=total>=85?'var(--gld)':total>=70?'var(--grn)':total>=55?'var(--acc)':total>=40?'var(--gld)':'var(--red)';
-
-  // Advice
-  const tips=[];
-  if(diversityScore<25)tips.push(`📍 Join ${4-moatCount>0?4-moatCount+' more moat'+(4-moatCount>1?'s':''):'more moats'} to maximize diversity (+${(25-diversityScore).toFixed(0)} pts)`);
-  if(lockScore<20)tips.push(`⏳ Lock tokens longer — avg ${avgLockDays.toFixed(0)} days vs optimal 365+ days`);
-  if(burnScore<15)tips.push(`🔥 Burn more tokens — burns give 10× points permanently`);
-  if(ecoScore<20)tips.push(`🌱 Increase your ecosystem share to signal conviction`);
-
-  emp.style.display='none'; res.style.display='block';
-  document.getElementById('healthScore').textContent=total;
-  document.getElementById('healthGrade').innerHTML=`Grade: <span style="color:${gradeColor}">${grade}</span>`;
-  document.getElementById('healthSummary').textContent=total>=70?'Strong position. You\'re well-diversified and committed.':total>=45?'Decent foundation, room to grow.':'Early stage. More moats, longer locks, and burns will push this score up.';
-
-  // Arc
-  const arc=document.getElementById('healthArc');
-  if(arc){const off=264-(264*total/100);setTimeout(()=>{arc.style.strokeDashoffset=off;arc.style.stroke=gradeColor;},80);}
-
-  const breakdown=document.getElementById('healthBreakdown');
-  const bars=[
-    {label:'Diversity',val:diversityScore,max:25,color:'var(--cyn)'},
-    {label:'Lock Depth',val:lockScore,max:25,color:'var(--gld)'},
-    {label:'Eco Share',val:ecoScore,max:25,color:'var(--grn)'},
-    {label:'Burn Ratio',val:burnScore,max:25,color:'var(--red)'},
-  ];
-  if(breakdown) breakdown.innerHTML=bars.map(b=>`<div class="health-bar-row">
-    <div class="health-bar-label"><span>${b.label}</span><span style="color:var(--txt)">${b.val.toFixed(0)}/25</span></div>
-    <div class="health-bar-track"><div class="health-bar-fill" style="width:${(b.val/b.max*100).toFixed(0)}%;background:${b.color}"></div></div>
-  </div>`).join('');
-
-  const adv=document.getElementById('healthAdvice');
-  if(adv) adv.innerHTML=tips.length?`<div style="font-family:'DM Mono',monospace;font-size:.58rem;color:var(--mut);margin-bottom:.4rem;text-transform:uppercase;letter-spacing:.08em">💡 How to improve</div>`+tips.map(t=>`<div style="font-family:'DM Mono',monospace;font-size:.62rem;color:var(--txt);margin-bottom:.3rem;line-height:1.5">${t}</div>`).join(''):`<div style="font-family:'DM Mono',monospace;font-size:.64rem;color:var(--grn);text-align:center">🏆 Perfect score! You're at peak moat health.</div>`;
-
-  // Badges
-  const badgeEl=document.getElementById('healthBadges');
-  if(badgeEl) badgeEl.innerHTML=BADGES_DEF.map(b=>{
-    const earned=b.check(wIn,allPts,allEvs);
-    return `<div class="badge ${b.cls}${earned?'':' locked'}" title="${b.desc}${earned?'':' — not yet earned'}">${b.emoji} ${b.label}${earned?'':' 🔒'}</div>`;
-  }).join('');
-}
-
-// Also add "Last Seen" injection into moat cards after data loads.
-// We patch the moat card render to show last activity.
-function getMoatLastActivity(moatAddr){
-  const evs=allEvs.filter(e=>e.moatAddress===moatAddr||e.moat_address===moatAddr);
-  if(!evs.length) return null;
-  return Math.max(...evs.map(e=>e.timestamp||0));
-}
-
-// Patch: after renderMoatSelect runs, inject last-seen badges
-const _origRenderMoatSelect=typeof renderMoatSelect==='function'?renderMoatSelect:null;
-// Use MutationObserver to inject last-seen into moat cards without touching original render
-(function injectLastSeen(){
-  const obs=new MutationObserver(()=>{
-    document.querySelectorAll('.mc:not([data-ls])').forEach(card=>{
-      card.setAttribute('data-ls','1');
-      // find moat addr from onclick or data attribute
-      const oc=card.getAttribute('onclick')||card.innerHTML;
-      const match=oc.match(/0x[0-9a-fA-F]{40}/i);
-      if(!match)return;
-      const addr=match[0].toLowerCase();
-      const ts=getMoatLastActivity(addr);
-      if(!ts)return;
-      const dotCls=lastSeenDot(ts);
-      const txt=lastSeenText(ts);
-      const badge=document.createElement('div');
-      badge.style.cssText='display:flex;align-items:center;margin-top:6px;font-family:\'DM Mono\',monospace;font-size:.52rem;';
-      badge.innerHTML=`<span class="last-seen-dot ${dotCls}"></span><span style="color:var(--mut)">Last activity: <b style="color:var(--txt)">${txt}</b></span>`;
-      card.appendChild(badge);
-    });
-  });
-  obs.observe(document.body,{childList:true,subtree:true});
-})();
-
-// Auto-refresh new features when main data loads
-const _origLoadAll=typeof loadAll==='function'?loadAll:null;
-// Trigger new renders after data update
-setInterval(()=>{
-  const v=document.querySelector('.tab.on')?.dataset?.v;
-  if(v==='whales'){renderWhales();renderStreaks();}
-  if(v==='race')renderRace();
-  if(v==='intel'){buildIntelBrief();renderLiqHeatmap();}
-},30000);
-
-// Overview highlights — always update when data changes
-function updateOverviewHighlights(){
-  try{
-    // Whale count 24h
-    const wc=document.getElementById('ovWhaleCount');
-    if(wc) wc.textContent=getWhaleMoves(100000,'').filter(e=>(Date.now()/1000-(e.timestamp||0))<86400).length||'0';
-
-    // Race leader
-    const rl=document.getElementById('ovRaceLeader');
-    if(rl){const sc=computeCouncilScores();rl.textContent=sc.length?shortA(sc[0].wallet):'—';}
-
-    // Top streak
-    const ts=document.getElementById('ovTopStreak');
-    if(ts){const str=computeStreaks();ts.textContent=str.length?str[0].streak+'w 🔥':'—';}
-
-    // Active 24h
-    const a24=document.getElementById('ovActive24');
-    if(a24){
-      const since24=Date.now()/1000-86400;
-      a24.textContent=new Set(allEvs.filter(e=>(e.timestamp||0)>since24).map(e=>e.address||e.walletAddress||'').filter(Boolean)).size||'0';
-    }
-  }catch(e){}
-}
-
-// Hook into existing loadAll completion — poll for data readiness
-(function watchDataReady(){
-  let triggered=false;
-  const check=setInterval(()=>{
-    if((allEvs.length||allPts.length)&&!triggered){
-      triggered=true;
-      clearInterval(check);
-      updateOverviewHighlights();
-      // Also re-render if whale/race/intel tabs are open
-      const v=document.querySelector('.tab.on')?.dataset?.v;
-      if(v==='whales'){renderWhales();renderStreaks();}
-      if(v==='race')renderRace();
-      if(v==='intel'){buildIntelBrief();renderLiqHeatmap();setIntelDate();}
-    }
-  },800);
-  // Update overview highlights every 60s
-  setInterval(updateOverviewHighlights,60000);
 })();
 </script>
 
