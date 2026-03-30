@@ -2534,6 +2534,12 @@ function renderMoatDetail(addr,silent=false){
     if(totals && totals.staked>0) {
       const tkr=meta.ticker||'tokens';
       if(actNoteEl) actNoteEl.innerHTML='<span style="color:var(--grn)">● on-chain real token amounts</span>';
+      // Update "Tokens in Moat" stat card with real on-chain balance
+      const mStatRow = document.getElementById('mStatRow');
+      if(mStatRow){
+        const tokCard = mStatRow.querySelector('.sc:nth-child(4)');
+        if(tokCard) tokCard.innerHTML=`<div class="sl">Tokens in Moat</div><div class="sv ca">${fmtP(totals.staked)}</div><div class="ss">${tkr} <span style="color:var(--grn);font-size:.48rem">● on-chain</span></div>`;
+      }
       const stakeCard=mSlb.children[0];
       const burnCard=mSlb.children[2];
       if(stakeCard) stakeCard.innerHTML='<div class="rv2 ca">'+fmtP(totals.staked)+'</div><div class="rl2">🔒 Staked + Locked</div><div style="font-size:.62rem;color:var(--dim);margin-top:3px">'+tkr+' in moat contract</div>';
@@ -2907,25 +2913,52 @@ async function renderMoatRewards(addr){
   const hasRewards=Object.keys(rewardTally).length>0&&tallySource.some(e=>e.rewardAmount>0);
 
   let rewardCurrencyHTML='';
+  // ── Token image lookup: moat logos + well-known DeFi tokens ──
+  const TOKEN_IMG = {
+    'USDC':  'https://assets.coingecko.com/coins/images/6319/small/usdc.png',
+    'USDT':  'https://assets.coingecko.com/coins/images/325/small/Tether.png',
+    'WAVAX': 'https://assets.coingecko.com/coins/images/15075/small/wrapped-avax.png',
+    'AVAX':  'https://assets.coingecko.com/coins/images/12559/small/Avalanche_Circle_RedWhite_Trans.png',
+    'WETH.e':'https://assets.coingecko.com/coins/images/2518/small/weth.png',
+    'BTC.b': 'https://assets.coingecko.com/coins/images/26115/small/btcb.png',
+    'WBTC.e':'https://assets.coingecko.com/coins/images/7598/small/wrapped_bitcoin_wbtc.png',
+    'AAVE.e':'https://assets.coingecko.com/coins/images/12645/small/AAVE.png',
+    'DAI.e': 'https://assets.coingecko.com/coins/images/9956/small/Badge_Dai.png',
+  };
+  // Add all moat token logos from MOATS config
+  Object.values(MOATS).forEach(mm=>{
+    if(mm.ticker&&mm.logo) TOKEN_IMG[mm.ticker]= RAW + encodeURIComponent(mm.logo);
+    if(mm.ticker&&mm.thumb) TOKEN_IMG[mm.ticker]=mm.thumb;
+  });
+  // Add from cgCache for any unknown tokens resolved via CoinGecko
+  Object.entries(cgCache).forEach(([,d])=>{ if(d.symbol&&d.thumb) TOKEN_IMG[d.symbol]=d.thumb; });
+
+  // Helper: get image for a token label
+  function tokenImgTag(label, size=20){
+    const src = TOKEN_IMG[label]||(cgCache&&Object.values(cgCache).find(d=>d.symbol===label)?.thumb)||null;
+    if(!src) return `<div style="width:${size}px;height:${size}px;border-radius:50%;background:var(--bor);display:flex;align-items:center;justify-content:center;font-size:${size*.5}px;flex-shrink:0">💰</div>`;
+    return `<img src="${src}" style="width:${size}px;height:${size}px;border-radius:50%;object-fit:cover;flex-shrink:0" onerror="this.style.display='none'">`;
+  }
+
   if(hasRewards){
     const summaryLine = Object.entries(rewardTally)
       .filter(([,d])=>d.total>0)
-      .map(([label,d])=>`<span style="font-family:'Chakra Petch',sans-serif;font-weight:700;color:var(--grn)">${fmtP(Math.round(d.total))} ${label}</span>`)
+      .map(([label,d])=>`<span style="display:inline-flex;align-items:center;gap:4px">${tokenImgTag(label,16)}<span style="font-family:'Chakra Petch',sans-serif;font-weight:700;color:var(--grn)">${fmtP(Math.round(d.total))} ${label}</span></span>`)
       .join(' · ');
     rewardCurrencyHTML=`
       <div style="background:rgba(109,184,122,.06);border:1px solid rgba(109,184,122,.22);border-radius:9px;padding:.85rem;margin-bottom:.85rem">
         <div style="font-family:'DM Mono',monospace;font-size:.6rem;color:var(--grn);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.5rem">💰 All Rewards Claimed — Combined Totals</div>
-        ${summaryLine?`<div style="font-size:.82rem;margin-bottom:.65rem;line-height:1.8">${summaryLine}</div>`:''}
+        ${summaryLine?`<div style="font-size:.82rem;margin-bottom:.65rem;line-height:2;display:flex;flex-wrap:wrap;gap:.5rem">${summaryLine}</div>`:''}
         <div style="display:flex;flex-wrap:wrap;gap:.5rem">
           ${Object.entries(rewardTally).map(([label,d])=>`
             <div style="background:var(--card);border:1px solid rgba(109,184,122,.2);border-radius:7px;padding:.5rem .8rem;text-align:center;min-width:90px">
-              ${d.thumb?`<img src="${d.thumb}" style="width:20px;height:20px;border-radius:50%;object-fit:cover;margin-bottom:3px" onerror="this.style.display='none'">`:'' }
-              <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.85rem;color:var(--grn)">${d.total>0?fmtP(Math.round(d.total)):''}</div>
+              <div style="display:flex;justify-content:center;margin-bottom:4px">${tokenImgTag(label,22)}</div>
+              <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.85rem;color:var(--grn)">${d.total>0?(d.total>=1?fmtP(Math.round(d.total)):d.total.toFixed(4)):''}</div>
               <div style="font-family:'DM Mono',monospace;font-size:.6rem;color:var(--txt);font-weight:600">${label}</div>
               <div style="font-family:'DM Mono',monospace;font-size:.5rem;color:var(--mut);margin-top:2px">${d.count} event${d.count>1?'s':''} · ${d.wallets.size} wallet${d.wallets.size!==1?'s':''}</div>
             </div>`).join('')}
         </div>
-        <div style="font-family:'DM Mono',monospace;font-size:.48rem;color:var(--ash2);margin-top:.55rem">Sources: live events API + on-chain RPC scan (last ~100k blocks) · unknown tokens resolved via CoinGecko</div>
+        <div style="font-family:'DM Mono',monospace;font-size:.48rem;color:var(--ash2);margin-top:.55rem">Sources: live events API + on-chain receipt scan · unknown tokens resolved via CoinGecko</div>
       </div>`;
   } else {
     rewardCurrencyHTML=`
@@ -2959,10 +2992,13 @@ async function renderMoatRewards(addr){
     </div>`:''}
     <div class="panel">
       <div class="ph"><div class="ptitle">Full Distribution (${pts.length} wallets)</div>${tokenLabels.length?`<span style="font-family:'DM Mono',monospace;font-size:.52rem;color:var(--grn)">💰 claimed rewards shown</span>`:''}</div>
-      <div class="pb0 tw"><table class="tbl"><thead><tr><th>Rank</th><th>Wallet</th><th>Points</th><th>Pool %</th><th>Est. Tier</th>${tokenLabels.map(t=>`<th style="color:var(--grn)">${t} Claimed</th>`).join('')}</tr></thead><tbody>
+      <div class="pb0 tw"><table class="tbl"><thead><tr><th>Rank</th><th>Wallet</th><th>Points</th><th>Pool %</th><th>Tier</th>${tokenLabels.map(t=>`<th style="color:var(--grn)"><div style="display:inline-flex;align-items:center;gap:3px">${tokenImgTag(t,14)} ${t}</div></th>`).join('')}</tr></thead><tbody>
         ${pts.map((p,i)=>{
           const w=getWallet(p),sh=tot?(p.points/tot*100).toFixed(3):'0';
-          const tier=p.points>m.avgPoints*5?'🔥 Burn':p.points>m.avgPoints*1.5?'⏳ Lock':'🔒 Stake';
+          // Use actionType from API if available; fall back to points-based inference
+          const at=(p.actionType||'').toLowerCase();
+          const tier=at==='burn'||at==='burned'?'🔥 Burn':at==='lock'||at==='locked'?'⏳ Lock':at==='stake'||at==='staked'?'🔒 Stake':
+            p.points>m.avgPoints*5?'🔥 Burn':p.points>m.avgPoints*1.5?'⏳ Lock':'🔒 Stake';
           const wClaimed=walletClaimed[w.toLowerCase()]||{};
           const claimedCols=tokenLabels.map(t=>{
             const amt=wClaimed[t]||0;
@@ -3938,7 +3974,7 @@ function renderEvItems(evs,id,freshIds=[]){
           ${_picHtml}
           <span style="font-family:'DM Mono',monospace;font-size:.6rem;color:var(--txt)">${_dispName}</span>
           ${_bensiTag}${_twitterTag}
-        </span>${_showAddr ? ' ' + _addrTag : (_addrTag)}`
+        </span>${_showAddr ? ' ' + _addrTag : ''}`
       : '';
 
     // Token amount chip
