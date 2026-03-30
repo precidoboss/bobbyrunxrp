@@ -2664,10 +2664,15 @@ async function renderMoatRewards(addr){
   const top10=pts.slice(0,10).reduce((s,p)=>s+p.points,0);
 
   const REWARD_TOKENS={
-    'usdc':'USDC','wavax':'WAVAX','avax':'AVAX',
+    'usdc':'USDC','wavax':'WAVAX','avax':'AVAX','btc.b':'BTC.b','usdt':'USDT','weth.e':'WETH.e',
     '0xb97ef9ef8734c71904d8002f8b6bc66dd9c48a6e':'USDC',
+    '0x9702230a8ea53601f5cd2dc00fdbc13d4df4a8c7':'USDT',
     '0xb31f66aa3c1e785363f0875a1b74e27b85fd66c7':'WAVAX',
     '0x49d5c2bdffac6ce2bfdb6640f4f80f226bc10bab':'WETH.e',
+    '0x152b9d0fdc40c096757f570a51e494bd4b943e50':'BTC.b',
+    '0x50b7545627a5162f82a992c33b87adc75187b218':'WBTC.e',
+    '0x63a72806098bd3d9520cc43356dd78afe5d386d9':'AAVE.e',
+    '0xd586e7f844cea2f87f50152665bcbc2c279d8d70':'DAI.e',
   };
   // Add all moat tokens
   Object.values(MOATS).forEach(mm=>{ if(mm.tokenAddr) REWARD_TOKENS[mm.tokenAddr.toLowerCase()]=mm.ticker; });
@@ -2713,68 +2718,108 @@ async function renderMoatRewards(addr){
     txHash: e.transactionHash||e.txHash||''
   })).filter(e=>e.rewardAmount>0||e.txHash);
 
-  // ── Step 3: On-chain scan via eth_getLogs for RewardPaid / RewardDistributed ──
-  // Common reward event signatures
-  const REWARD_SIGS = [
-    '0x3be3571900000000000000000000000000000000000000000000000000000000', // RewardPaid(address,uint256)
-    '0xe2403640ba68fed3a2f88b7557551d1993f84b99bb10ff833f3cf823bf203ac', // RewardPaid(address,address,uint256)
-    '0xaa24dfbe89aabc0daf04e929d06ccce00f24d19c5e5a4d14e7a9fd7efb8d06f', // RewardDistributed
-  ];
-  // keccak256 of "RewardPaid(address,uint256)" = 0xe2403640...
-  // We use a broad approach: getLogs for last ~50k blocks
+  // ── Step 3: Fetch tx receipts for claim txns → read ERC-20 Transfer events ──
+  // Transfer(address indexed from, address indexed to, uint256 value)
+  const TRANSFER_TOPIC = '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef';
+  // Known token decimals (address → decimals)
+  const TOKEN_DECIMALS = {
+    '0xb97ef9ef8734c71904d8002f8b6bc66dd9c48a6e': 6,  // USDC
+    '0x9702230a8ea53601f5cd2dc00fdbc13d4df4a8c7': 6,  // USDT
+    '0x49d5c2bdffac6ce2bfdb6640f4f80f226bc10bab': 18, // WETH.e
+    '0xb31f66aa3c1e785363f0875a1b74e27b85fd66c7': 18, // WAVAX
+    '0x152b9d0fdc40c096757f570a51e494bd4b943e50': 8,  // BTC.b
+    '0x50b7545627a5162f82a992c33b87adc75187b218': 8,  // WBTC.e
+  };
   let onChainEvs = [];
   try {
     const RPC = 'https://api.avax.network/ext/bc/C/rpc';
-    // Get current block
+    // Collect unique txHashes from API events (claim/reward types)
+    const claimTxHashes = [...new Set(
+      apiRewardEvs.map(e=>e.txHash).filter(h=>h&&h.startsWith('0x'))
+    )].slice(0, 50); // cap at 50 receipts
+
+    // Also do a broad getLogs scan for Transfer events TO the moat contract
+    // to catch any receipts we might have missed from the API
     const blkRes = await fetch(RPC,{method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({jsonrpc:'2.0',id:1,method:'eth_blockNumber',params:[]})}).then(r=>r.json()).catch(()=>null);
     const curBlock = blkRes?.result ? parseInt(blkRes.result,16) : 0;
+
+    // Fetch all tx receipts in parallel (for known claim txns from API)
+    const receiptJobs = claimTxHashes.map(hash=>
+      fetch(RPC,{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({jsonrpc:'2.0',id:1,method:'eth_getTransactionReceipt',params:[hash]})
+      }).then(r=>r.json()).catch(()=>null)
+    );
+
+    // Also scan for Transfer events FROM the moat contract address in recent blocks
+    // (moat contract is the "from" address when it pays out rewards)
+    let logScanJob = null;
     if(curBlock>0){
-      // Scan last ~100k blocks (~3-4 days on AVAX C-chain)
       const fromBlock = '0x'+Math.max(0,curBlock-100000).toString(16);
       const toBlock   = '0x'+curBlock.toString(16);
-      // Try multiple topic signatures
-      const logJobs = REWARD_SIGS.map(sig=>
-        fetch(RPC,{method:'POST',headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({jsonrpc:'2.0',id:1,method:'eth_getLogs',params:[{
-            address: addr, fromBlock, toBlock, topics:[sig]
-          }]})}).then(r=>r.json()).catch(()=>null)
-      );
-      // Also try without topic filter (catch all events from moat)
-      logJobs.push(fetch(RPC,{method:'POST',headers:{'Content-Type':'application/json'},
+      // Transfer events where topic[1] (from) = moat contract (padded to 32 bytes)
+      const paddedAddr = '0x000000000000000000000000'+addr.slice(2).toLowerCase();
+      logScanJob = fetch(RPC,{method:'POST',headers:{'Content-Type':'application/json'},
         body:JSON.stringify({jsonrpc:'2.0',id:2,method:'eth_getLogs',params:[{
-          address: addr, fromBlock, toBlock
-        }]})}).then(r=>r.json()).catch(()=>null));
+          fromBlock, toBlock,
+          topics:[TRANSFER_TOPIC, paddedAddr] // Transfer FROM moat contract
+        }]})
+      }).then(r=>r.json()).catch(()=>null);
+    }
 
-      const logResults = await Promise.allSettled(logJobs);
-      logResults.forEach(r=>{
-        if(r.status==='fulfilled'&&r.value?.result&&Array.isArray(r.value.result)){
-          r.value.result.forEach(log=>{
-            // Decode: data = uint256 amount, topics[1] = address user, topics[2] = address token (if exists)
-            try{
-              const data = log.data||'0x';
-              const amtHex = data.slice(2,66);
-              const amtRaw = amtHex ? BigInt('0x'+amtHex) : 0n;
-              const wallet = log.topics?.[1] ? '0x'+log.topics[1].slice(26) : '';
-              const tokenAddr = log.topics?.[2] ? '0x'+log.topics[2].slice(26) : '';
-              // Determine decimals (WAVAX/ERC20 = 18, USDC = 6)
-              const isUsdc = tokenAddr.toLowerCase()==='0xb97ef9ef8734c71904d8002f8b6bc66dd9c48a6e';
-              const dec = isUsdc ? 6 : 18;
-              const amt = Number(amtRaw) / Math.pow(10,dec);
-              if(amt>0&&wallet){
-                onChainEvs.push({
-                  contractAddress:addr, eventType:'RewardPaid',
-                  wallet:wallet.toLowerCase(),
-                  rewardTokenAddr:tokenAddr.toLowerCase(),
-                  rewardToken:tokenAddr.toLowerCase(),
-                  rewardAmount:amt,
-                  txHash:log.transactionHash||'',
-                  timestamp:0, _onchain:true
-                });
-              }
-            }catch(e2){}
-          });
-        }
+    const [receiptResults, logScanRes] = await Promise.all([
+      Promise.allSettled(receiptJobs),
+      logScanJob||Promise.resolve(null)
+    ]);
+
+    // Helper: decode a Transfer log into a reward event
+    function decodeTransferLog(log, walletOverride){
+      try{
+        const tokenAddr = (log.address||'').toLowerCase();
+        const fromAddr  = log.topics?.[1] ? '0x'+log.topics[1].slice(26).toLowerCase() : '';
+        const toAddr    = log.topics?.[2] ? '0x'+log.topics[2].slice(26).toLowerCase() : '';
+        // Only care about transfers FROM the moat contract
+        if(fromAddr !== addr.toLowerCase()) return null;
+        const data = log.data||'0x';
+        const amtHex = data.replace('0x','').padStart(64,'0').slice(0,64);
+        const amtRaw = BigInt('0x'+amtHex);
+        const dec = TOKEN_DECIMALS[tokenAddr] ?? 18;
+        const amt = Number(amtRaw) / Math.pow(10, dec);
+        if(amt <= 0) return null;
+        return {
+          contractAddress: addr,
+          eventType: 'RewardPaid',
+          wallet: (walletOverride||toAddr).toLowerCase(),
+          rewardTokenAddr: tokenAddr,
+          rewardToken: tokenAddr,
+          rewardAmount: amt,
+          txHash: log.transactionHash||'',
+          timestamp: 0,
+          _onchain: true
+        };
+      }catch(e2){ return null; }
+    }
+
+    // Process receipts: each receipt contains all logs for that tx
+    receiptResults.forEach(r=>{
+      if(r.status!=='fulfilled'||!r.value?.result) return;
+      const receipt = r.value.result;
+      const txHash  = receipt.transactionHash||'';
+      // "from" field of the tx = the wallet that called ClaimAllRewards
+      const txCaller = (receipt.from||'').toLowerCase();
+      (receipt.logs||[]).forEach(log=>{
+        if(log.topics?.[0]!==TRANSFER_TOPIC) return;
+        const ev = decodeTransferLog(log, txCaller);
+        if(ev){ ev.txHash=txHash; onChainEvs.push(ev); }
+      });
+    });
+
+    // Process log scan results (Transfer FROM moat in last 100k blocks)
+    if(logScanRes?.result&&Array.isArray(logScanRes.result)){
+      logScanRes.result.forEach(log=>{
+        if(log.topics?.[0]!==TRANSFER_TOPIC) return;
+        const ev = decodeTransferLog(log, null);
+        if(ev) onChainEvs.push(ev);
       });
     }
   } catch(e){}
