@@ -2663,56 +2663,159 @@ async function renderMoatRewards(addr){
   const pts=m.sorted, tot=m.totalPoints;
   const top10=pts.slice(0,10).reduce((s,p)=>s+p.points,0);
 
-  const REWARD_TOKENS={'usdc':'USDC','wavax':'WAVAX','avax':'AVAX',
+  const REWARD_TOKENS={
+    'usdc':'USDC','wavax':'WAVAX','avax':'AVAX',
     '0xb97ef9ef8734c71904d8002f8b6bc66dd9c48a6e':'USDC',
-    '0xb31f66aa3c1e785363f0875a1b74e27b85fd66c7':'WAVAX'};
+    '0xb31f66aa3c1e785363f0875a1b74e27b85fd66c7':'WAVAX',
+    '0x49d5c2bdffac6ce2bfdb6640f4f80f226bc10bab':'WETH.e',
+  };
+  // Add all moat tokens
+  Object.values(MOATS).forEach(mm=>{ if(mm.tokenAddr) REWARD_TOKENS[mm.tokenAddr.toLowerCase()]=mm.ticker; });
 
-  // Detect reward events for this moat (local events + API /rewards endpoint)
-  const rewardEvs=allEvs.filter(e=>e.contractAddress===addr&&
+  // ── Show loading state ──
+  el.innerHTML='<div style="text-align:center;padding:1.5rem;color:var(--mut)"><span class="spin"></span> Loading reward history…</div>';
+
+  // ── Step 1: Local allEvs filtered for this moat ──
+  const localRewardEvs = allEvs.filter(e=>e.contractAddress===addr&&
     (e.eventType?.toLowerCase().includes('reward')||
      e.eventType?.toLowerCase().includes('claim')||
      e.eventType?.toLowerCase().includes('distribut')));
 
-  // ── Fetch all claimed rewards from API ──
-  el.innerHTML='<div style="text-align:center;padding:1.5rem;color:var(--mut)"><span class="spin"></span> Loading reward history…</div>';
-  let apiRewards = [];
+  // ── Step 2: Fetch from /events API (the only working endpoint) ──
+  let apiEvs = [];
   try {
-    const rRes = await fetch(API + '/rewards?contractAddress=' + addr + '&limit=500').then(r=>r.json()).catch(()=>null);
-    if (rRes && Array.isArray(rRes.rewards || rRes)) {
-      apiRewards = (rRes.rewards || rRes).map(r=>({
-        wallet: (r.wallet||r.user||r.walletAddress||'').toLowerCase(),
-        rewardToken: (r.rewardToken||r.token||'').toLowerCase(),
-        rewardAmount: Number(r.amount||r.rewardAmount||r.value||0),
-        timestamp: r.timestamp||r.createdAt||0,
-        txHash: r.txHash||r.transactionHash||''
-      })).filter(r=>r.rewardAmount>0);
-    }
-  } catch(e) {}
+    const pages = [0, 500, 1000]; // fetch up to 1500 events
+    const fetches = pages.map(offset =>
+      fetch(API + '/events?contractAddress=' + addr + '&limit=500&offset=' + offset)
+        .then(r=>r.ok?r.json():null).catch(()=>null)
+    );
+    const results = await Promise.allSettled(fetches);
+    results.forEach(r=>{
+      if(r.status==='fulfilled'&&r.value){
+        const evArr = r.value.results||r.value||[];
+        if(Array.isArray(evArr)) apiEvs.push(...evArr);
+      }
+    });
+  } catch(e){}
 
-  // Merge API rewards with local events
-  const allRewardEvs = [...rewardEvs];
-  apiRewards.forEach(ar => {
-    if (!allRewardEvs.find(e=>e.txHash&&e.txHash===ar.txHash)) {
-      allRewardEvs.push({
-        contractAddress: addr, eventType:'claimed',
-        wallet: ar.wallet, rewardToken: ar.rewardToken,
-        rewardAmount: ar.rewardAmount, timestamp: ar.timestamp, txHash: ar.txHash
+  // Filter API events for reward/claim types
+  const apiRewardEvs = apiEvs.filter(e=>{
+    const t=(e.eventType||'').toLowerCase();
+    return t.includes('reward')||t.includes('claim')||t.includes('distribut');
+  }).map(e=>({
+    contractAddress: addr,
+    eventType: e.eventType||'claimed',
+    wallet: (e.wallet||e.user||e.walletAddress||e.address||e.from||'').toLowerCase(),
+    rewardToken: (e.rewardToken||e.token||e.rewardCurrency||'').toLowerCase(),
+    rewardTokenAddr: (e.rewardTokenAddress||e.rewardContract||e.rewardToken||'').toLowerCase(),
+    rewardAmount: Number(e.amount||e.rewardAmount||e.value||0),
+    timestamp: e.timestamp||e.createdAt||0,
+    txHash: e.transactionHash||e.txHash||''
+  })).filter(e=>e.rewardAmount>0||e.txHash);
+
+  // ── Step 3: On-chain scan via eth_getLogs for RewardPaid / RewardDistributed ──
+  // Common reward event signatures
+  const REWARD_SIGS = [
+    '0x3be3571900000000000000000000000000000000000000000000000000000000', // RewardPaid(address,uint256)
+    '0xe2403640ba68fed3a2f88b7557551d1993f84b99bb10ff833f3cf823bf203ac', // RewardPaid(address,address,uint256)
+    '0xaa24dfbe89aabc0daf04e929d06ccce00f24d19c5e5a4d14e7a9fd7efb8d06f', // RewardDistributed
+  ];
+  // keccak256 of "RewardPaid(address,uint256)" = 0xe2403640...
+  // We use a broad approach: getLogs for last ~50k blocks
+  let onChainEvs = [];
+  try {
+    const RPC = 'https://api.avax.network/ext/bc/C/rpc';
+    // Get current block
+    const blkRes = await fetch(RPC,{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({jsonrpc:'2.0',id:1,method:'eth_blockNumber',params:[]})}).then(r=>r.json()).catch(()=>null);
+    const curBlock = blkRes?.result ? parseInt(blkRes.result,16) : 0;
+    if(curBlock>0){
+      // Scan last ~100k blocks (~3-4 days on AVAX C-chain)
+      const fromBlock = '0x'+Math.max(0,curBlock-100000).toString(16);
+      const toBlock   = '0x'+curBlock.toString(16);
+      // Try multiple topic signatures
+      const logJobs = REWARD_SIGS.map(sig=>
+        fetch(RPC,{method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({jsonrpc:'2.0',id:1,method:'eth_getLogs',params:[{
+            address: addr, fromBlock, toBlock, topics:[sig]
+          }]})}).then(r=>r.json()).catch(()=>null)
+      );
+      // Also try without topic filter (catch all events from moat)
+      logJobs.push(fetch(RPC,{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({jsonrpc:'2.0',id:2,method:'eth_getLogs',params:[{
+          address: addr, fromBlock, toBlock
+        }]})}).then(r=>r.json()).catch(()=>null));
+
+      const logResults = await Promise.allSettled(logJobs);
+      logResults.forEach(r=>{
+        if(r.status==='fulfilled'&&r.value?.result&&Array.isArray(r.value.result)){
+          r.value.result.forEach(log=>{
+            // Decode: data = uint256 amount, topics[1] = address user, topics[2] = address token (if exists)
+            try{
+              const data = log.data||'0x';
+              const amtHex = data.slice(2,66);
+              const amtRaw = amtHex ? BigInt('0x'+amtHex) : 0n;
+              const wallet = log.topics?.[1] ? '0x'+log.topics[1].slice(26) : '';
+              const tokenAddr = log.topics?.[2] ? '0x'+log.topics[2].slice(26) : '';
+              // Determine decimals (WAVAX/ERC20 = 18, USDC = 6)
+              const isUsdc = tokenAddr.toLowerCase()==='0xb97ef9ef8734c71904d8002f8b6bc66dd9c48a6e';
+              const dec = isUsdc ? 6 : 18;
+              const amt = Number(amtRaw) / Math.pow(10,dec);
+              if(amt>0&&wallet){
+                onChainEvs.push({
+                  contractAddress:addr, eventType:'RewardPaid',
+                  wallet:wallet.toLowerCase(),
+                  rewardTokenAddr:tokenAddr.toLowerCase(),
+                  rewardToken:tokenAddr.toLowerCase(),
+                  rewardAmount:amt,
+                  txHash:log.transactionHash||'',
+                  timestamp:0, _onchain:true
+                });
+              }
+            }catch(e2){}
+          });
+        }
       });
     }
+  } catch(e){}
+
+  // ── Merge all sources, deduplicate by txHash ──
+  const seen = new Set();
+  const allRewardEvs = [];
+  [...localRewardEvs, ...apiRewardEvs, ...onChainEvs].forEach(e=>{
+    const key = e.txHash||(e.wallet+e.rewardAmount+e.timestamp);
+    if(!seen.has(key)){ seen.add(key); allRewardEvs.push(e); }
   });
+
+  // ── Step 4: Resolve unknown token addresses via CoinGecko ──
+  const unknownAddrs = new Set();
+  allRewardEvs.forEach(e=>{
+    const ra = (e.rewardTokenAddr||e.rewardToken||'').toLowerCase();
+    if(ra&&ra.startsWith('0x')&&ra.length===42&&!REWARD_TOKENS[ra]) unknownAddrs.add(ra);
+  });
+  const cgCache = {}; // addr -> {symbol, name, thumb}
+  if(unknownAddrs.size>0){
+    await Promise.allSettled([...unknownAddrs].map(async tAddr=>{
+      try{
+        const cgRes = await fetch(
+          'https://api.coingecko.com/api/v3/coins/avalanche/contract/'+tAddr
+        ).then(r=>r.ok?r.json():null).catch(()=>null);
+        if(cgRes?.symbol){
+          cgCache[tAddr]={symbol:cgRes.symbol.toUpperCase(),name:cgRes.name,thumb:cgRes.image?.thumb||''};
+          REWARD_TOKENS[tAddr]=cgRes.symbol.toUpperCase(); // cache for future use
+        }
+      }catch(e){}
+    }));
+  }
 
   // ── Tally by token — combine ALL claimed rewards ──
   const rewardTally={};
   allRewardEvs.forEach(e=>{
-    const raw=(e.rewardToken||'').toLowerCase();
-    // Resolve token label
+    const raw=(e.rewardTokenAddr||e.rewardToken||'').toLowerCase();
     let label = REWARD_TOKENS[raw];
-    if (!label) {
-      // Check against all moat tokens
-      Object.values(MOATS).forEach(mm=>{ if(mm.tokenAddr&&mm.tokenAddr.toLowerCase()===raw) label=mm.ticker; });
-    }
-    label = label || e.rewardToken || (raw ? shortA(raw) : 'Token');
-    if(!rewardTally[label])rewardTally[label]={count:0,total:0,wallets:new Set()};
+    if(!label&&cgCache[raw]) label=cgCache[raw].symbol;
+    label = label || (raw&&raw.startsWith('0x')?shortA(raw):'Token');
+    if(!rewardTally[label]) rewardTally[label]={count:0,total:0,wallets:new Set(),thumb:cgCache[raw]?.thumb||''};
     rewardTally[label].count++;
     rewardTally[label].total+=Number(e.rewardAmount||0);
     if(e.wallet) rewardTally[label].wallets.add(e.wallet);
@@ -2728,15 +2831,17 @@ async function renderMoatRewards(addr){
     rewardCurrencyHTML=`
       <div style="background:rgba(109,184,122,.06);border:1px solid rgba(109,184,122,.22);border-radius:9px;padding:.85rem;margin-bottom:.85rem">
         <div style="font-family:'DM Mono',monospace;font-size:.6rem;color:var(--grn);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.5rem">💰 All Rewards Claimed — Combined Totals</div>
-        ${summaryLine ? `<div style="font-size:.8rem;margin-bottom:.6rem;line-height:1.7">${summaryLine}</div>` : ''}
+        ${summaryLine?`<div style="font-size:.82rem;margin-bottom:.65rem;line-height:1.8">${summaryLine}</div>`:''}
         <div style="display:flex;flex-wrap:wrap;gap:.5rem">
           ${Object.entries(rewardTally).map(([label,d])=>`
-            <div style="background:var(--card);border:1px solid rgba(109,184,122,.2);border-radius:7px;padding:.45rem .75rem;text-align:center">
-              <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.88rem;color:var(--grn)">${d.total>0?fmtP(Math.round(d.total))+' ':''}<span style="font-size:.75rem">${label}</span></div>
-              <div style="font-family:'DM Mono',monospace;font-size:.52rem;color:var(--mut)">${d.count} claim event${d.count>1?'s':''}</div>
-              ${d.wallets.size>0?`<div style="font-family:'DM Mono',monospace;font-size:.5rem;color:var(--ash2)">${d.wallets.size} unique wallet${d.wallets.size>1?'s':''}</div>`:''}
+            <div style="background:var(--card);border:1px solid rgba(109,184,122,.2);border-radius:7px;padding:.5rem .8rem;text-align:center;min-width:90px">
+              ${d.thumb?`<img src="${d.thumb}" style="width:20px;height:20px;border-radius:50%;object-fit:cover;margin-bottom:3px" onerror="this.style.display='none'">`:'' }
+              <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.85rem;color:var(--grn)">${d.total>0?fmtP(Math.round(d.total)):''}</div>
+              <div style="font-family:'DM Mono',monospace;font-size:.6rem;color:var(--txt);font-weight:600">${label}</div>
+              <div style="font-family:'DM Mono',monospace;font-size:.5rem;color:var(--mut);margin-top:2px">${d.count} event${d.count>1?'s':''} · ${d.wallets.size} wallet${d.wallets.size!==1?'s':''}</div>
             </div>`).join('')}
         </div>
+        <div style="font-family:'DM Mono',monospace;font-size:.48rem;color:var(--ash2);margin-top:.55rem">Sources: live events API + on-chain RPC scan (last ~100k blocks) · unknown tokens resolved via CoinGecko</div>
       </div>`;
   } else {
     rewardCurrencyHTML=`
