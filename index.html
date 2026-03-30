@@ -1264,6 +1264,31 @@ main{position:relative;z-index:1;padding:.8rem;max-width:1440px;margin:0 auto}
       </div>
       <div id="posActiveCards" style="display:grid;grid-template-columns:1fr;gap:.65rem;margin-bottom:1.2rem"></div>
     </div>
+    <!-- Section: Recent Activity (per-wallet interactions with all moat contracts) -->
+    <div id="posActivitySec" style="display:none;margin-bottom:1.2rem">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.6rem;flex-wrap:wrap;gap:.4rem">
+        <div class="sh-t">📡 Your Recent Activity</div>
+        <span id="posActivityTotal" style="font-family:'DM Mono',monospace;font-size:.56rem;color:var(--mut)"></span>
+      </div>
+      <!-- All moats activity table -->
+      <div class="panel" style="margin-bottom:.75rem">
+        <div class="ph">
+          <div class="ptitle">All Moats — Interactions</div>
+          <span id="posAllActCount" style="font-family:'DM Mono',monospace;font-size:.56rem;color:var(--mut)"></span>
+        </div>
+        <div class="pb0 tw"><table class="tbl" id="posAllActTbl">
+          <thead><tr><th>Time</th><th>Moat</th><th>Action</th><th>Amount</th><th>Tx</th></tr></thead>
+          <tbody id="posAllActBody"></tbody>
+        </table></div>
+        <div id="posAllActPager" style="display:none;padding:.55rem .85rem;display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--bor)">
+          <button id="posAllActPrev" onclick="posActPage('all',-1)" class="btn btn-sm btn-g" style="padding:2px 9px;font-size:.58rem">← Prev</button>
+          <span id="posAllActPageLbl" style="font-family:'DM Mono',monospace;font-size:.56rem;color:var(--mut)"></span>
+          <button id="posAllActNext" onclick="posActPage('all',1)" class="btn btn-sm btn-g" style="padding:2px 9px;font-size:.58rem">Next →</button>
+        </div>
+      </div>
+      <!-- Per-moat activity tables -->
+      <div id="posPerMoatActArea"></div>
+    </div>
     <!-- Section: Other moats -->
     <div id="posOtherSec">
       <div class="sh-t" style="margin-bottom:.6rem;color:var(--mut)">⬡ All Moats — Click to Enter</div>
@@ -2540,10 +2565,26 @@ function renderMoatDetail(addr,silent=false){
         const tokCard = mStatRow.querySelector('.sc:nth-child(4)');
         if(tokCard) tokCard.innerHTML=`<div class="sl">Tokens in Moat</div><div class="sv ca">${fmtP(totals.staked)}</div><div class="ss">${tkr} <span style="color:var(--grn);font-size:.48rem">● on-chain</span></div>`;
       }
+      const px = priceCache[addr]?.price || 0;
+      const stakedUsd = px > 0 ? totals.staked * px : 0;
+      const burnedUsd = px > 0 ? totals.burned * px : 0;
+      const totalUsd  = px > 0 ? totals.total * px : 0;
       const stakeCard=mSlb.children[0];
       const burnCard=mSlb.children[2];
-      if(stakeCard) stakeCard.innerHTML='<div class="rv2 ca">'+fmtP(totals.staked)+'</div><div class="rl2">🔒 Staked + Locked</div><div style="font-size:.62rem;color:var(--dim);margin-top:3px">'+tkr+' in moat contract</div>';
-      if(burnCard) burnCard.innerHTML='<div class="rv2 cr">'+fmtP(totals.burned)+'</div><div class="rl2">🔥 Burned Total</div><div style="font-size:.62rem;color:var(--dim);margin-top:3px">'+tkr+' at 0xDead</div>';
+      if(stakeCard) stakeCard.innerHTML='<div class="rv2 ca">'+fmtP(totals.staked)+'</div><div class="rl2">🔒 Staked + Locked</div><div style="font-size:.62rem;color:var(--dim);margin-top:3px">'+tkr+' in moat contract</div>'+(stakedUsd>0?`<div style="font-family:'DM Mono',monospace;font-size:.6rem;color:var(--grn);margin-top:2px">≈ $${fmtK(stakedUsd)}</div>`:'');
+      if(burnCard) burnCard.innerHTML='<div class="rv2 cr">'+fmtP(totals.burned)+'</div><div class="rl2">🔥 Burned Total</div><div style="font-size:.62rem;color:var(--dim);margin-top:3px">'+tkr+' at 0xDead</div>'+(burnedUsd>0?`<div style="font-family:'DM Mono',monospace;font-size:.6rem;color:var(--red);margin-top:2px">≈ $${fmtK(burnedUsd)}</div>`:'');
+      // Update locked card USD
+      const lockCard=mSlb.children[1];
+      if(lockCard&&totalUsd>0){
+        const existing=lockCard.querySelector('.lock-usd-note');
+        if(!existing){
+          const d=document.createElement('div');
+          d.className='lock-usd-note';
+          d.style.cssText="font-family:'DM Mono',monospace;font-size:.6rem;color:var(--gld);margin-top:2px";
+          d.textContent='Combined: ≈ $'+fmtK(totalUsd);
+          lockCard.appendChild(d);
+        }
+      }
     } else {
       if(actNoteEl) actNoteEl.innerHTML='<span style="color:var(--gld)">⚠️ estimated — API returns points only</span>';
     }
@@ -2576,11 +2617,14 @@ function renderMoatDetail(addr,silent=false){
     if (!totals) return;
     const tkr2 = meta.ticker || 'tokens';
     const note2 = document.getElementById('mActNote');
-    if (note2) note2.innerHTML = '<span style="color:var(--grn)">&#9679; on-chain data</span>';
+    const px2 = priceCache[addr]?.price || 0;
+    if (note2) note2.innerHTML = '<span style="color:var(--grn)">&#9679; on-chain data'+(px2>0?' · $'+fmtPrice(px2)+' per token':'')+'</span>';
     const stakedEl = document.getElementById('mStakedTotal');
     const burnedEl = document.getElementById('mBurnedTotal');
-    if (stakedEl && totals.staked>0) stakedEl.innerHTML = fmtP(totals.staked)+' '+tkr2+' (staked+locked)';
-    if (burnedEl && totals.burned>0) burnedEl.innerHTML = fmtP(totals.burned)+' '+tkr2+' burned';
+    const stakedUsd2 = px2 > 0 ? totals.staked * px2 : 0;
+    const burnedUsd2 = px2 > 0 ? totals.burned * px2 : 0;
+    if (stakedEl && totals.staked>0) stakedEl.innerHTML = fmtP(totals.staked)+' '+tkr2+' (staked+locked)'+(stakedUsd2>0?' · <b style="color:var(--grn)">$'+fmtK(stakedUsd2)+'</b>':'');
+    if (burnedEl && totals.burned>0) burnedEl.innerHTML = fmtP(totals.burned)+' '+tkr2+' burned'+(burnedUsd2>0?' · <b style="color:var(--red)">$'+fmtK(burnedUsd2)+'</b>':'');
   }), 0);
   // Fetch real on-chain events with token amounts
   fetchMoatOnchainEvents(addr, 25).then(ocEvs => {
@@ -2941,22 +2985,60 @@ async function renderMoatRewards(addr){
   }
 
   if(hasRewards){
+    // Build USD price map for known reward tokens
+    const rewardPriceMap = {
+      'USDC':1, 'USDT':1, 'DAI.e':1,
+      'WAVAX': priceCache['0xb31f66aa3c1e785363f0875a1b74e27b85fd66c7']?.price||0,
+      'AVAX':  priceCache['0xb31f66aa3c1e785363f0875a1b74e27b85fd66c7']?.price||0,
+      'WETH.e':priceCache['0x49d5c2bdffac6ce2bfdb6640f4f80f226bc10bab']?.price||0,
+      'BTC.b': priceCache['0x152b9d0fdc40c096757f570a51e494bd4b943e50']?.price||0,
+      'WBTC.e':priceCache['0x50b7545627a5162f82a992c33b87adc75187b218']?.price||0,
+    };
+    // Add moat token prices to the map
+    Object.entries(MOATS).forEach(([mAddr,mm])=>{ if(mm.ticker&&priceCache[mAddr]?.price>0) rewardPriceMap[mm.ticker]=priceCache[mAddr].price; });
+    // Fetch prices for unknown tokens via CoinGecko if not already cached
+    const unknownRewardTokens = Object.keys(rewardTally).filter(label=>!rewardPriceMap[label]||rewardPriceMap[label]===0);
+    if(unknownRewardTokens.length>0){
+      await Promise.allSettled(unknownRewardTokens.map(async label=>{
+        // Try to find this token address from REWARD_TOKENS map
+        const addr2 = Object.entries(REWARD_TOKENS).find(([,v])=>v===label)?.[0];
+        if(addr2&&addr2.startsWith('0x')){
+          try{
+            const cg2 = await fetch(`https://api.coingecko.com/api/v3/simple/token_price/avalanche?contract_addresses=${addr2}&vs_currencies=usd`).then(r=>r.ok?r.json():null);
+            if(cg2?.[addr2.toLowerCase()]?.usd>0) rewardPriceMap[label]=cg2[addr2.toLowerCase()].usd;
+          }catch(e){}
+        }
+      }));
+    }
+    let totalRewardsUsd = 0;
+    Object.entries(rewardTally).forEach(([label,d])=>{ if(rewardPriceMap[label]>0) totalRewardsUsd+=d.total*(rewardPriceMap[label]||0); });
     const summaryLine = Object.entries(rewardTally)
       .filter(([,d])=>d.total>0)
-      .map(([label,d])=>`<span style="display:inline-flex;align-items:center;gap:4px">${tokenImgTag(label,16)}<span style="font-family:'Chakra Petch',sans-serif;font-weight:700;color:var(--grn)">${fmtP(Math.round(d.total))} ${label}</span></span>`)
+      .map(([label,d])=>{
+        const usdVal = rewardPriceMap[label]>0 ? `<span style="font-size:.65rem;color:var(--mut)"> ≈ $${fmtK(d.total*rewardPriceMap[label])}</span>` : '';
+        return `<span style="display:inline-flex;align-items:center;gap:4px">${tokenImgTag(label,16)}<span style="font-family:'Chakra Petch',sans-serif;font-weight:700;color:var(--grn)">${fmtP(Math.round(d.total))} ${label}</span>${usdVal}</span>`;
+      })
       .join(' · ');
     rewardCurrencyHTML=`
       <div style="background:rgba(109,184,122,.06);border:1px solid rgba(109,184,122,.22);border-radius:9px;padding:.85rem;margin-bottom:.85rem">
-        <div style="font-family:'DM Mono',monospace;font-size:.6rem;color:var(--grn);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.5rem">💰 All Rewards Claimed — Combined Totals</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.4rem;margin-bottom:.5rem">
+          <div style="font-family:'DM Mono',monospace;font-size:.6rem;color:var(--grn);text-transform:uppercase;letter-spacing:.1em">💰 All Rewards Claimed — Combined Totals</div>
+          ${totalRewardsUsd>0?`<div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.85rem;color:var(--grn)">≈ $${fmtK(totalRewardsUsd)} total</div>`:''}
+        </div>
         ${summaryLine?`<div style="font-size:.82rem;margin-bottom:.65rem;line-height:2;display:flex;flex-wrap:wrap;gap:.5rem">${summaryLine}</div>`:''}
         <div style="display:flex;flex-wrap:wrap;gap:.5rem">
-          ${Object.entries(rewardTally).map(([label,d])=>`
+          ${Object.entries(rewardTally).map(([label,d])=>{
+            const usdPerTok = rewardPriceMap[label]||0;
+            const usdTotal = usdPerTok>0 ? d.total*usdPerTok : 0;
+            return `
             <div style="background:var(--card);border:1px solid rgba(109,184,122,.2);border-radius:7px;padding:.5rem .8rem;text-align:center;min-width:90px">
               <div style="display:flex;justify-content:center;margin-bottom:4px">${tokenImgTag(label,22)}</div>
               <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.85rem;color:var(--grn)">${d.total>0?(d.total>=1?fmtP(Math.round(d.total)):d.total.toFixed(4)):''}</div>
               <div style="font-family:'DM Mono',monospace;font-size:.6rem;color:var(--txt);font-weight:600">${label}</div>
+              ${usdTotal>0?`<div style="font-family:'DM Mono',monospace;font-size:.52rem;color:var(--grn);margin-top:1px">≈ $${fmtK(usdTotal)}</div>`:''}
               <div style="font-family:'DM Mono',monospace;font-size:.5rem;color:var(--mut);margin-top:2px">${d.count} event${d.count>1?'s':''} · ${d.wallets.size} wallet${d.wallets.size!==1?'s':''}</div>
-            </div>`).join('')}
+            </div>`;
+          }).join('')}
         </div>
         <div style="font-family:'DM Mono',monospace;font-size:.48rem;color:var(--ash2);margin-top:.55rem">Sources: live events API + on-chain receipt scan · unknown tokens resolved via CoinGecko</div>
       </div>`;
@@ -4648,7 +4730,22 @@ async function runAllocatorCalc() {
     </div>
 
     <!-- Per-moat result cards -->
-    ${moatResults.map(r => `
+    ${moatResults.map(r => {
+      const isHcash = r.addr.toLowerCase() === '0x501f6e7bec3db63d8dacbc9fa0ce42d5d2329d53';
+      // hCASH LP split: budget is split 50/50 — half buys hCASH, half goes as WAVAX for LP
+      const hcashSplit = isHcash && r.usd > 0 ? {
+        hcashUsd: r.usd / 2,
+        wavaxUsd: r.usd / 2,
+        // hCASH tokens = half the budget / hCASH price
+        hcashTokens: r.price > 0 ? (r.usd / 2) / r.price : 0,
+        // WAVAX needed = roughly same USD value paired with hCASH
+        wavaxAvax: priceCache['0xb31f66aa3c1e785363f0875a1b74e27b85fd66c7']?.price > 0
+          ? (r.usd / 2) / priceCache['0xb31f66aa3c1e785363f0875a1b74e27b85fd66c7'].price
+          : (r.usd / 2) / 25, // fallback ~$25/AVAX
+      } : null;
+      // Points calc for hCASH: based on LP token amount not raw token amount
+      const hcashPtsNote = isHcash ? '(LP token points — stake LP after adding liquidity on Pharaoh)' : r.ptsMethod;
+      return `
     <div class="res-moat-card" style="background:${r.meta.color}10;border-color:${r.meta.color};border:1px solid ${r.meta.color}44;border-left:3px solid ${r.meta.color}">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:.6rem">
         ${logoImg(r.meta.logo,'moat-logo-sm',r.meta.emoji,r.meta.color)}
@@ -4661,16 +4758,33 @@ async function runAllocatorCalc() {
           ${r.ch24!==0?`<div style="font-family:'DM Mono',monospace;font-size:.58rem;color:${r.ch24>=0?'var(--grn)':'var(--red)'}">${r.ch24>=0?'+':''}${r.ch24.toFixed(2)}% 24h</div>`:''}
         </div>
       </div>
+      ${hcashSplit ? `
+      <div style="background:rgba(212,168,67,.08);border:1px solid rgba(212,168,67,.25);border-radius:9px;padding:.75rem;margin-bottom:.65rem">
+        <div style="font-family:'Chakra Petch',sans-serif;font-size:.64rem;font-weight:700;color:var(--gld);margin-bottom:.5rem">💧 LP Budget Split (50/50)</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-bottom:.5rem">
+          <div style="background:var(--card);border-radius:7px;padding:.5rem;text-align:center">
+            <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.9rem;color:var(--gld)">${f2(hcashSplit.hcashTokens)}</div>
+            <div style="font-family:'DM Mono',monospace;font-size:.52rem;color:var(--txt);margin-top:1px">hCASH to buy</div>
+            <div style="font-family:'DM Mono',monospace;font-size:.5rem;color:var(--mut)">≈ $${hcashSplit.hcashUsd.toFixed(0)}</div>
+          </div>
+          <div style="background:var(--card);border-radius:7px;padding:.5rem;text-align:center">
+            <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.9rem;color:var(--acc)">${hcashSplit.wavaxAvax.toFixed(4)}</div>
+            <div style="font-family:'DM Mono',monospace;font-size:.52rem;color:var(--txt);margin-top:1px">WAVAX for LP</div>
+            <div style="font-family:'DM Mono',monospace;font-size:.5rem;color:var(--mut)">≈ $${hcashSplit.wavaxUsd.toFixed(0)}</div>
+          </div>
+        </div>
+        <div style="font-family:'DM Mono',monospace;font-size:.55rem;color:var(--mut);line-height:1.5">① Buy ${f2(hcashSplit.hcashTokens)} hCASH + ${hcashSplit.wavaxAvax.toFixed(4)} WAVAX → ② Add both as LP on Pharaoh → ③ Stake LP tokens in hCASH Moat</div>
+      </div>` : ''}
       <div class="res-grid">
         <div class="res-cell">
-          <div class="res-val">${r.price>0?f2(r.tokens):'—'}</div>
-          <div class="res-lbl">Tokens to buy</div>
+          <div class="res-val">${r.price>0?(isHcash?f2(hcashSplit?.hcashTokens||0):f2(r.tokens)):'—'}</div>
+          <div class="res-lbl">${isHcash?'hCASH tokens':'Tokens to buy'}</div>
           <div class="res-sub">${r.price>0?'@ $'+fmtPrice(r.price):'price unavail.'}</div>
         </div>
         <div class="res-cell">
           <div class="res-val" style="color:var(--acc)">${r.price>0?fmtP(r.pts):'—'}</div>
           <div class="res-lbl">Est. Points${r.ptsCalibrated?'':'<span style=\"color:var(--gld)\"> ⚠</span>'}</div>
-          <div class="res-sub">${r.price>0?r.ptsMethod:r.mult+'×'}</div>
+          <div class="res-sub" style="font-size:.44rem">${r.price>0?hcashPtsNote:r.mult+'×'}</div>
         </div>
         <div class="res-cell">
           <div class="res-val" style="color:var(--dim)">${r.price>0?'#'+r.estRank:'—'}</div>
@@ -4684,7 +4798,7 @@ async function runAllocatorCalc() {
         ${r.eelNote?`<span style="font-family:'DM Mono',monospace;font-size:.56rem;color:var(--red);background:rgba(224,82,82,.08);border:1px solid rgba(224,82,82,.2);border-radius:4px;padding:1px 6px">${r.eelNote}</span>`:''}
         <span style="font-family:'DM Mono',monospace;font-size:.56rem;color:var(--mut);background:var(--sur);border:1px solid var(--bor);border-radius:4px;padding:1px 6px">Fort: ${r.fortShare}%</span>
       </div>`:''}
-    </div>`).join('')}
+    </div>`; }).join('')}
 
     <!-- Grand totals -->
     <div class="rb" style="margin-top:.9rem">
@@ -7848,6 +7962,11 @@ async function posLoadPositions() {
     document.getElementById('posActiveCards').innerHTML = active.sort((a,b)=>b.pts-a.pts).map(r=>posRenderActiveCard(r)).join('');
   }
 
+  // Render recent activity for this wallet
+  if (addr) {
+    posRenderActivity(addr);
+  }
+
   // Render all moats (inactive grid)
   posRenderAllMoatCards(posLoadedData);
 }
@@ -8142,7 +8261,7 @@ async function posOpenDetail(moatAddr) {
       </div>
       <!-- Swap pane: AVAX <-> hCASH -->
       <div id="hcashPane_swap">
-        <div style="font-size:.72rem;color:var(--dim);margin-bottom:.7rem">Swap AVAX ↔ hCASH using the best available route (Odos · KyberSwap · Paraswap · LFJ V1).</div>
+        <div style="font-size:.72rem;color:var(--dim);margin-bottom:.7rem">Swap AVAX ↔ hCASH using the best available route (Odos · KyberSwap · Paraswap · LFJ V1 · Pharaoh). Routes AVAX → WAVAX → hCASH automatically.</div>
         <div style="background:var(--sur);border:1px solid var(--bor);border-radius:10px;padding:.85rem;margin-bottom:.3rem">
           <div style="display:flex;justify-content:space-between;margin-bottom:.4rem">
             <span style="font-family:'DM Mono',monospace;font-size:.56rem;color:var(--mut)">From</span>
@@ -8220,7 +8339,7 @@ async function posOpenDetail(moatAddr) {
 
         <div class="cr2" style="margin-bottom:.55rem">
           <div class="ig">
-            <label class="il" id="hcashAmtLabel">AVAX Amount</label>
+            <label class="il" id="hcashAmtLabel">AVAX / WAVAX Amount</label>
             <div style="display:flex;gap:5px;align-items:center">
               <img id="hcashAmtLogo" src="https://raw.githubusercontent.com/precidoboss/my-game-sprites/main/image-removebg-preview%20(8).png" style="width:20px;height:20px;border-radius:50%;object-fit:cover;flex-shrink:0">
               <input id="hcashAvaxAmt" type="number" class="inp" placeholder="0.0" oninput="hcashQuoteLP()" style="flex:1">
@@ -8229,10 +8348,10 @@ async function posOpenDetail(moatAddr) {
             <div id="hcashAvaxBal" style="font-family:'DM Mono',monospace;font-size:.55rem;color:var(--acc);margin-top:2px">—</div>
           </div>
           <div class="ig">
-            <label class="il">hCASH Needed (auto)</label>
+            <label class="il">hCASH Amount (auto or enter to reverse-quote)</label>
             <div style="display:flex;gap:5px;align-items:center">
               <img src="https://raw.githubusercontent.com/precidoboss/my-game-sprites/main/hashcashclub.png" style="width:20px;height:20px;border-radius:50%;object-fit:cover;flex-shrink:0" onerror="this.style.display='none'">
-              <input id="hcashTokenAmt" type="number" class="inp" placeholder="auto-quoted" readonly style="flex:1;background:rgba(51,46,40,.4);opacity:.8">
+              <input id="hcashTokenAmt" type="number" class="inp" placeholder="auto or enter hCASH → quotes WAVAX" style="flex:1" oninput="hcashQuoteLPFromToken()">
             </div>
             <div id="hcashTokenBal" style="font-family:'DM Mono',monospace;font-size:.55rem;color:var(--acc);margin-top:2px">—</div>
           </div>
@@ -9264,7 +9383,7 @@ async function hcashQuoteLP() {
     const lpExpected  = parseFloat(ethers.formatEther(q[2]));
     const ratio       = (hcashNeeded / wavaxUsed).toFixed(2);
 
-    if (hcashInp) hcashInp.value = hcashNeeded.toFixed(Math.min(hcashDec, 6));
+    if (hcashInp && !hcashInp.dataset.userEdited) hcashInp.value = hcashNeeded.toFixed(Math.min(hcashDec, 6));
     const lpFmt = lpExpected > 0.0001 ? lpExpected.toFixed(8) : lpExpected.toExponential(4);
     if (preview) preview.innerHTML =
       `<span style="color:var(--grn)">✓</span>&nbsp;${lpFmt} LP · ${hcashNeeded.toFixed(4)} hCASH · 1 AVAX = ${ratio} hCASH`;
@@ -9302,6 +9421,136 @@ async function hcashQuoteLP() {
   }
 }
 
+
+// Reverse LP quote: user enters hCASH amount → auto-fills AVAX needed
+let _hcashRevQuoteTimer = null;
+async function hcashQuoteLPFromToken() {
+  clearTimeout(_hcashRevQuoteTimer);
+  _hcashRevQuoteTimer = setTimeout(async () => {
+    const hcashAmtRaw = parseFloat(document.getElementById('hcashTokenAmt')?.value) || 0;
+    const avaxInp  = document.getElementById('hcashAvaxAmt');
+    const preview  = document.getElementById('hcashLpPreview');
+    if (!hcashAmtRaw) { if(avaxInp) avaxInp.value=''; if(preview) preview.textContent=''; return; }
+    if (preview) preview.innerHTML = '<span class="spin"></span> Reverse-quoting WAVAX…';
+    const prov = posProvider || new ethers.JsonRpcProvider(AVAX_RPC);
+    try {
+      const hcashAddr = await resolveHcashToken();
+      const hcashTok  = new ethers.Contract(hcashAddr, ERC20_ABI, prov);
+      const hcashDec  = Number(await hcashTok.decimals().catch(()=>18));
+      const hcashWei  = ethers.parseUnits(String(Math.floor(hcashAmtRaw * 1e6) / 1e6), hcashDec);
+      const router    = new ethers.Contract(PHARAOH_ROUTER_ADDR, PHARAOH_ROUTER_ABI, prov);
+      // Give a very large AVAX desired, router returns exact ratio
+      const bigAvax = ethers.parseEther('9999999');
+      const q = await router.quoteAddLiquidity(WAVAX_ADDR, hcashAddr, false, bigAvax, hcashWei);
+      const avaxNeeded   = parseFloat(ethers.formatEther(q[0]));
+      const hcashActual  = parseFloat(ethers.formatUnits(q[1], hcashDec));
+      const lpExpected   = parseFloat(ethers.formatEther(q[2]));
+      if (avaxInp) avaxInp.value = avaxNeeded.toFixed(6);
+      const lpFmt = lpExpected > 0.0001 ? lpExpected.toFixed(8) : lpExpected.toExponential(4);
+      if (preview) preview.innerHTML = `<span style="color:var(--grn)">✓</span>&nbsp;${lpFmt} LP · needs ${avaxNeeded.toFixed(4)} WAVAX + ${hcashActual.toFixed(4)} hCASH`;
+    } catch(e) {
+      // Fallback: use reserve ratio
+      try {
+        const hcashAddr2 = await resolveHcashToken();
+        const hcashTok2  = new ethers.Contract(hcashAddr2, ERC20_ABI, prov);
+        const hcashDec2  = Number(await hcashTok2.decimals().catch(()=>18));
+        const lp = new ethers.Contract(HCASH_LP_ADDR, [
+          'function getReserves() view returns (uint256,uint256,uint256)',
+          'function token0() view returns (address)',
+          'function totalSupply() view returns (uint256)',
+        ], prov);
+        const [res, t0, ts] = await Promise.all([lp.getReserves(), lp.token0(), lp.totalSupply()]);
+        const isWavaxT0 = t0.toLowerCase() === WAVAX_ADDR.toLowerCase();
+        const wavaxRes  = isWavaxT0 ? res[0] : res[1];
+        const hcashRes  = isWavaxT0 ? res[1] : res[0];
+        const hcashWei2 = ethers.parseUnits(String(Math.floor(hcashAmtRaw * 1e6) / 1e6), hcashDec2);
+        const avaxWei2  = hcashWei2 * wavaxRes / hcashRes;
+        const avaxNeeded2 = parseFloat(ethers.formatEther(avaxWei2));
+        const lpShare   = Number(hcashWei2) / Number(hcashRes);
+        const lpExp2    = lpShare * Number(ts) / 1e18;
+        if (avaxInp) avaxInp.value = avaxNeeded2.toFixed(6);
+        if (preview) preview.innerHTML = `<span style="color:var(--gld)">~</span>&nbsp;${lpExp2.toFixed(8)} LP · needs ~${avaxNeeded2.toFixed(4)} WAVAX (reserve estimate)`;
+      } catch(e2) {
+        if (preview) preview.innerHTML = `<span style="color:var(--red)">⚠ Could not quote: ${e2.message?.slice(0,60)||'RPC error'}</span>`;
+      }
+    }
+  }, 400);
+}
+
+// Reverse-quote: user enters hCASH amount → auto-fills AVAX/WAVAX needed
+async function hcashQuoteLPFromToken() {
+  const hcashAmt = parseFloat(document.getElementById('hcashTokenAmt')?.value)||0;
+  const avaxInp  = document.getElementById('hcashAvaxAmt');
+  const preview  = document.getElementById('hcashLpPreview');
+  if (!hcashAmt) { if(avaxInp) avaxInp.value=''; if(preview) preview.textContent=''; return; }
+  if (preview) preview.innerHTML = '<span class="spin"></span> Reverse-quoting WAVAX needed…';
+  const prov = posProvider || new ethers.JsonRpcProvider(AVAX_RPC);
+  try {
+    const hcashAddr = await resolveHcashToken();
+    const hcashTok  = new ethers.Contract(hcashAddr, ERC20_ABI, prov);
+    const hcashDec  = Number(await hcashTok.decimals().catch(()=>18));
+    const lp = new ethers.Contract(HCASH_LP_ADDR, [
+      'function getReserves() view returns (uint256,uint256,uint256)',
+      'function token0() view returns (address)',
+      'function totalSupply() view returns (uint256)',
+    ], prov);
+    const [res, t0, ts] = await Promise.all([lp.getReserves(), lp.token0(), lp.totalSupply()]);
+    const isWavaxT0 = t0.toLowerCase() === WAVAX_ADDR.toLowerCase();
+    const wavaxRes  = isWavaxT0 ? res[0] : res[1];
+    const hcashRes  = isWavaxT0 ? res[1] : res[0];
+    const hcashWei  = ethers.parseUnits(hcashAmt.toFixed(Math.min(hcashDec,8)), hcashDec);
+    // wavaxWei = hcashWei * wavaxRes / hcashRes
+    const wavaxWei  = hcashWei * wavaxRes / hcashRes;
+    const wavaxAmt  = parseFloat(ethers.formatEther(wavaxWei));
+    const lpShare   = Number(hcashWei) / Number(hcashRes);
+    const lpExp     = lpShare * Number(ts) / 1e18;
+    if (avaxInp) avaxInp.value = wavaxAmt.toFixed(6);
+    const ratio = (hcashAmt / wavaxAmt).toFixed(2);
+    if (preview) preview.innerHTML =
+      `<span style="color:var(--grn)">✓</span>&nbsp;You need ${wavaxAmt.toFixed(6)} AVAX + ${hcashAmt.toFixed(4)} hCASH → ~${lpExp.toFixed(8)} LP tokens · ratio: 1 AVAX = ${ratio} hCASH`;
+  } catch(e) {
+    if (preview) preview.innerHTML = `<span style="color:var(--red)">⚠ Reverse quote failed: ${e.message?.slice(0,80)||'RPC error'}</span>`;
+  }
+}
+
+// Reverse-quote: user enters hCASH tokens → auto-fill AVAX amount needed
+let _hcashReverseTimer = null;
+async function hcashQuoteLPFromToken() {
+  clearTimeout(_hcashReverseTimer);
+  _hcashReverseTimer = setTimeout(async () => {
+    const hcashAmt = parseFloat(document.getElementById('hcashTokenAmt')?.value) || 0;
+    const avaxInp  = document.getElementById('hcashAvaxAmt');
+    const preview  = document.getElementById('hcashLpPreview');
+    if (!hcashAmt || !avaxInp) return;
+    if (preview) preview.innerHTML = '<span class="spin"></span> Quoting AVAX needed…';
+    try {
+      const prov = posProvider || new ethers.JsonRpcProvider(AVAX_RPC);
+      const hcashAddr = await resolveHcashToken();
+      const hcashTok  = new ethers.Contract(hcashAddr, ERC20_ABI, prov);
+      const hcashDec  = Number(await hcashTok.decimals().catch(() => 18));
+      const lp = new ethers.Contract(HCASH_LP_ADDR, [
+        'function getReserves() view returns (uint256,uint256,uint256)',
+        'function token0() view returns (address)',
+        'function totalSupply() view returns (uint256)',
+      ], prov);
+      const [res, t0, ts] = await Promise.all([lp.getReserves(), lp.token0(), lp.totalSupply()]);
+      const isWavaxT0 = t0.toLowerCase() === WAVAX_ADDR.toLowerCase();
+      const wavaxRes  = isWavaxT0 ? res[0] : res[1];
+      const hcashRes  = isWavaxT0 ? res[1] : res[0];
+      // avaxWei = hcashWei * wavaxRes / hcashRes
+      const hcashWei  = ethers.parseUnits(String(parseFloat(hcashAmt.toFixed(hcashDec < 6 ? hcashDec : 6))), hcashDec);
+      const avaxWei   = hcashWei * wavaxRes / hcashRes;
+      const avaxNeeded = parseFloat(ethers.formatEther(avaxWei));
+      const lpShare   = Number(hcashWei) / Number(hcashRes);
+      const lpExp     = lpShare * Number(ts) / 1e18;
+      avaxInp.value = avaxNeeded.toFixed(6);
+      const ratio = (Number(hcashRes) / Number(wavaxRes)).toFixed(2);
+      if (preview) preview.innerHTML = `<span style="color:var(--grn)">✓</span>&nbsp;You need <b style="color:var(--acc)">${avaxNeeded.toFixed(4)} AVAX</b> + ${hcashAmt.toFixed(4)} hCASH → ~${lpExp.toFixed(8)} LP · 1 AVAX = ${ratio} hCASH`;
+    } catch (e) {
+      if (preview) preview.innerHTML = `<span style="color:var(--red)">⚠ Could not quote: ${e.message?.slice(0, 60) || 'RPC error'}</span>`;
+    }
+  }, 400);
+}
 
 async function hcashAddLiquidity() {
   if (!posSigner) return;
@@ -9608,15 +9857,54 @@ async function hswapQuote() {
     } catch(e) { if(toAmtEl)toAmtEl.textContent='—'; return; }
 
     const route = await getBestRoute(tokenIn, tokenOut, amountInWei, addr, decIn, decOut, prov);
-    if (!route) {
+
+    // ── hCASH fallback: try AVAX→WAVAX→hCASH if no direct route found ──
+    let finalRoute = route;
+    if (!finalRoute && isFromAvax) {
+      try {
+        const WAVAX = WAVAX_ADDR;
+        const pharRouter = new ethers.Contract(PHARAOH_ROUTER_ADDR, PHARAOH_ROUTER_ABI, prov);
+        // Try WAVAX→hCASH route directly (wrap is implicit for AVAX input)
+        const wRoutes = [
+          [{from:WAVAX, to:hcashAddr, stable:false}],
+          [{from:WAVAX, to:hcashAddr, stable:true}],
+        ];
+        for (const wr of wRoutes) {
+          try {
+            const amts = await pharRouter.getAmountsOut(amountInWei, wr);
+            const out = amts[amts.length-1];
+            if (out > 0n) {
+              finalRoute = { dex:'Pharaoh (AVAX→WAVAX→hCASH)', amountOut:out, _useV1:false, _usePharaoh:true, _pharaohRoutes:wr };
+              break;
+            }
+          } catch(e2) {}
+        }
+        // Also try LFJ V1 with explicit AVAX→WAVAX→hCASH path
+        if (!finalRoute) {
+          const lfjR = new ethers.Contract(LFJ_V1_ROUTER, LFJ_V1_ABI, prov);
+          const paths = [[WAVAX, hcashAddr], [WAVAX, USDC_ADDR, hcashAddr]];
+          for (const p of paths) {
+            try {
+              const amts = await lfjR.getAmountsOut(amountInWei, p);
+              const out = amts[amts.length-1];
+              if (out > 0n) {
+                finalRoute = { dex:'LFJ V1 (AVAX→WAVAX→hCASH)', amountOut:out, _useV1:true, _v1Path:p };
+                break;
+              }
+            } catch(e3) {}
+          }
+        }
+      } catch(fbErr) {}
+    }
+    if (!finalRoute) {
       if(toAmtEl) toAmtEl.innerHTML = '<span style="color:var(--red)">No route found</span>';
-      if(routeEl) routeEl.innerHTML = 'Try smaller amount · or <a href="https://www.phar.gg/trade" target="_blank" style="color:var(--acc)">phar.gg/trade ↗</a>';
+      if(routeEl) routeEl.innerHTML = 'Try <a href="https://www.phar.gg/trade" target="_blank" style="color:var(--acc)">phar.gg/trade ↗</a> · or wrap AVAX→WAVAX first';
       if(execBtn) execBtn.style.display='none';
       hswapRouteData = null; return;
     }
 
     // Full number display — no K/M abbreviation for swap amounts
-    const amtOut    = Number(route.amountOut) / Math.pow(10, decOut);
+    const amtOut    = Number(finalRoute.amountOut) / Math.pow(10, decOut);
     const amtOutFmt = amtOut >= 1 ? amtOut.toFixed(6) : amtOut.toPrecision(6);
     const amtInFmt  = amt >= 1 ? amt.toFixed(6) : amt.toPrecision(6);
 
@@ -9638,13 +9926,13 @@ async function hswapQuote() {
 
     if(toAmtEl)  toAmtEl.textContent  = amtOutFmt + ' ' + tokenOutName;
     const minRec2 = (amtOut * (1-hswapSlippage/100)).toFixed(6);
-    if(routeEl)  routeEl.innerHTML = `via <b style="color:var(--acc)">${route.dex}</b> · min: ${minRec2}`;
+    if(routeEl)  routeEl.innerHTML = `via <b style="color:var(--acc)">${finalRoute.dex}</b> · min: ${minRec2}`;
     if(detailEl) detailEl.style.display = 'block';
-    setTxt('hswapDetailRoute', route.dex);
+    setTxt('hswapDetailRoute', finalRoute.dex);
     setTxt('hswapDetailMin',   minReceived + ' ' + tokenOutName);
     if(execBtn) execBtn.style.display = posAddress ? 'block' : 'none';
 
-    hswapRouteData = { route, amountInWei, tokenIn, tokenOut, decIn, decOut, amtOut, hcashAddr, isFromAvax };
+    hswapRouteData = { route: finalRoute, amountInWei, tokenIn, tokenOut, decIn, decOut, amtOut, hcashAddr, isFromAvax };
   }, 500);
 }
 
@@ -9993,6 +10281,182 @@ async function posRenderCardCanvas(moatAddr) {
 
 
 // ── INIT ──
+// ── POSITIONS ACTIVITY TABLES ──
+// State for pagination
+const posActState = { all: { page:0, data:[] }, perMoat:{} };
+
+async function posRenderActivity(walletAddr) {
+  const sec = document.getElementById('posActivitySec');
+  if (!sec || !walletAddr) return;
+
+  // Gather all events from allEvs that match this wallet
+  const wallet = walletAddr.toLowerCase();
+  const walletEvs = allEvs.filter(e => (e.wallet||'').toLowerCase() === wallet)
+    .sort((a,b) => (b.timestamp||0) - (a.timestamp||0));
+
+  // Also scan on-chain events for this wallet per moat
+  // Use allEvs (already includes on-chain events merged in) filtered by wallet
+  const totalEvs = walletEvs.length;
+
+  if (totalEvs === 0) {
+    // Try fetching from Snowtrace for this wallet across all moat contracts
+    const moatAddrs = Object.keys(MOATS);
+    const prov = new ethers.JsonRpcProvider(AVAX_RPC);
+    let onChainWalletEvs = [];
+    try {
+      const tokenTxJobs = moatAddrs.map(async ma => {
+        const meta = MOATS[ma]; if(!meta?.tokenAddr) return [];
+        try {
+          const res = await fetch(`${SNOWTRACE}?module=account&action=tokentx&address=${walletAddr}&contractaddress=${meta.tokenAddr}&sort=desc&offset=20`).then(r=>r.json());
+          if(res?.status!=='1') return [];
+          const supply = getSupply(ma);
+          const dec = supply?.decimals||18;
+          return (res.result||[]).slice(0,20).map(tx=>({
+            contractAddress: ma,
+            eventType: tx.to?.toLowerCase()===ma.toLowerCase()?'staked':tx.from?.toLowerCase()===ma.toLowerCase()?'unstaked':'activity',
+            wallet: walletAddr,
+            timestamp: Number(tx.timeStamp||0),
+            txHash: tx.hash,
+            tokenAmount: Number(tx.value||0)/Math.pow(10,dec),
+            tokenSymbol: meta.ticker,
+            _onchain: true,
+          }));
+        } catch(e) { return []; }
+      });
+      const results = await Promise.all(tokenTxJobs);
+      results.forEach(evs => onChainWalletEvs.push(...evs));
+      onChainWalletEvs.sort((a,b)=>(b.timestamp||0)-(a.timestamp||0));
+    } catch(e) {}
+    posActState.all.data = onChainWalletEvs;
+  } else {
+    posActState.all.data = walletEvs;
+  }
+
+  sec.style.display = 'block';
+  const total = posActState.all.data.length;
+  const totalEl = document.getElementById('posActivityTotal');
+  if (totalEl) totalEl.textContent = total + ' interaction' + (total!==1?'s':'') + ' found';
+
+  posActState.all.page = 0;
+  posRenderAllActTable();
+
+  // Per-moat tables: only for moats where user has activity
+  const moatsWithActivity = {};
+  posActState.all.data.forEach(e => {
+    if (!e.contractAddress) return;
+    if (!moatsWithActivity[e.contractAddress]) moatsWithActivity[e.contractAddress] = [];
+    moatsWithActivity[e.contractAddress].push(e);
+  });
+
+  const perMoatEl = document.getElementById('posPerMoatActArea');
+  if (!perMoatEl) return;
+  if (Object.keys(moatsWithActivity).length === 0) { perMoatEl.innerHTML=''; return; }
+
+  perMoatEl.innerHTML = Object.entries(moatsWithActivity).map(([ma, evs]) => {
+    const meta = MOATS[ma] || {};
+    const col = meta.color||'#f97316';
+    posActState.perMoat[ma] = { page:0, data: evs.sort((a,b)=>(b.timestamp||0)-(a.timestamp||0)) };
+    return `<div class="panel" style="margin-bottom:.75rem">
+      <div class="ph">
+        <div class="ptitle" style="display:flex;align-items:center;gap:7px">
+          ${logoImg(meta.logo,'moat-logo-sm',meta.emoji,col)}
+          <span>${meta.name||ma}</span>
+        </div>
+        <span style="font-family:'DM Mono',monospace;font-size:.56rem;color:var(--mut)">${evs.length} event${evs.length!==1?'s':''}</span>
+      </div>
+      <div class="pb0 tw"><table class="tbl">
+        <thead><tr><th>Time</th><th>Action</th><th>Amount</th><th>Tx</th></tr></thead>
+        <tbody id="posActBody_${ma.slice(-8)}"></tbody>
+      </table></div>
+      <div id="posActPager_${ma.slice(-8)}" style="display:none;padding:.55rem .85rem;display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--bor)">
+        <button onclick="posActPage('${ma}',-1)" class="btn btn-sm btn-g" style="padding:2px 9px;font-size:.58rem">← Prev</button>
+        <span id="posActPageLbl_${ma.slice(-8)}" style="font-family:'DM Mono',monospace;font-size:.56rem;color:var(--mut)"></span>
+        <button onclick="posActPage('${ma}',1)" class="btn btn-sm btn-g" style="padding:2px 9px;font-size:.58rem">Next →</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  Object.keys(moatsWithActivity).forEach(ma => posRenderPerMoatActTable(ma));
+}
+
+function posEvRow(e, showMoat=false) {
+  const meta = e.contractAddress ? (MOATS[e.contractAddress]||{}) : {};
+  const col = meta.color||'#f97316';
+  const ts = e.timestamp ? new Date(Number(e.timestamp)*1000).toLocaleString([],{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '—';
+  const evType = (e.eventType||'activity').toLowerCase();
+  const evIcon = evType.includes('stake')||evType.includes('deposit')?'🔒':evType.includes('lock')?'⏳':evType.includes('burn')?'🔥':evType.includes('unstake')||evType.includes('withdraw')||evType.includes('unlock')?'↩':evType.includes('reward')||evType.includes('claim')?'💰':'📋';
+  const evColor = evType.includes('burn')?'var(--red)':evType.includes('lock')?'var(--gld)':evType.includes('reward')||evType.includes('claim')?'var(--grn)':evType.includes('unstake')?'var(--mut)':'var(--acc)';
+  const evLabel = (e.eventType||'Activity').replace(/([a-z])([A-Z])/g,'$1 $2');
+  const amt = (e.tokenAmount||e.rewardAmount)>0 ? fmtP(Number(e.tokenAmount||e.rewardAmount||0).toFixed(4))+(e.tokenSymbol||meta.ticker?(' '+(e.tokenSymbol||meta.ticker)):'') : '—';
+  const txLink = e.txHash ? `<a href="https://snowtrace.io/tx/${e.txHash}" target="_blank" style="font-family:'DM Mono',monospace;font-size:.56rem;color:var(--acc)" title="${e.txHash}">${e.txHash.slice(0,6)}…${e.txHash.slice(-4)} ↗</a>` : '—';
+  const moatCell = showMoat && meta.name ? `<td><div style="display:flex;align-items:center;gap:5px">${logoImg(meta.logo,'moat-logo-fb-sm',meta.emoji,col)}<span style="font-family:'DM Mono',monospace;font-size:.62rem;color:${col}">${meta.short||meta.name}</span></div></td>` : '';
+  return `<tr>
+    <td style="font-family:'DM Mono',monospace;font-size:.6rem;color:var(--mut);white-space:nowrap">${ts}</td>
+    ${moatCell}
+    <td><span style="font-family:'DM Mono',monospace;font-size:.62rem;color:${evColor}">${evIcon} ${evLabel}</span></td>
+    <td style="font-family:'DM Mono',monospace;font-size:.62rem">${amt}</td>
+    <td>${txLink}</td>
+  </tr>`;
+}
+
+function posRenderAllActTable() {
+  const tb = document.getElementById('posAllActBody');
+  const pager = document.getElementById('posAllActPager');
+  const lbl = document.getElementById('posAllActPageLbl');
+  const ct = document.getElementById('posAllActCount');
+  if (!tb) return;
+  const { data, page } = posActState.all;
+  const perPage = 10;
+  const start = page * perPage;
+  const end = start + perPage;
+  const slice = data.slice(start, end);
+  tb.innerHTML = slice.map(e => posEvRow(e, true)).join('') || '<tr><td colspan="5" style="text-align:center;color:var(--mut);padding:1.5rem;font-size:.72rem">No activity found.</td></tr>';
+  if (ct) ct.textContent = data.length + ' event' + (data.length!==1?'s':'');
+  if (pager) {
+    pager.style.display = data.length > perPage ? 'flex' : 'none';
+    if (lbl) lbl.textContent = `Page ${page+1} of ${Math.ceil(data.length/perPage)}`;
+    const prev = document.getElementById('posAllActPrev');
+    const next = document.getElementById('posAllActNext');
+    if (prev) prev.disabled = page === 0;
+    if (next) next.disabled = end >= data.length;
+  }
+}
+
+function posRenderPerMoatActTable(ma) {
+  const state = posActState.perMoat[ma]; if (!state) return;
+  const slug = ma.slice(-8);
+  const tb = document.getElementById('posActBody_'+slug);
+  const pager = document.getElementById('posActPager_'+slug);
+  const lbl = document.getElementById('posActPageLbl_'+slug);
+  if (!tb) return;
+  const perPage = 10;
+  const start = state.page * perPage;
+  const end = start + perPage;
+  const slice = state.data.slice(start, end);
+  tb.innerHTML = slice.map(e => posEvRow(e, false)).join('') || '<tr><td colspan="4" style="text-align:center;color:var(--mut);padding:1.5rem;font-size:.72rem">No activity.</td></tr>';
+  if (pager) {
+    pager.style.display = state.data.length > perPage ? 'flex' : 'none';
+    if (lbl) lbl.textContent = `Page ${state.page+1} of ${Math.ceil(state.data.length/perPage)}`;
+  }
+}
+
+function posActPage(key, dir) {
+  if (key === 'all') {
+    const perPage = 10;
+    const newPage = posActState.all.page + dir;
+    if (newPage < 0 || newPage * perPage >= posActState.all.data.length) return;
+    posActState.all.page = newPage;
+    posRenderAllActTable();
+  } else {
+    const state = posActState.perMoat[key]; if (!state) return;
+    const perPage = 10;
+    const newPage = state.page + dir;
+    if (newPage < 0 || newPage * perPage >= state.data.length) return;
+    state.page = newPage;
+    posRenderPerMoatActTable(key);
+  }
+}
+
 function initPositions() {
   posRenderAllMoatCards({});
   if (cmAddress && !posAddress) {
