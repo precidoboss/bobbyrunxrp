@@ -1270,11 +1270,26 @@ main{position:relative;z-index:1;padding:.8rem;max-width:1440px;margin:0 auto}
         <div class="sh-t">📡 Your Recent Activity</div>
         <span id="posActivityTotal" style="font-family:'DM Mono',monospace;font-size:.56rem;color:var(--mut)"></span>
       </div>
-      <!-- All moats activity table -->
+      <!-- All moats activity table with moat filter -->
       <div class="panel" style="margin-bottom:.75rem">
-        <div class="ph">
+        <div class="ph" style="flex-wrap:wrap;gap:.5rem">
           <div class="ptitle">All Moats — Interactions</div>
-          <span id="posAllActCount" style="font-family:'DM Mono',monospace;font-size:.56rem;color:var(--mut)"></span>
+          <div style="display:flex;align-items:center;gap:.5rem;flex-wrap:wrap">
+            <select id="posActMoatFilter" onchange="posActFilterChange()" style="background:var(--sur);border:1px solid var(--bor);border-radius:6px;padding:.25rem .55rem;font-family:'DM Mono',monospace;font-size:.58rem;color:var(--txt);cursor:pointer;outline:none">
+              <option value="">All Moats</option>
+            </select>
+            <select id="posActTypeFilter" onchange="posActFilterChange()" style="background:var(--sur);border:1px solid var(--bor);border-radius:6px;padding:.25rem .55rem;font-family:'DM Mono',monospace;font-size:.58rem;color:var(--txt);cursor:pointer;outline:none">
+              <option value="">All Actions</option>
+              <option value="stake">Stake</option>
+              <option value="unstake">Unstake</option>
+              <option value="lock">Lock</option>
+              <option value="unlock">Unlock</option>
+              <option value="burn">Burn</option>
+              <option value="eel">EEL</option>
+              <option value="claim">Claim / Reward</option>
+            </select>
+            <span id="posAllActCount" style="font-family:'DM Mono',monospace;font-size:.56rem;color:var(--mut)"></span>
+          </div>
         </div>
         <div class="pb0 tw"><table class="tbl" id="posAllActTbl">
           <thead><tr><th>Time</th><th>Moat</th><th>Action</th><th>Amount</th><th>Tx</th></tr></thead>
@@ -1286,8 +1301,6 @@ main{position:relative;z-index:1;padding:.8rem;max-width:1440px;margin:0 auto}
           <button id="posAllActNext" onclick="posActPage('all',1)" class="btn btn-sm btn-g" style="padding:2px 9px;font-size:.58rem">Next →</button>
         </div>
       </div>
-      <!-- Per-moat activity tables -->
-      <div id="posPerMoatActArea"></div>
     </div>
     <!-- Section: Other moats -->
     <div id="posOtherSec">
@@ -2142,7 +2155,7 @@ function buildMoatBar(){
   const e=Object.entries(moatMap).filter(([,m])=>m.walletCount>0).sort((a,b)=>b[1].totalPoints-a[1].totalPoints);
   charts.moat=new Chart(ctx,{type:'bar',
     data:{labels:e.map(([,m])=>m.short||m.name),
-      datasets:[{data:e.map(([,m])=>m.totalPoints),backgroundColor:e.map(([,m])=>(m.color||'#f97316')+'33'),borderColor:e.map(([,m])=>m.color||'#f97316'),borderWidth:1.5,borderRadius:6}]},
+      datasets:[{data:e.map(([,m])=>m.totalPoints),backgroundColor:e.map(([,m])=>(m.color||'#f97316')+'44'),borderColor:e.map(([,m])=>m.color||'#f97316'),borderWidth:1.5,borderRadius:8,borderSkipped:false,hoverBackgroundColor:e.map(([,m])=>(m.color||'#f97316')+'77')}]},
     options:copts({yFmt:true})});
 }
 function buildDistChart(sw){
@@ -2151,7 +2164,7 @@ function buildDistChart(sw){
   const b={'0–1K':0,'1K–10K':0,'10K–100K':0,'100K+':0};
   sw.forEach(w=>{if(w.totalPoints<1000)b['0–1K']++;else if(w.totalPoints<10000)b['1K–10K']++;else if(w.totalPoints<100000)b['10K–100K']++;else b['100K+']++;});
   const cols=['#6b5f54','#f97316','#8c8074','#d4a843'];
-  charts.dist=new Chart(ctx,{type:'doughnut',data:{labels:Object.keys(b),datasets:[{data:Object.values(b),backgroundColor:cols.map(c=>c+'44'),borderColor:cols,borderWidth:1.5}]},options:dopts()});
+  charts.dist=new Chart(ctx,{type:'doughnut',data:{labels:Object.keys(b),datasets:[{data:Object.values(b),backgroundColor:cols.map(c=>c+'44'),borderColor:cols,borderWidth:2,hoverOffset:10,hoverBorderWidth:3}]},options:dopts()});
 }
 
 
@@ -2571,8 +2584,8 @@ function renderMoatDetail(addr,silent=false){
       const totalUsd  = px > 0 ? totals.total * px : 0;
       const stakeCard=mSlb.children[0];
       const burnCard=mSlb.children[2];
-      if(stakeCard) stakeCard.innerHTML='<div class="rv2 ca">'+fmtP(totals.staked)+'</div><div class="rl2">🔒 Staked + Locked</div><div style="font-size:.62rem;color:var(--dim);margin-top:3px">'+tkr+' in moat contract</div>'+(stakedUsd>0?`<div style="font-family:'DM Mono',monospace;font-size:.6rem;color:var(--grn);margin-top:2px">≈ $${fmtK(stakedUsd)}</div>`:'');
-      if(burnCard) burnCard.innerHTML='<div class="rv2 cr">'+fmtP(totals.burned)+'</div><div class="rl2">🔥 Burned Total</div><div style="font-size:.62rem;color:var(--dim);margin-top:3px">'+tkr+' at 0xDead</div>'+(burnedUsd>0?`<div style="font-family:'DM Mono',monospace;font-size:.6rem;color:var(--red);margin-top:2px">≈ $${fmtK(burnedUsd)}</div>`:'');
+      if(stakeCard) stakeCard.innerHTML='<div class="rv2 ca">'+fmtP(totals.staked)+'</div><div class="rl2">🔒 Staked + Locked</div><div style="font-size:.62rem;color:var(--dim);margin-top:3px">'+tkr+' in moat contract</div>'+(stakedUsd>0?`<div style="font-family:'DM Mono',monospace;font-size:.6rem;color:var(--grn);margin-top:2px">≈ ${fmtK(stakedUsd)}</div>`:'');
+      if(burnCard) burnCard.innerHTML='<div class="rv2 cr">'+fmtP(totals.burned)+'</div><div class="rl2">🔥 Burned Total</div><div style="font-size:.62rem;color:var(--dim);margin-top:3px">'+tkr+' at 0xDead</div>'+(burnedUsd>0?`<div style="font-family:'DM Mono',monospace;font-size:.6rem;color:var(--red);margin-top:2px">≈ ${fmtK(burnedUsd)}</div>`:'');
       // Update locked card USD
       const lockCard=mSlb.children[1];
       if(lockCard&&totalUsd>0){
@@ -2581,7 +2594,7 @@ function renderMoatDetail(addr,silent=false){
           const d=document.createElement('div');
           d.className='lock-usd-note';
           d.style.cssText="font-family:'DM Mono',monospace;font-size:.6rem;color:var(--gld);margin-top:2px";
-          d.textContent='Combined: ≈ $'+fmtK(totalUsd);
+          d.textContent='Staked + Burned total: '+fmtK(totalUsd);
           lockCard.appendChild(d);
         }
       }
@@ -2678,7 +2691,7 @@ function buildMoatDetailChart(addr){
   const top=m.sorted.slice(0,20);
   charts.mdet=new Chart(ctx,{type:'bar',
     data:{labels:top.map(w=>shortA(getWallet(w))),
-      datasets:[{data:top.map(w=>w.points),backgroundColor:col+'33',borderColor:col,borderWidth:1.5,borderRadius:5}]},
+      datasets:[{data:top.map(w=>w.points),backgroundColor:col+'33',borderColor:col,borderWidth:2,borderRadius:8,borderSkipped:false,hoverBackgroundColor:col+'66'}]},
     options:copts({yFmt:true})});
 }
 
@@ -2996,6 +3009,26 @@ async function renderMoatRewards(addr){
     };
     // Add moat token prices to the map
     Object.entries(MOATS).forEach(([mAddr,mm])=>{ if(mm.ticker&&priceCache[mAddr]?.price>0) rewardPriceMap[mm.ticker]=priceCache[mAddr].price; });
+    // Fetch missing prices for WAVAX and BTC.b from CoinGecko by contract address
+    const missingWellKnown = [
+      {label:'WAVAX', addr:'0xb31f66aa3c1e785363f0875a1b74e27b85fd66c7'},
+      {label:'AVAX',  addr:'0xb31f66aa3c1e785363f0875a1b74e27b85fd66c7'},
+      {label:'BTC.b', addr:'0x152b9d0fdc40c096757f570a51e494bd4b943e50'},
+      {label:'WETH.e',addr:'0x49d5c2bdffac6ce2bfdb6640f4f80f226bc10bab'},
+      {label:'WBTC.e',addr:'0x50b7545627a5162f82a992c33b87adc75187b218'},
+    ].filter(t => rewardTally[t.label] && (!rewardPriceMap[t.label] || rewardPriceMap[t.label]===0));
+    if(missingWellKnown.length>0){
+      try{
+        const addrs = [...new Set(missingWellKnown.map(t=>t.addr))].join(',');
+        const cgRes = await fetch(`https://api.coingecko.com/api/v3/simple/token_price/avalanche?contract_addresses=${addrs}&vs_currencies=usd`).then(r=>r.ok?r.json():null);
+        if(cgRes){
+          missingWellKnown.forEach(t=>{
+            const p = cgRes?.[t.addr.toLowerCase()]?.usd;
+            if(p>0){ rewardPriceMap[t.label]=p; if(t.label==='WAVAX') rewardPriceMap['AVAX']=p; }
+          });
+        }
+      }catch(e){}
+    }
     // Fetch prices for unknown tokens via CoinGecko if not already cached
     const unknownRewardTokens = Object.keys(rewardTally).filter(label=>!rewardPriceMap[label]||rewardPriceMap[label]===0);
     if(unknownRewardTokens.length>0){
@@ -3015,7 +3048,7 @@ async function renderMoatRewards(addr){
     const summaryLine = Object.entries(rewardTally)
       .filter(([,d])=>d.total>0)
       .map(([label,d])=>{
-        const usdVal = rewardPriceMap[label]>0 ? `<span style="font-size:.65rem;color:var(--mut)"> ≈ $${fmtK(d.total*rewardPriceMap[label])}</span>` : '';
+        const usdVal = rewardPriceMap[label]>0 ? `<span style="font-size:.65rem;color:var(--mut)"> ≈ ${fmtK(d.total*rewardPriceMap[label])}</span>` : '';
         return `<span style="display:inline-flex;align-items:center;gap:4px">${tokenImgTag(label,16)}<span style="font-family:'Chakra Petch',sans-serif;font-weight:700;color:var(--grn)">${fmtP(Math.round(d.total))} ${label}</span>${usdVal}</span>`;
       })
       .join(' · ');
@@ -3023,7 +3056,7 @@ async function renderMoatRewards(addr){
       <div style="background:rgba(109,184,122,.06);border:1px solid rgba(109,184,122,.22);border-radius:9px;padding:.85rem;margin-bottom:.85rem">
         <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.4rem;margin-bottom:.5rem">
           <div style="font-family:'DM Mono',monospace;font-size:.6rem;color:var(--grn);text-transform:uppercase;letter-spacing:.1em">💰 All Rewards Claimed — Combined Totals</div>
-          ${totalRewardsUsd>0?`<div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.85rem;color:var(--grn)">≈ $${fmtK(totalRewardsUsd)} total</div>`:''}
+          ${totalRewardsUsd>0?`<div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.85rem;color:var(--grn)">≈ ${fmtK(totalRewardsUsd)} total</div>`:''}
         </div>
         ${summaryLine?`<div style="font-size:.82rem;margin-bottom:.65rem;line-height:2;display:flex;flex-wrap:wrap;gap:.5rem">${summaryLine}</div>`:''}
         <div style="display:flex;flex-wrap:wrap;gap:.5rem">
@@ -3035,7 +3068,7 @@ async function renderMoatRewards(addr){
               <div style="display:flex;justify-content:center;margin-bottom:4px">${tokenImgTag(label,22)}</div>
               <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.85rem;color:var(--grn)">${d.total>0?(d.total>=1?fmtP(Math.round(d.total)):d.total.toFixed(4)):''}</div>
               <div style="font-family:'DM Mono',monospace;font-size:.6rem;color:var(--txt);font-weight:600">${label}</div>
-              ${usdTotal>0?`<div style="font-family:'DM Mono',monospace;font-size:.52rem;color:var(--grn);margin-top:1px">≈ $${fmtK(usdTotal)}</div>`:''}
+              ${usdTotal>0?`<div style="font-family:'DM Mono',monospace;font-size:.52rem;color:var(--grn);margin-top:1px">≈ ${fmtK(usdTotal)}</div>`:''}
               <div style="font-family:'DM Mono',monospace;font-size:.5rem;color:var(--mut);margin-top:2px">${d.count} event${d.count>1?'s':''} · ${d.wallets.size} wallet${d.wallets.size!==1?'s':''}</div>
             </div>`;
           }).join('')}
@@ -3054,12 +3087,14 @@ async function renderMoatRewards(addr){
       </div>`;
   }
 
+  const totalRewardsDeposited = Number(m.totalRewardsDeposited||0);
   el.innerHTML=`
     <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:.55rem;margin-bottom:.85rem">
       <div class="reward-card"><div class="rv2" style="color:${meta.color||'var(--acc)'}">${fmtP(tot)}</div><div class="rl2">Total Points Pool</div></div>
       <div class="reward-card"><div class="rv2 ca">${pts.length}</div><div class="rl2">Recipients</div></div>
       <div class="reward-card"><div class="rv2 cg">${fmtP(Math.round(tot/(pts.length||1)))}</div><div class="rl2">Avg / Wallet</div></div>
       <div class="reward-card"><div class="rv2 cd">${tot?(top10/tot*100).toFixed(1):0}%</div><div class="rl2">Top 10 Share</div></div>
+      ${totalRewardsDeposited>0?`<div class="reward-card" style="grid-column:1/-1;border-color:rgba(109,184,122,.25)"><div class="rv2 cgn">${fmtP(totalRewardsDeposited)}</div><div class="rl2">💰 Total Rewards Deposited</div><div style="font-size:.6rem;color:var(--mut);margin-top:2px">USDC · from moats.app API</div></div>`:''}
     </div>
     ${rewardCurrencyHTML}
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.55rem;margin-bottom:.85rem">
@@ -3829,14 +3864,14 @@ function buildConcChart(sw,tot){
   const ctx=document.getElementById('cConc'); if(!ctx)return;
   if(charts.conc)charts.conc.destroy();
   const t10=sw.slice(0,10).reduce((s,w)=>s+w.totalPoints,0),t25=sw.slice(0,25).reduce((s,w)=>s+w.totalPoints,0);
-  charts.conc=new Chart(ctx,{type:'bar',data:{labels:['Top 10','Top 11–25','Rest'],datasets:[{data:[t10,t25-t10,tot-t25],backgroundColor:['#d4a84333','#f9731633','#6b5f5433'],borderColor:['#d4a843','#f97316','#6b5f54'],borderWidth:1.5,borderRadius:7}]},options:copts({yFmt:true})});
+  charts.conc=new Chart(ctx,{type:'bar',data:{labels:['Top 10','Top 11–25','Rest'],datasets:[{data:[t10,t25-t10,tot-t25],backgroundColor:['#d4a84333','#f9731633','#6b5f5433'],borderColor:['#d4a843','#f97316','#6b5f54'],borderWidth:2,borderRadius:9,borderSkipped:false,hoverBackgroundColor:['#d4a84355','#f9731655','#6b5f5455']}]},options:copts({yFmt:true})});
 }
 function buildMCChart(sw){
   const ctx=document.getElementById('cMC'); if(!ctx)return;
   if(charts.mc)charts.mc.destroy();
   const b={};sw.forEach(w=>{b[w.moatCount]=(b[w.moatCount]||0)+1;});
   const ks=Object.keys(b).sort((a,b)=>Number(a)-Number(b)),cols=['#6b5f54','#f97316','#d4a843','#8c8074','#a78bfa'];
-  charts.mc=new Chart(ctx,{type:'doughnut',data:{labels:ks.map(k=>k+' Moat'+(k==='1'?'':'s')),datasets:[{data:ks.map(k=>b[k]),backgroundColor:cols.map(c=>c+'44'),borderColor:cols,borderWidth:1.5}]},options:dopts()});
+  charts.mc=new Chart(ctx,{type:'doughnut',data:{labels:ks.map(k=>k+' Moat'+(k==='1'?'':'s')),datasets:[{data:ks.map(k=>b[k]),backgroundColor:cols.map(c=>c+'44'),borderColor:cols,borderWidth:2,hoverOffset:10,hoverBorderWidth:3}]},options:dopts()});
 }
 
 // ── EVENTS ──
@@ -3969,7 +4004,7 @@ function buildEvChart(types){
   const ctx=document.getElementById('cEvT'); if(!ctx)return;
   if(charts.evT)charts.evT.destroy();
   const ks=Object.keys(types),cols=genCols(ks.length);
-  charts.evT=new Chart(ctx,{type:'pie',data:{labels:ks,datasets:[{data:ks.map(k=>types[k]),backgroundColor:cols.map(c=>c+'44'),borderColor:cols,borderWidth:1.5}]},options:dopts()});
+  charts.evT=new Chart(ctx,{type:'pie',data:{labels:ks,datasets:[{data:ks.map(k=>types[k]),backgroundColor:cols.map(c=>c+'44'),borderColor:cols,borderWidth:2,hoverOffset:10,hoverBorderWidth:3}]},options:dopts()});
 }
 
 
@@ -4254,7 +4289,7 @@ function buildWChart(pts){
   const s=pts.slice().sort((a,b)=>b.points-a.points);
   const labels=s.map(p=>{const m=MOATS[p.contractAddress];return m?m.short||m.name:shortA(p.contractAddress);});
   const cols=s.map(p=>{const m=MOATS[p.contractAddress];return m?m.color:'#6b5f54';});
-  charts.wc=new Chart(ctx,{type:'doughnut',data:{labels,datasets:[{data:s.map(p=>p.points),backgroundColor:cols.map(c=>c+'55'),borderColor:cols,borderWidth:1.5}]},options:dopts()});
+  charts.wc=new Chart(ctx,{type:'doughnut',data:{labels,datasets:[{data:s.map(p=>p.points),backgroundColor:cols.map(c=>c+'55'),borderColor:cols,borderWidth:2,hoverOffset:10,hoverBorderWidth:3}]},options:dopts()});
 }
 
 // ── INVESTMENT ALLOCATOR ──
@@ -4657,16 +4692,33 @@ async function runAllocatorCalc() {
     const tokens = price > 0 ? usd/price : 0;
     // Declare m FIRST to avoid ReferenceError
     const m = moatMap[addr] || {totalPoints:0,walletCount:0,sorted:[],burnCount:0,lockCount:0,stakeCount:0};
+    const isHcashLpCalc = addr.toLowerCase() === '0x501f6e7bec3db63d8dacbc9fa0ce42d5d2329d53';
     const supplyData2 = getSupply(addr);
+    // hCASH: points are based on LP token supply (pairAddr), not the hCASH token itself
+    let knownSup;
+    if (isHcashLpCalc) {
+      const lpAddr2 = (meta.pairAddr||'').toLowerCase();
+      const lpSup2  = lpAddr2 ? (supplyCache[lpAddr2]||null) : null;
+      knownSup = (lpSup2 && lpSup2.totalSupply > 0) ? lpSup2.totalSupply : (m.totalTokens || 0);
+    } else {
+      knownSup = supplyData2?.totalSupply || MOATS[addr]?.knownSupply || 0;
+    }
     let pts = 0, ptsCalibrated = false, ptsMethod = '';
     if (price > 0 && tokens > 0) {
-      const knownSup = supplyData2?.totalSupply || MOATS[addr]?.knownSupply || 0;
       if (knownSup > 0 && m.totalPoints > 0) {
-        // Supply share model: yourPts = (tokens/totalSupply) × moatTotalPts × (yourMult/avgMult)
+        // For hCASH: tokens here is LP tokens the user gets, not hCASH tokens
+        // Supply share model: yourPts = (yourLPTokens/totalLPSupply) × moatTotalPts × (yourMult/avgMult)
         const bwc=m.burnCount||0, lwc=m.lockCount||0, swc=m.stakeCount||0, totc=m.walletCount||1;
         const avgMult = (bwc*10 + lwc*3.5 + swc*1) / totc || 1;
-        pts = (tokens/knownSup) * m.totalPoints * (mult/avgMult);
-        ptsCalibrated = true; ptsMethod = 'supply share';
+        // For hCASH, estimate LP tokens received from the USD budget
+        // LP token value ≈ 2× single token value because it contains both AVAX and hCASH
+        // We estimate LP tokens as usd / (2 * LP token price proxy)
+        // Best proxy: use in-moat token total vs total supply to get LP token price
+        const lpTokensEstimated = isHcashLpCalc
+          ? (knownSup > 0 && m.totalTokens > 0 && px?.liq > 0 ? (usd / (px.liq / knownSup)) : tokens)
+          : tokens;
+        pts = (lpTokensEstimated/knownSup) * m.totalPoints * (mult/avgMult);
+        ptsCalibrated = true; ptsMethod = isHcashLpCalc ? 'LP token supply share' : 'supply share';
       } else {
         const ppt = estPtsPerToken(addr);
         if (ppt) { pts = tokens*ppt*mult; ptsCalibrated=true; ptsMethod='ppt calibrated'; }
@@ -4765,12 +4817,12 @@ async function runAllocatorCalc() {
           <div style="background:var(--card);border-radius:7px;padding:.5rem;text-align:center">
             <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.9rem;color:var(--gld)">${f2(hcashSplit.hcashTokens)}</div>
             <div style="font-family:'DM Mono',monospace;font-size:.52rem;color:var(--txt);margin-top:1px">hCASH to buy</div>
-            <div style="font-family:'DM Mono',monospace;font-size:.5rem;color:var(--mut)">≈ $${hcashSplit.hcashUsd.toFixed(0)}</div>
+            <div style="font-family:'DM Mono',monospace;font-size:.5rem;color:var(--mut)">≈ ${hcashSplit.hcashUsd.toFixed(0)}</div>
           </div>
           <div style="background:var(--card);border-radius:7px;padding:.5rem;text-align:center">
             <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.9rem;color:var(--acc)">${hcashSplit.wavaxAvax.toFixed(4)}</div>
             <div style="font-family:'DM Mono',monospace;font-size:.52rem;color:var(--txt);margin-top:1px">WAVAX for LP</div>
-            <div style="font-family:'DM Mono',monospace;font-size:.5rem;color:var(--mut)">≈ $${hcashSplit.wavaxUsd.toFixed(0)}</div>
+            <div style="font-family:'DM Mono',monospace;font-size:.5rem;color:var(--mut)">≈ ${hcashSplit.wavaxUsd.toFixed(0)}</div>
           </div>
         </div>
         <div style="font-family:'DM Mono',monospace;font-size:.55rem;color:var(--mut);line-height:1.5">① Buy ${f2(hcashSplit.hcashTokens)} hCASH + ${hcashSplit.wavaxAvax.toFixed(4)} WAVAX → ② Add both as LP on Pharaoh → ③ Stake LP tokens in hCASH Moat</div>
@@ -5226,26 +5278,44 @@ function onMoatSelChange(){
   const meta = MOATS[addr]  || {};
   if (ctx) ctx.style.display = 'block';
 
+  const isHcashLp2 = addr.toLowerCase() === '0x501f6e7bec3db63d8dacbc9fa0ce42d5d2329d53';
+
+  // Update Token Amount label to reflect LP tokens for hCASH
+  const tokLbl = document.querySelector('label[for="cTok"], #cTok')?.closest('.ig')?.querySelector('.il');
+  if (tokLbl) tokLbl.textContent = isHcashLp2 ? 'LP Token Amount (not hCASH)' : 'Token Amount';
+
   // Use knownSupply as primary source — NEVER await anything, UI stays instant
   const knownSup = meta.knownSupply || 0;
   // Try supplyCache first (may have been enriched), fall back to knownSupply
-  const cached = getSupply(addr);
-  const sup    = (cached && cached.totalSupply > 0) ? cached : (knownSup ? {totalSupply:knownSup, symbol:meta.ticker, decimals:18} : null);
+  // For hCASH: use LP token supply from pairAddr
+  let cached, sup;
+  if (isHcashLp2) {
+    const lpAddr = (meta.pairAddr||'').toLowerCase();
+    cached = lpAddr ? (supplyCache[lpAddr]||null) : null;
+    sup = (cached && cached.totalSupply > 0) ? cached : null;
+  } else {
+    cached = getSupply(addr);
+    sup    = (cached && cached.totalSupply > 0) ? cached : (knownSup ? {totalSupply:knownSup, symbol:meta.ticker, decimals:18} : null);
+  }
 
   // Estimated pts-per-token for rank preview
-  const ppt = (knownSup > 0) ? (1000000 / knownSup) : (estPtsPerToken(addr) || null);
+  const ppt = isHcashLp2
+    ? (sup && sup.totalSupply > 0 ? 1000000 / sup.totalSupply : null)
+    : (knownSup > 0 ? 1000000 / knownSup : (estPtsPerToken(addr) || null));
 
-  const dynTag = meta.supplyType === 'dynamic'
-    ? '<span style="color:var(--gld)">⚡ Dynamic</span>'
-    : '<span style="color:var(--grn)">🔒 Fixed</span>';
+  const dynTag = isHcashLp2
+    ? '<span style="color:var(--gld)">💧 LP Tokens</span>'
+    : (meta.supplyType === 'dynamic'
+      ? '<span style="color:var(--gld)">⚡ Dynamic</span>'
+      : '<span style="color:var(--grn)">🔒 Fixed</span>');
 
   const supplyLine = sup && sup.totalSupply > 0
     ? '<div style="grid-column:1/-1;margin-top:5px;font-family:monospace;font-size:.56rem;color:var(--dim);display:flex;align-items:center;gap:8px">'
-      + '<span>Supply: <b style="color:var(--txt)">'+fmtP(sup.totalSupply)+' '+(sup.symbol||meta.ticker||'')+'</b></span>'
+      + '<span>' + (isHcashLp2 ? 'LP Supply: ' : 'Supply: ') + '<b style="color:var(--txt)">'+fmtP(sup.totalSupply)+' '+(isHcashLp2 ? 'LP tokens' : (sup.symbol||meta.ticker||''))+'</b></span>'
       + dynTag
-      + (ppt ? '<span style="color:var(--acc)">~'+fmtPrice(ppt)+' pts/token (stake)</span>' : '')
+      + (ppt ? '<span style="color:var(--acc)">~'+fmtPrice(ppt)+' pts/LP token (stake)</span>' : '')
       + '</div>'
-    : '';
+    : (isHcashLp2 ? '<div style="grid-column:1/-1;margin-top:5px;font-family:monospace;font-size:.56rem;color:var(--gld)">⚠ LP token supply not yet cached — enter LP token amount to estimate pts</div>' : '');
 
   if (st) st.innerHTML =
     `<div style="text-align:center"><div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.88rem;color:${meta.color||'var(--acc)'}">${fmtP(m.totalPoints||0)}</div><div style="font-family:'DM Mono',monospace;font-size:.5rem;color:var(--mut);text-transform:uppercase">Live Pool</div></div>`
@@ -5268,14 +5338,26 @@ function calcPts(){
 
   // pts-per-token: knownSupply is the ground truth (hardcoded from moats.app docs)
   // Formula: 1,000,000 base pts allocated per full token supply — standard Moats mechanic
+  // hCASH special case: points are based on LP token supply, not the hCASH token itself
+  const isHcashLp = addr && addr.toLowerCase() === '0x501f6e7bec3db63d8dacbc9fa0ce42d5d2329d53';
   const knownSup = meta.knownSupply || 0;
   const cached   = getSupply(addr);
-  const supply   = (cached && cached.totalSupply > 0) ? cached.totalSupply : knownSup;
+  // For hCASH, prefer the LP pool supply from supplyCache (pairAddr), not the hCASH token supply
+  let supply = 0;
+  if (isHcashLp) {
+    const lpAddr = (meta.pairAddr||'').toLowerCase();
+    const lpCached = lpAddr ? (supplyCache[lpAddr] || null) : null;
+    supply = (lpCached && lpCached.totalSupply > 0) ? lpCached.totalSupply : 0;
+    // fallback: use in-moat staked amount as proxy for LP tokens staked
+    if (!supply && moatMap[addr]) supply = moatMap[addr].totalTokens || 0;
+  } else {
+    supply = (cached && cached.totalSupply > 0) ? cached.totalSupply : knownSup;
+  }
   let ppt        = null;
   let pptSource  = '';
   if (supply > 0) {
     ppt       = 1000000 / supply;
-    pptSource = 'hardcoded supply';
+    pptSource = isHcashLp ? 'LP token supply' : 'hardcoded supply';
   } else if (addr) {
     ppt       = estPtsPerToken(addr);
     pptSource = 'live estimate';
@@ -5285,8 +5367,10 @@ function calcPts(){
 
   // Formula note
   let ptsNote = '';
+  const tokenUnit = isHcashLp ? 'LP tokens' : (meta.ticker||'tokens');
   if (ppt !== null) {
-    ptsNote = fmtP(t) + ' ' + (meta.ticker||'tokens') + ' × ' + fmtPrice(ppt) + ' pts/token (base) × ' + multiplier + '×';
+    ptsNote = fmtP(t) + ' ' + tokenUnit + ' × ' + fmtPrice(ppt) + ' pts/token (base) × ' + multiplier + '×';
+    if (isHcashLp) ptsNote += ' — LP token supply basis';
     if (a === 'lock') ptsNote += ' — ' + days + 'd lock';
     if (a === 'burn') ptsNote += ' — permanent 🔥';
   } else {
@@ -5450,9 +5534,8 @@ function fmtPrice(n){
 function fmtK(n){if(n>=1e9)return'$'+(n/1e9).toFixed(2)+'B';if(n>=1e6)return'$'+(n/1e6).toFixed(2)+'M';if(n>=1e3)return'$'+(n/1e3).toFixed(1)+'K';return'$'+n.toFixed(0);}
 function genCols(n){const p=['#f97316','#d4a843','#8c8074','#6db87a','#e05252','#a78bfa','#22d3ee','#fb7185','#fbbf24'];return Array.from({length:n},(_,i)=>p[i%p.length]);}
 function setTxt(id,v){const el=document.getElementById(id);if(el)el.textContent=v;}
-function copts({yFmt=false}={}){return{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{color:'rgba(51,46,40,.38)'},ticks:{color:'#6b5f54',font:{family:"'DM Mono'",size:9}}},y:{grid:{color:'rgba(51,46,40,.38)'},ticks:{color:'#6b5f54',font:{family:"'DM Mono'",size:9},callback:yFmt?v=>fmtP(v):undefined}}}};}
-function dopts(){return{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:'#6b5f54',font:{family:"'DM Mono'",size:9},boxWidth:9}}}};}
-
+function copts({yFmt=false}={}){return{responsive:true,maintainAspectRatio:false,animation:{duration:800,easing:'easeOutQuart'},plugins:{legend:{display:false},tooltip:{backgroundColor:'rgba(20,18,16,.93)',titleColor:'#f0ebe4',bodyColor:'#8c8074',borderColor:'rgba(249,115,22,.3)',borderWidth:1,padding:10,cornerRadius:8,titleFont:{family:"'Chakra Petch'",size:11,weight:'700'},bodyFont:{family:"'DM Mono'",size:10}}},scales:{x:{grid:{color:'rgba(51,46,40,.25)',drawBorder:false},ticks:{color:'#6b5f54',font:{family:"'DM Mono'",size:9}},border:{display:false}},y:{grid:{color:'rgba(51,46,40,.25)',drawBorder:false},ticks:{color:'#6b5f54',font:{family:"'DM Mono'",size:9},callback:yFmt?v=>fmtP(v):undefined},border:{display:false}}}};}
+function dopts(){return{responsive:true,maintainAspectRatio:false,animation:{animateRotate:true,animateScale:true,duration:900,easing:'easeOutBack'},layout:{padding:{top:4,bottom:4,left:4,right:4}},plugins:{legend:{position:'right',labels:{color:'#8c8074',font:{family:"'DM Mono'",size:9},boxWidth:10,boxHeight:10,borderRadius:3,padding:8,usePointStyle:true,pointStyle:'circle'}},tooltip:{backgroundColor:'rgba(20,18,16,.93)',titleColor:'#f0ebe4',bodyColor:'#8c8074',borderColor:'rgba(249,115,22,.3)',borderWidth:1,padding:10,cornerRadius:8,titleFont:{family:"'Chakra Petch'",size:11,weight:'700'},bodyFont:{family:"'DM Mono'",size:10}}},cutout:'60%',radius:'88%',spacing:2};}
 // ── INIT ──
 // Script is at bottom of <body> — DOM is already ready, run directly
 // Guaranteed loading screen dismiss after 3 seconds no matter what
@@ -10283,25 +10366,46 @@ async function posRenderCardCanvas(moatAddr) {
 // ── INIT ──
 // ── POSITIONS ACTIVITY TABLES ──
 // State for pagination
-const posActState = { all: { page:0, data:[] }, perMoat:{} };
+const posActState = { all: { page:0, data:[], filtered:[] } };
+
+// Action type filter helper
+function posActMatchType(e, typeFilter) {
+  if (!typeFilter) return true;
+  const ev = (e.eventType||'activity').toLowerCase();
+  if (typeFilter === 'stake')   return ev.includes('stake') || ev.includes('deposit');
+  if (typeFilter === 'unstake') return ev.includes('unstake') || ev.includes('withdraw');
+  if (typeFilter === 'lock')    return ev.includes('lock') && !ev.includes('unlock');
+  if (typeFilter === 'unlock')  return ev.includes('unlock');
+  if (typeFilter === 'burn')    return ev.includes('burn');
+  if (typeFilter === 'eel')     return ev.includes('eel') || ev.includes('earlyexit') || ev.includes('early exit');
+  if (typeFilter === 'claim')   return ev.includes('claim') || ev.includes('reward');
+  return true;
+}
+
+function posActFilterChange() {
+  const moatF = (document.getElementById('posActMoatFilter')?.value||'').toLowerCase();
+  const typeF = document.getElementById('posActTypeFilter')?.value||'';
+  posActState.all.filtered = posActState.all.data.filter(e => {
+    const moatMatch = !moatF || (e.contractAddress||'').toLowerCase() === moatF;
+    return moatMatch && posActMatchType(e, typeF);
+  });
+  posActState.all.page = 0;
+  posRenderAllActTable();
+}
 
 async function posRenderActivity(walletAddr) {
   const sec = document.getElementById('posActivitySec');
   if (!sec || !walletAddr) return;
 
-  // Gather all events from allEvs that match this wallet
   const wallet = walletAddr.toLowerCase();
+
+  // Gather all contract interactions from allEvs (stake/lock/burn/unstake/claim)
   const walletEvs = allEvs.filter(e => (e.wallet||'').toLowerCase() === wallet)
     .sort((a,b) => (b.timestamp||0) - (a.timestamp||0));
 
-  // Also scan on-chain events for this wallet per moat
-  // Use allEvs (already includes on-chain events merged in) filtered by wallet
-  const totalEvs = walletEvs.length;
-
-  if (totalEvs === 0) {
-    // Try fetching from Snowtrace for this wallet across all moat contracts
+  if (walletEvs.length === 0) {
+    // Fallback: scan on-chain token txs per moat
     const moatAddrs = Object.keys(MOATS);
-    const prov = new ethers.JsonRpcProvider(AVAX_RPC);
     let onChainWalletEvs = [];
     try {
       const tokenTxJobs = moatAddrs.map(async ma => {
@@ -10313,7 +10417,10 @@ async function posRenderActivity(walletAddr) {
           const dec = supply?.decimals||18;
           return (res.result||[]).slice(0,20).map(tx=>({
             contractAddress: ma,
-            eventType: tx.to?.toLowerCase()===ma.toLowerCase()?'staked':tx.from?.toLowerCase()===ma.toLowerCase()?'unstaked':'activity',
+            eventType: tx.to?.toLowerCase()===ma.toLowerCase()?'Staked':
+                       tx.from?.toLowerCase()===ma.toLowerCase()?'Unstaked':
+                       tx.to?.toLowerCase()==='0x000000000000000000000000000000000000dead'?'Burned':
+                       'Transfer',
             wallet: walletAddr,
             timestamp: Number(tx.timeStamp||0),
             txHash: tx.hash,
@@ -10332,51 +10439,27 @@ async function posRenderActivity(walletAddr) {
     posActState.all.data = walletEvs;
   }
 
+  // Populate moat filter dropdown
+  const moatSel = document.getElementById('posActMoatFilter');
+  if (moatSel) {
+    const moatsInData = [...new Set(posActState.all.data.map(e=>e.contractAddress).filter(Boolean))];
+    moatSel.innerHTML = '<option value="">All Moats</option>'
+      + moatsInData.map(ma => {
+          const m = MOATS[ma]||{};
+          return `<option value="${ma.toLowerCase()}">${m.short||m.name||ma.slice(-6)}</option>`;
+        }).join('');
+  }
+
+  // Apply current filters
+  posActState.all.filtered = [...posActState.all.data];
+  posActState.all.page = 0;
+
   sec.style.display = 'block';
   const total = posActState.all.data.length;
   const totalEl = document.getElementById('posActivityTotal');
-  if (totalEl) totalEl.textContent = total + ' interaction' + (total!==1?'s':'') + ' found';
+  if (totalEl) totalEl.textContent = total + ' event' + (total!==1?'s':'') + ' found across all moats';
 
-  posActState.all.page = 0;
   posRenderAllActTable();
-
-  // Per-moat tables: only for moats where user has activity
-  const moatsWithActivity = {};
-  posActState.all.data.forEach(e => {
-    if (!e.contractAddress) return;
-    if (!moatsWithActivity[e.contractAddress]) moatsWithActivity[e.contractAddress] = [];
-    moatsWithActivity[e.contractAddress].push(e);
-  });
-
-  const perMoatEl = document.getElementById('posPerMoatActArea');
-  if (!perMoatEl) return;
-  if (Object.keys(moatsWithActivity).length === 0) { perMoatEl.innerHTML=''; return; }
-
-  perMoatEl.innerHTML = Object.entries(moatsWithActivity).map(([ma, evs]) => {
-    const meta = MOATS[ma] || {};
-    const col = meta.color||'#f97316';
-    posActState.perMoat[ma] = { page:0, data: evs.sort((a,b)=>(b.timestamp||0)-(a.timestamp||0)) };
-    return `<div class="panel" style="margin-bottom:.75rem">
-      <div class="ph">
-        <div class="ptitle" style="display:flex;align-items:center;gap:7px">
-          ${logoImg(meta.logo,'moat-logo-sm',meta.emoji,col)}
-          <span>${meta.name||ma}</span>
-        </div>
-        <span style="font-family:'DM Mono',monospace;font-size:.56rem;color:var(--mut)">${evs.length} event${evs.length!==1?'s':''}</span>
-      </div>
-      <div class="pb0 tw"><table class="tbl">
-        <thead><tr><th>Time</th><th>Action</th><th>Amount</th><th>Tx</th></tr></thead>
-        <tbody id="posActBody_${ma.slice(-8)}"></tbody>
-      </table></div>
-      <div id="posActPager_${ma.slice(-8)}" style="display:none;padding:.55rem .85rem;display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--bor)">
-        <button onclick="posActPage('${ma}',-1)" class="btn btn-sm btn-g" style="padding:2px 9px;font-size:.58rem">← Prev</button>
-        <span id="posActPageLbl_${ma.slice(-8)}" style="font-family:'DM Mono',monospace;font-size:.56rem;color:var(--mut)"></span>
-        <button onclick="posActPage('${ma}',1)" class="btn btn-sm btn-g" style="padding:2px 9px;font-size:.58rem">Next →</button>
-      </div>
-    </div>`;
-  }).join('');
-
-  Object.keys(moatsWithActivity).forEach(ma => posRenderPerMoatActTable(ma));
 }
 
 function posEvRow(e, showMoat=false) {
@@ -10384,9 +10467,19 @@ function posEvRow(e, showMoat=false) {
   const col = meta.color||'#f97316';
   const ts = e.timestamp ? new Date(Number(e.timestamp)*1000).toLocaleString([],{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '—';
   const evType = (e.eventType||'activity').toLowerCase();
-  const evIcon = evType.includes('stake')||evType.includes('deposit')?'🔒':evType.includes('lock')?'⏳':evType.includes('burn')?'🔥':evType.includes('unstake')||evType.includes('withdraw')||evType.includes('unlock')?'↩':evType.includes('reward')||evType.includes('claim')?'💰':'📋';
-  const evColor = evType.includes('burn')?'var(--red)':evType.includes('lock')?'var(--gld)':evType.includes('reward')||evType.includes('claim')?'var(--grn)':evType.includes('unstake')?'var(--mut)':'var(--acc)';
-  const evLabel = (e.eventType||'Activity').replace(/([a-z])([A-Z])/g,'$1 $2');
+  const evIcon = evType.includes('stake')||evType.includes('deposit')?'🔒':evType.includes('lock')?'⏳':evType.includes('burn')?'🔥':evType.includes('unstake')||evType.includes('withdraw')||evType.includes('unlock')?'↩':evType.includes('reward')||evType.includes('claim')?'💰':evType.includes('transfer')?'↔':'📋';
+  const evColor = evType.includes('burn')?'var(--red)':evType.includes('lock')?'var(--gld)':evType.includes('reward')||evType.includes('claim')?'var(--grn)':evType.includes('unstake')||evType.includes('withdraw')?'var(--pur)':evType.includes('transfer')?'var(--cyn)':'var(--acc)';
+  // Friendly label map — covers all known API event types + on-chain fallbacks
+  const evLabelMap = {
+    staked:'Stake', stake:'Stake', deposited:'Stake', deposit:'Stake',
+    locked:'Lock', lock:'Lock',
+    burned:'Burn', burn:'Burn',
+    unstaked:'Unstake', unstake:'Unstake', withdrawn:'Unstake', withdraw:'Unstake', unlocked:'Unstake', unlock:'Unstake',
+    rewardpaid:'Reward Paid', claimed:'Claimed', claim:'Claim', rewardclaimed:'Reward Claimed',
+    transfer:'Transfer',
+  };
+  const rawType = (e.eventType||'');
+  const evLabel = evLabelMap[evType] || rawType.replace(/([a-z])([A-Z])/g,'$1 $2') || 'Activity';
   const amt = (e.tokenAmount||e.rewardAmount)>0 ? fmtP(Number(e.tokenAmount||e.rewardAmount||0).toFixed(4))+(e.tokenSymbol||meta.ticker?(' '+(e.tokenSymbol||meta.ticker)):'') : '—';
   const txLink = e.txHash ? `<a href="https://snowtrace.io/tx/${e.txHash}" target="_blank" style="font-family:'DM Mono',monospace;font-size:.56rem;color:var(--acc)" title="${e.txHash}">${e.txHash.slice(0,6)}…${e.txHash.slice(-4)} ↗</a>` : '—';
   const moatCell = showMoat && meta.name ? `<td><div style="display:flex;align-items:center;gap:5px">${logoImg(meta.logo,'moat-logo-fb-sm',meta.emoji,col)}<span style="font-family:'DM Mono',monospace;font-size:.62rem;color:${col}">${meta.short||meta.name}</span></div></td>` : '';
@@ -10405,55 +10498,30 @@ function posRenderAllActTable() {
   const lbl = document.getElementById('posAllActPageLbl');
   const ct = document.getElementById('posAllActCount');
   if (!tb) return;
-  const { data, page } = posActState.all;
-  const perPage = 10;
+  const { filtered, page } = posActState.all;
+  const perPage = 15;
   const start = page * perPage;
   const end = start + perPage;
-  const slice = data.slice(start, end);
+  const slice = filtered.slice(start, end);
   tb.innerHTML = slice.map(e => posEvRow(e, true)).join('') || '<tr><td colspan="5" style="text-align:center;color:var(--mut);padding:1.5rem;font-size:.72rem">No activity found.</td></tr>';
-  if (ct) ct.textContent = data.length + ' event' + (data.length!==1?'s':'');
+  if (ct) ct.textContent = filtered.length + ' event' + (filtered.length!==1?'s':'');
   if (pager) {
-    pager.style.display = data.length > perPage ? 'flex' : 'none';
-    if (lbl) lbl.textContent = `Page ${page+1} of ${Math.ceil(data.length/perPage)}`;
+    pager.style.display = filtered.length > perPage ? 'flex' : 'none';
+    if (lbl) lbl.textContent = `Page ${page+1} of ${Math.ceil(filtered.length/perPage)||1}`;
     const prev = document.getElementById('posAllActPrev');
     const next = document.getElementById('posAllActNext');
     if (prev) prev.disabled = page === 0;
-    if (next) next.disabled = end >= data.length;
-  }
-}
-
-function posRenderPerMoatActTable(ma) {
-  const state = posActState.perMoat[ma]; if (!state) return;
-  const slug = ma.slice(-8);
-  const tb = document.getElementById('posActBody_'+slug);
-  const pager = document.getElementById('posActPager_'+slug);
-  const lbl = document.getElementById('posActPageLbl_'+slug);
-  if (!tb) return;
-  const perPage = 10;
-  const start = state.page * perPage;
-  const end = start + perPage;
-  const slice = state.data.slice(start, end);
-  tb.innerHTML = slice.map(e => posEvRow(e, false)).join('') || '<tr><td colspan="4" style="text-align:center;color:var(--mut);padding:1.5rem;font-size:.72rem">No activity.</td></tr>';
-  if (pager) {
-    pager.style.display = state.data.length > perPage ? 'flex' : 'none';
-    if (lbl) lbl.textContent = `Page ${state.page+1} of ${Math.ceil(state.data.length/perPage)}`;
+    if (next) next.disabled = end >= filtered.length;
   }
 }
 
 function posActPage(key, dir) {
   if (key === 'all') {
-    const perPage = 10;
+    const perPage = 15;
     const newPage = posActState.all.page + dir;
-    if (newPage < 0 || newPage * perPage >= posActState.all.data.length) return;
+    if (newPage < 0 || newPage * perPage >= posActState.all.filtered.length) return;
     posActState.all.page = newPage;
     posRenderAllActTable();
-  } else {
-    const state = posActState.perMoat[key]; if (!state) return;
-    const perPage = 10;
-    const newPage = state.page + dir;
-    if (newPage < 0 || newPage * perPage >= state.data.length) return;
-    state.page = newPage;
-    posRenderPerMoatActTable(key);
   }
 }
 
