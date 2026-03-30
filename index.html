@@ -2824,13 +2824,26 @@ async function renderMoatRewards(addr){
     }
   } catch(e){}
 
+  // ── Build txHash → caller wallet map from receipt data (for backfilling) ──
+  const txCallerMap = {};
+  onChainEvs.forEach(e=>{ if(e.txHash&&e.wallet) txCallerMap[e.txHash]=e.wallet; });
+
+  // Backfill wallet into allEvs for claim events missing it (Activity tab too)
+  if(Object.keys(txCallerMap).length){
+    allEvs.forEach(ev=>{ if(!ev.wallet && ev.txHash && txCallerMap[ev.txHash]) ev.wallet=txCallerMap[ev.txHash]; });
+  }
+
   // ── Merge sources ──
-  // For DISPLAY (event list): deduplicate API events by txHash — these have wallet/timestamp
+  // For DISPLAY (event list): deduplicate API events by txHash
   const seenTx = new Set();
   const allRewardEvs = [];
   [...localRewardEvs, ...apiRewardEvs].forEach(e=>{
     const key = e.txHash||(e.wallet+e.timestamp);
-    if(!seen.has(key)){ seenTx.add(key); allRewardEvs.push(e); }
+    if(!seenTx.has(key)){
+      seenTx.add(key);
+      if(!e.wallet && e.txHash && txCallerMap[e.txHash]) e.wallet=txCallerMap[e.txHash];
+      allRewardEvs.push(e);
+    }
   });
 
   // For TALLY: use onChain events (real token+amount data), deduplicate by txHash+tokenAddr
