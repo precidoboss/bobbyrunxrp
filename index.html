@@ -2824,17 +2824,29 @@ async function renderMoatRewards(addr){
     }
   } catch(e){}
 
-  // ── Merge all sources, deduplicate by txHash ──
-  const seen = new Set();
+  // ── Merge sources ──
+  // For DISPLAY (event list): deduplicate API events by txHash — these have wallet/timestamp
+  const seenTx = new Set();
   const allRewardEvs = [];
-  [...localRewardEvs, ...apiRewardEvs, ...onChainEvs].forEach(e=>{
-    const key = e.txHash||(e.wallet+e.rewardAmount+e.timestamp);
-    if(!seen.has(key)){ seen.add(key); allRewardEvs.push(e); }
+  [...localRewardEvs, ...apiRewardEvs].forEach(e=>{
+    const key = e.txHash||(e.wallet+e.timestamp);
+    if(!seen.has(key)){ seenTx.add(key); allRewardEvs.push(e); }
   });
+
+  // For TALLY: use onChain events (real token+amount data), deduplicate by txHash+tokenAddr
+  // so multiple tokens per tx are each counted separately
+  const seenOnChain = new Set();
+  const tallyEvs = [];
+  onChainEvs.forEach(e=>{
+    const key = (e.txHash||'')+'|'+(e.rewardTokenAddr||e.rewardToken||'')+'|'+e.wallet;
+    if(!seenOnChain.has(key)){ seenOnChain.add(key); tallyEvs.push(e); }
+  });
+  // If no onChain data, fall back to API events for tally
+  const tallySource = tallyEvs.length > 0 ? tallyEvs : allRewardEvs;
 
   // ── Step 4: Resolve unknown token addresses via CoinGecko ──
   const unknownAddrs = new Set();
-  allRewardEvs.forEach(e=>{
+  tallySource.forEach(e=>{
     const ra = (e.rewardTokenAddr||e.rewardToken||'').toLowerCase();
     if(ra&&ra.startsWith('0x')&&ra.length===42&&!REWARD_TOKENS[ra]) unknownAddrs.add(ra);
   });
@@ -2847,15 +2859,15 @@ async function renderMoatRewards(addr){
         ).then(r=>r.ok?r.json():null).catch(()=>null);
         if(cgRes?.symbol){
           cgCache[tAddr]={symbol:cgRes.symbol.toUpperCase(),name:cgRes.name,thumb:cgRes.image?.thumb||''};
-          REWARD_TOKENS[tAddr]=cgRes.symbol.toUpperCase(); // cache for future use
+          REWARD_TOKENS[tAddr]=cgRes.symbol.toUpperCase();
         }
       }catch(e){}
     }));
   }
 
-  // ── Tally by token — combine ALL claimed rewards ──
+  // ── Tally by token ──
   const rewardTally={};
-  allRewardEvs.forEach(e=>{
+  tallySource.forEach(e=>{
     const raw=(e.rewardTokenAddr||e.rewardToken||'').toLowerCase();
     let label = REWARD_TOKENS[raw];
     if(!label&&cgCache[raw]) label=cgCache[raw].symbol;
@@ -2865,7 +2877,21 @@ async function renderMoatRewards(addr){
     rewardTally[label].total+=Number(e.rewardAmount||0);
     if(e.wallet) rewardTally[label].wallets.add(e.wallet);
   });
-  const hasRewards=Object.keys(rewardTally).length>0;
+
+  // ── Per-wallet claimed totals (from onChain data) ──
+  // walletClaimed: { walletAddr -> { tokenLabel -> amount } }
+  const walletClaimed={};
+  tallySource.forEach(e=>{
+    const w=(e.wallet||'').toLowerCase(); if(!w) return;
+    const raw=(e.rewardTokenAddr||e.rewardToken||'').toLowerCase();
+    let label=REWARD_TOKENS[raw]; if(!label&&cgCache[raw]) label=cgCache[raw].symbol;
+    label=label||(raw&&raw.startsWith('0x')?shortA(raw):null); if(!label) return;
+    if(!walletClaimed[w]) walletClaimed[w]={};
+    walletClaimed[w][label]=(walletClaimed[w][label]||0)+Number(e.rewardAmount||0);
+  });
+  const tokenLabels=Object.keys(rewardTally); // ordered list of tokens seen
+
+  const hasRewards=Object.keys(rewardTally).length>0&&tallySource.some(e=>e.rewardAmount>0);
 
   let rewardCurrencyHTML='';
   if(hasRewards){
@@ -2916,29 +2942,41 @@ async function renderMoatRewards(addr){
     ${allRewardEvs.length?`
     <div class="panel" style="margin-bottom:.85rem">
       <div class="ph"><div class="ptitle">💰 Reward & Claim Events</div><span style="font-family:'DM Mono',monospace;font-size:.58rem;color:var(--mut)">${allRewardEvs.length} events</span></div>
-      <div class="evf">${renderEvItemsInline(allRewardEvs.slice(0,20))}</div>
+      <div class="evf">${renderEvItemsInline(allRewardEvs.slice(0,20), REWARD_TOKENS, cgCache)}</div>
     </div>`:''}
     <div class="panel">
-      <div class="ph"><div class="ptitle">Full Distribution (${pts.length} wallets)</div></div>
-      <div class="pb0 tw"><table class="tbl"><thead><tr><th>Rank</th><th>Wallet</th><th>Points</th><th>Pool %</th><th>Est. Tier</th></tr></thead><tbody>
+      <div class="ph"><div class="ptitle">Full Distribution (${pts.length} wallets)</div>${tokenLabels.length?`<span style="font-family:'DM Mono',monospace;font-size:.52rem;color:var(--grn)">💰 claimed rewards shown</span>`:''}</div>
+      <div class="pb0 tw"><table class="tbl"><thead><tr><th>Rank</th><th>Wallet</th><th>Points</th><th>Pool %</th><th>Est. Tier</th>${tokenLabels.map(t=>`<th style="color:var(--grn)">${t} Claimed</th>`).join('')}</tr></thead><tbody>
         ${pts.map((p,i)=>{
           const w=getWallet(p),sh=tot?(p.points/tot*100).toFixed(3):'0';
           const tier=p.points>m.avgPoints*5?'🔥 Burn':p.points>m.avgPoints*1.5?'⏳ Lock':'🔒 Stake';
+          const wClaimed=walletClaimed[w.toLowerCase()]||{};
+          const claimedCols=tokenLabels.map(t=>{
+            const amt=wClaimed[t]||0;
+            return `<td style="font-family:'DM Mono',monospace;font-size:.62rem;color:${amt>0?'var(--grn)':'var(--ash2)'}">${amt>0?(amt>=1?fmtP(amt):amt.toFixed(4)):'—'}</td>`;
+          }).join('');
           return `<tr><td>${rb(i+1)}</td><td><span class="wa" onclick="gotoW('${w}')">${shortA(w)}</span></td>
             <td style="font-family:'DM Mono',monospace;font-size:.7rem">${fmtP(p.points)}</td>
             <td style="font-family:'DM Mono',monospace;font-size:.63rem;color:var(--mut)">${sh}%</td>
-            <td style="font-size:.68rem">${tier}</td></tr>`;
+            <td style="font-size:.68rem">${tier}</td>${claimedCols}</tr>`;
         }).join('')}
       </tbody></table></div>
     </div>`;
 }
 
 // Lightweight inline event renderer for sub-panels
-function renderEvItemsInline(evs){
+function renderEvItemsInline(evs, tokenMap, cgCache){
   if(!evs.length)return'<div class="empty" style="padding:1rem">No events.</div>';
-  const REWARD_TOKENS={'usdc':'USDC','wavax':'WAVAX','avax':'AVAX',
+  const REWARD_TOKENS=Object.assign({
+    'usdc':'USDC','wavax':'WAVAX','avax':'AVAX','btc.b':'BTC.b',
     '0xb97ef9ef8734c71904d8002f8b6bc66dd9c48a6e':'USDC',
-    '0xb31f66aa3c1e785363f0875a1b74e27b85fd66c7':'WAVAX'};
+    '0x9702230a8ea53601f5cd2dc00fdbc13d4df4a8c7':'USDT',
+    '0xb31f66aa3c1e785363f0875a1b74e27b85fd66c7':'WAVAX',
+    '0x152b9d0fdc40c096757f570a51e494bd4b943e50':'BTC.b',
+    '0x50b7545627a5162f82a992c33b87adc75187b218':'WBTC.e',
+    '0x49d5c2bdffac6ce2bfdb6640f4f80f226bc10bab':'WETH.e',
+  }, tokenMap||{});
+  const cg=cgCache||{};
   return evs.map(e=>{
     const ts=fmtTs(e.timestamp);
     const _w=(e.wallet||e.user||e.walletAddress||'').toLowerCase();
@@ -2956,10 +2994,11 @@ function renderEvItemsInline(evs){
       ?`<span onclick="event.stopPropagation();navigator.clipboard&&navigator.clipboard.writeText('${_w}').then(()=>showAppNotif('Copied','success',1200))" title="${_w}" style="font-family:'DM Mono',monospace;font-size:.48rem;color:var(--mut);background:var(--sur);border:1px solid var(--bor);border-radius:3px;padding:0 4px;cursor:copy">${shortA(_w)}</span>`:'';
     const w=_w
       ?`<span class="wa" onclick="gotoW('${_w}')" style="display:inline-flex;align-items:center;gap:3px;background:var(--sur);border:1px solid var(--bor);border-radius:5px;padding:1px 5px;cursor:pointer">${_pic}<span style="font-family:'DM Mono',monospace;font-size:.6rem;color:var(--txt)">${_dispName}</span>${_bensiTag}${_twitterTag}</span>${(_ep||_zn)?' '+_addrTag:_addrTag}`:'';
-    const rkRaw=(e.rewardToken||'').toLowerCase();
-    let rkLabel=REWARD_TOKENS[rkRaw]||e.rewardToken||'tokens';
-    if(!REWARD_TOKENS[rkRaw]&&rkRaw){Object.values(MOATS).forEach(mm=>{if(mm.tokenAddr&&mm.tokenAddr.toLowerCase()===rkRaw)rkLabel=mm.ticker;});}
-    const amt=e.rewardAmount>0?`<span style="font-family:'DM Mono',monospace;font-size:.6rem;color:var(--grn);background:rgba(109,184,122,.1);border-radius:4px;padding:1px 5px">💰 ${fmtP(e.rewardAmount)} ${rkLabel}</span>`:'';
+    const rkRaw=(e.rewardTokenAddr||e.rewardToken||'').toLowerCase();
+    let rkLabel=REWARD_TOKENS[rkRaw]||(cg[rkRaw]?.symbol)||null;
+    if(!rkLabel&&rkRaw){Object.values(MOATS).forEach(mm=>{if(mm.tokenAddr&&mm.tokenAddr.toLowerCase()===rkRaw)rkLabel=mm.ticker;});}
+    rkLabel=rkLabel||(rkRaw&&rkRaw.startsWith('0x')?shortA(rkRaw):'');
+    const amt=e.rewardAmount>0&&rkLabel?`<span style="font-family:'DM Mono',monospace;font-size:.6rem;color:var(--grn);background:rgba(109,184,122,.1);border-radius:4px;padding:1px 5px">💰 ${e.rewardAmount>=1?fmtP(e.rewardAmount):e.rewardAmount.toFixed(4)} ${rkLabel}</span>`:'';
     const txLink=e.txHash?`<a href="https://snowtrace.io/tx/${e.txHash}" target="_blank" style="font-family:'DM Mono',monospace;font-size:.54rem;color:var(--mut)">${shortA(e.txHash)} ↗</a>`:'';
     return `<div class="ei">
       <div style="width:6px;height:6px;border-radius:50%;background:var(--grn);margin-top:6px;flex-shrink:0"></div>
