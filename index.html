@@ -300,65 +300,6 @@ main{position:relative;z-index:1;padding:.8rem;max-width:1440px;margin:0 auto}
 .mcard .mn{font-family:'DM Mono',monospace;font-size:.54rem;text-transform:uppercase;letter-spacing:.1em;color:var(--mut)}
 .mcard .md{font-size:.63rem;color:var(--mut);margin-top:.28rem;line-height:1.45}
 
-/* ── WHALE FEED ── */
-.whale-feed{max-height:420px;overflow-y:auto;padding:.45rem .75rem}
-.whale-feed::-webkit-scrollbar{width:2px}
-.whale-feed::-webkit-scrollbar-thumb{background:var(--bor);border-radius:99px}
-.whale-item{display:flex;align-items:flex-start;gap:8px;padding:.52rem 0;border-bottom:1px solid rgba(51,46,40,.25);animation:whalein .5s ease}
-@keyframes whalein{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
-.whale-item:last-child{border-bottom:none}
-.whale-dot{width:8px;height:8px;border-radius:50%;margin-top:6px;flex-shrink:0}
-.whale-mega{display:inline-flex;align-items:center;gap:3px;background:linear-gradient(90deg,rgba(212,168,67,.2),rgba(249,115,22,.15));border:1px solid rgba(212,168,67,.5);border-radius:99px;padding:1px 7px;font-family:'DM Mono',monospace;font-size:.5rem;font-weight:700;color:var(--gld);letter-spacing:.05em;animation:megapulse 2s ease-in-out infinite}
-@keyframes megapulse{0%,100%{box-shadow:0 0 0 0 rgba(212,168,67,.3)}50%{box-shadow:0 0 8px 3px rgba(212,168,67,.2)}}
-.whale-filters{display:flex;gap:5px;flex-wrap:wrap;align-items:center;padding:.5rem .75rem;background:var(--sur);border-bottom:1px solid var(--bor)}
-.whale-stats-strip{display:grid;grid-template-columns:repeat(3,1fr);gap:.4rem;padding:.55rem .75rem;background:rgba(249,115,22,.04);border-bottom:1px solid var(--bor)}
-.wss-item{text-align:center}
-.wss-val{font-family:'Chakra Petch',sans-serif;font-size:.85rem;font-weight:700}
-.wss-lbl{font-family:'DM Mono',monospace;font-size:.44rem;text-transform:uppercase;letter-spacing:.09em;color:var(--mut);margin-top:1px}
-
-/* ── MOAT STREAK TRACKER ── */
-.streak-row{display:flex;align-items:center;gap:8px;padding:.5rem .75rem;border-bottom:1px solid rgba(51,46,40,.22)}
-.streak-row:last-child{border-bottom:none}
-.streak-pip-row{display:flex;gap:2px;align-items:center}
-.streak-pip{width:9px;height:9px;border-radius:2px;transition:all .2s}
-.streak-pip.active{background:var(--acc);box-shadow:0 0 4px rgba(249,115,22,.5)}
-.streak-pip.inactive{background:var(--bor)}
-.streak-badge{display:inline-flex;align-items:center;gap:2px;font-family:'DM Mono',monospace;font-size:.52rem;padding:1px 5px;border-radius:99px;border:1px solid}
-.badge-fire{color:#fb923c;border-color:rgba(251,146,60,.4);background:rgba(251,146,60,.1)}
-.badge-bolt{color:var(--cyn);border-color:rgba(34,211,238,.4);background:rgba(34,211,238,.1)}
-
-/* ── POSITION HEALTH SCORE ── */
-.health-arc-wrap{position:relative;width:120px;height:70px;margin:0 auto .6rem}
-.health-arc-wrap svg{overflow:visible}
-.health-grade{font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:1.55rem;line-height:1}
-.health-score-num{font-family:'DM Mono',monospace;font-size:.65rem;color:var(--mut)}
-.health-comp-bar{display:flex;align-items:center;gap:7px;margin-bottom:.38rem}
-.health-comp-fill{height:4px;border-radius:99px;background:var(--acc);transition:width .6s ease}
-.health-comp-bg{flex:1;height:4px;background:var(--bor);border-radius:99px;overflow:hidden}
-.health-tip{background:rgba(249,115,22,.06);border:1px solid rgba(249,115,22,.18);border-radius:7px;padding:.5rem .7rem;font-family:'DM Mono',monospace;font-size:.58rem;color:var(--dim);line-height:1.55;margin-bottom:.4rem}
-.health-tip::before{content:'💡 ';color:var(--gld)}
-
-/* ── DAILY INTEL BRIEF ── */
-.intel-brief{background:var(--card);border:1px solid var(--bor);border-radius:14px;overflow:hidden;margin-bottom:.85rem}
-.intel-masthead{background:linear-gradient(135deg,rgba(249,115,22,.12),rgba(212,168,67,.08));border-bottom:1px solid rgba(249,115,22,.2);padding:.75rem 1rem;display:flex;align-items:center;justify-content:space-between}
-.intel-nameplate{font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.95rem;letter-spacing:.07em;color:var(--txt)}
-.intel-nameplate em{color:var(--acc);font-style:normal}
-.intel-date{font-family:'DM Mono',monospace;font-size:.52rem;color:var(--mut)}
-.intel-edition{font-family:'DM Mono',monospace;font-size:.48rem;color:var(--gld);text-transform:uppercase;letter-spacing:.1em;margin-top:1px}
-.intel-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:0}
-@media(min-width:580px){.intel-grid{grid-template-columns:repeat(3,1fr)}}
-.intel-card{padding:.7rem .85rem;border-right:1px solid rgba(51,46,40,.3);border-bottom:1px solid rgba(51,46,40,.3)}
-.intel-card:nth-child(2n){border-right:none}
-@media(min-width:580px){.intel-card:nth-child(2n){border-right:1px solid rgba(51,46,40,.3)}.intel-card:nth-child(3n){border-right:none}}
-.intel-card-lbl{font-family:'DM Mono',monospace;font-size:.44rem;text-transform:uppercase;letter-spacing:.12em;color:var(--mut);margin-bottom:.25rem}
-.intel-card-val{font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.82rem;color:var(--txt);line-height:1.2}
-.intel-card-sub{font-family:'DM Mono',monospace;font-size:.55rem;color:var(--dim);margin-top:2px;line-height:1.4}
-.intel-headline{font-family:'Chakra Petch',sans-serif;font-size:.7rem;font-weight:600;color:var(--acc);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.18rem}
-.intel-breaking{background:rgba(224,82,82,.08);border-left:2px solid var(--red);padding:.35rem .6rem;font-family:'DM Mono',monospace;font-size:.58rem;color:var(--dim);line-height:1.5;margin:.5rem 0}
-
-/* ── LAST SEEN ── */
-.last-seen-badge{display:inline-flex;align-items:center;gap:4px;background:rgba(34,211,238,.07);border:1px solid rgba(34,211,238,.2);border-radius:6px;padding:2px 8px;font-family:'DM Mono',monospace;font-size:.56rem;color:var(--cyn)}
-
 
 /* ── MODALS ── */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(6px);z-index:500;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s}
@@ -559,31 +500,6 @@ main{position:relative;z-index:1;padding:.8rem;max-width:1440px;margin:0 auto}
     <div class="sc"><div class="sl">Total Events</div><div class="sv cgn" id="ovEv">—</div></div>
     <div class="sc"><div class="sl">Top Wallet</div><div class="sv ca" style="font-size:.72rem;font-family:'DM Mono',monospace" id="ovTop">—</div></div>
   </div>
-  <!-- ── DAILY INTEL BRIEF ── -->
-  <div class="intel-brief" id="intelBrief">
-    <div class="intel-masthead">
-      <div>
-        <div class="intel-nameplate">⬡ MOAT <em>INTEL</em> DISPATCH</div>
-        <div class="intel-edition">BREAKING INTELLIGENCE · FORIFI EDITION</div>
-      </div>
-      <div style="text-align:right">
-        <div class="intel-date" id="intelDate">—</div>
-        <div style="font-family:'DM Mono',monospace;font-size:.45rem;color:var(--mut);margin-top:2px">Today in Moats</div>
-      </div>
-    </div>
-    <div class="intel-grid" id="intelGrid">
-      <div class="intel-card"><div class="intel-card-lbl">🏰 Most Active Moat</div><div class="intel-card-val" id="ibActiveMoat">—</div><div class="intel-card-sub" id="ibActiveMoatSub">loading…</div></div>
-      <div class="intel-card"><div class="intel-card-lbl">🐳 Biggest Mover</div><div class="intel-card-val" id="ibBigMover">—</div><div class="intel-card-sub" id="ibBigMoverSub">loading…</div></div>
-      <div class="intel-card"><div class="intel-card-lbl">🔥 All-Time Biggest Burn</div><div class="intel-card-val" id="ibBigBurn">—</div><div class="intel-card-sub" id="ibBigBurnSub">loading…</div></div>
-      <div class="intel-card"><div class="intel-card-lbl">🌱 New Entrants (24h)</div><div class="intel-card-val ca" id="ibNewEntrants">—</div><div class="intel-card-sub" id="ibNewEntrantsSub">first-time wallets today</div></div>
-      <div class="intel-card"><div class="intel-card-lbl">👥 Active Wallets (24h)</div><div class="intel-card-val cg" id="ibActiveWallets">—</div><div class="intel-card-sub" id="ibActiveWalletsSub">interacted with any moat</div></div>
-      <div class="intel-card"><div class="intel-card-lbl">🐋 Whale of the Day</div><div class="intel-card-val cd" id="ibWhaleDay">—</div><div class="intel-card-sub" id="ibWhaleDaySub">loading…</div></div>
-    </div>
-    <div id="intelHeadline" style="padding:.55rem .85rem;font-family:'DM Mono',monospace;font-size:.6rem;color:var(--mut);border-top:1px solid rgba(51,46,40,.3)">
-      <span style="color:var(--acc);font-weight:700;font-family:'Chakra Petch',sans-serif;font-size:.62rem">BREAKING</span>&nbsp;—&nbsp;<span id="intelHeadlineText">Computing today's intelligence…</span>
-    </div>
-  </div>
-
   <div class="gsb">
     <div>
       <div class="panel">
@@ -764,57 +680,6 @@ main{position:relative;z-index:1;padding:.8rem;max-width:1440px;margin:0 auto}
     <div class="ph"><div class="ptitle">📊 Opportunity Matrix</div><span style="font-family:'DM Mono',monospace;font-size:.58rem;color:var(--mut)">lower eco share = higher upside</span></div>
     <div class="pb0 tw"><table class="tbl" id="oppTbl"><thead><tr><th>Moat</th><th>Eco Share</th><th>Wallets</th><th>Avg Points</th><th>Opportunity Score</th><th>Signal</th></tr></thead><tbody></tbody></table></div>
   </div>
-
-  <!-- ══ WHALE ALERT FEED ══ -->
-  <div class="panel" style="margin-top:.85rem">
-    <div class="ph" style="flex-wrap:wrap;gap:6px">
-      <div class="ptitle">🐳 Whale Alert Feed</div>
-      <div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center">
-        <select id="whaleFeedTypeFilter" onchange="renderWhaleFeed()" style="padding:3px 7px;background:var(--sur);border:1px solid var(--bor);border-radius:5px;color:var(--dim);font-family:'DM Mono',monospace;font-size:.56rem;outline:none">
-          <option value="">All Types</option>
-          <option value="burned">🔥 Burned</option>
-          <option value="staked">🔒 Staked</option>
-          <option value="locked">⏳ Locked</option>
-        </select>
-        <select id="whaleFeedThreshold" onchange="renderWhaleFeed()" style="padding:3px 7px;background:var(--sur);border:1px solid var(--bor);border-radius:5px;color:var(--dim);font-family:'DM Mono',monospace;font-size:.56rem;outline:none">
-          <option value="10000">10K+</option>
-          <option value="100000" selected>100K+</option>
-          <option value="500000">500K+</option>
-          <option value="1000000">1M+</option>
-        </select>
-        <span class="live"><span class="ld"></span>live</span>
-      </div>
-    </div>
-    <!-- Stats strip -->
-    <div class="whale-stats-strip">
-      <div class="wss-item"><div class="wss-val ca" id="wss24hCount">—</div><div class="wss-lbl">24h Whales</div></div>
-      <div class="wss-item"><div class="wss-val cr" id="wssBigBurn">—</div><div class="wss-lbl">Biggest Burn</div></div>
-      <div class="wss-item"><div class="wss-val cg" id="wssWhaleDay">—</div><div class="wss-lbl">Whale of the Day</div></div>
-    </div>
-    <div class="whale-feed" id="whaleFeedEl">
-      <div style="text-align:center;padding:1.5rem;font-family:'DM Mono',monospace;font-size:.62rem;color:var(--mut)"><span class="spin"></span> Loading whale data…</div>
-    </div>
-  </div>
-
-  <!-- ══ MOAT STREAK TRACKER ══ -->
-  <div class="panel" style="margin-top:.85rem">
-    <div class="ph">
-      <div class="ptitle">🔥 Moat Streak Tracker</div>
-      <span style="font-family:'DM Mono',monospace;font-size:.56rem;color:var(--mut)">top 20 · consecutive weeks active</span>
-    </div>
-    <!-- Header row -->
-    <div style="display:flex;align-items:center;gap:8px;padding:.4rem .75rem;border-bottom:1px solid var(--bor);font-family:'DM Mono',monospace;font-size:.48rem;color:var(--mut);text-transform:uppercase;letter-spacing:.08em">
-      <div style="width:28px;flex-shrink:0">#</div>
-      <div style="flex:1">Wallet</div>
-      <div style="display:flex;gap:2px;margin-right:6px">
-        <span>8w history →</span>
-      </div>
-      <div style="width:38px;text-align:right">Streak</div>
-    </div>
-    <div id="streakTrackerEl">
-      <div style="text-align:center;padding:1.5rem;font-family:'DM Mono',monospace;font-size:.62rem;color:var(--mut)"><span class="spin"></span> Computing streaks…</div>
-    </div>
-  </div>
 </div>
 
 <!-- ══ EVENTS ══ -->
@@ -903,21 +768,6 @@ main{position:relative;z-index:1;padding:.8rem;max-width:1440px;margin:0 auto}
         <div class="ccard"><div class="ctit">📈 Wallet Stats</div><div id="wSt"></div></div>
         <div class="ccard"><div class="ctit">🏰 Fort Score</div><div id="wFS"></div><div style="font-size:.63rem;color:var(--mut);margin-top:.45rem;line-height:1.55">Fort Score = all your Moat Points summed. Determines Early User Airdrop share.</div></div>
         <div class="ccard"><div class="ctit">🔬 Wallet Signals</div><div id="wSig"></div></div>
-        <div class="ccard" id="wHealthCard" style="display:none">
-          <div class="ctit">🏥 Position Health Score</div>
-          <div style="text-align:center;margin-bottom:.7rem">
-            <div class="health-arc-wrap">
-              <svg viewBox="0 0 120 70" width="120" height="70">
-                <path d="M10,65 A55,55 0 0,1 110,65" fill="none" stroke="var(--bor)" stroke-width="10" stroke-linecap="round"/>
-                <path id="healthArcFill" d="M10,65 A55,55 0 0,1 110,65" fill="none" stroke="var(--acc)" stroke-width="10" stroke-linecap="round" stroke-dasharray="0 172.8"/>
-              </svg>
-            </div>
-            <div class="health-grade" id="healthGrade" style="color:var(--acc)">—</div>
-            <div class="health-score-num"><span id="healthScore">0</span>/100</div>
-          </div>
-          <div id="healthComps" style="margin-bottom:.65rem"></div>
-          <div id="healthTips"></div>
-        </div>
       </div>
     </div>
   </div>
@@ -2140,7 +1990,6 @@ async function loadAll(){
     renderOverview(freshEids);
     renderEvs(freshEids);
     renderSignals();
-    initNewFeatures();
     updateTicker();
     const activeV=document.querySelector('.tab.on')?.dataset.v;
     if(activeV==='leaderboard')renderLB();
@@ -2807,7 +2656,7 @@ function buildMoatLB(addr){
   }).join('');
 }
 
-function renderMoatRewards(addr){
+async function renderMoatRewards(addr){
   const m=moatMap[addr]; const el=document.getElementById('mRewardsArea');
   if(!m||!m.sorted.length){el.innerHTML='<div class="empty"><div class="ico">💰</div>No reward data yet.</div>';return;}
   const meta=MOATS[addr]||{};
@@ -2818,32 +2667,74 @@ function renderMoatRewards(addr){
     '0xb97ef9ef8734c71904d8002f8b6bc66dd9c48a6e':'USDC',
     '0xb31f66aa3c1e785363f0875a1b74e27b85fd66c7':'WAVAX'};
 
-  // Detect reward events for this moat
+  // Detect reward events for this moat (local events + API /rewards endpoint)
   const rewardEvs=allEvs.filter(e=>e.contractAddress===addr&&
     (e.eventType?.toLowerCase().includes('reward')||
      e.eventType?.toLowerCase().includes('claim')||
      e.eventType?.toLowerCase().includes('distribut')));
+
+  // ── Fetch all claimed rewards from API ──
+  el.innerHTML='<div style="text-align:center;padding:1.5rem;color:var(--mut)"><span class="spin"></span> Loading reward history…</div>';
+  let apiRewards = [];
+  try {
+    const rRes = await fetch(API + '/rewards?contractAddress=' + addr + '&limit=500').then(r=>r.json()).catch(()=>null);
+    if (rRes && Array.isArray(rRes.rewards || rRes)) {
+      apiRewards = (rRes.rewards || rRes).map(r=>({
+        wallet: (r.wallet||r.user||r.walletAddress||'').toLowerCase(),
+        rewardToken: (r.rewardToken||r.token||'').toLowerCase(),
+        rewardAmount: Number(r.amount||r.rewardAmount||r.value||0),
+        timestamp: r.timestamp||r.createdAt||0,
+        txHash: r.txHash||r.transactionHash||''
+      })).filter(r=>r.rewardAmount>0);
+    }
+  } catch(e) {}
+
+  // Merge API rewards with local events
+  const allRewardEvs = [...rewardEvs];
+  apiRewards.forEach(ar => {
+    if (!allRewardEvs.find(e=>e.txHash&&e.txHash===ar.txHash)) {
+      allRewardEvs.push({
+        contractAddress: addr, eventType:'claimed',
+        wallet: ar.wallet, rewardToken: ar.rewardToken,
+        rewardAmount: ar.rewardAmount, timestamp: ar.timestamp, txHash: ar.txHash
+      });
+    }
+  });
+
+  // ── Tally by token — combine ALL claimed rewards ──
   const rewardTally={};
-  rewardEvs.forEach(e=>{
+  allRewardEvs.forEach(e=>{
     const raw=(e.rewardToken||'').toLowerCase();
-    const label=REWARD_TOKENS[raw]||e.rewardToken||meta.ticker||'Token';
-    if(!rewardTally[label])rewardTally[label]={count:0,total:0};
+    // Resolve token label
+    let label = REWARD_TOKENS[raw];
+    if (!label) {
+      // Check against all moat tokens
+      Object.values(MOATS).forEach(mm=>{ if(mm.tokenAddr&&mm.tokenAddr.toLowerCase()===raw) label=mm.ticker; });
+    }
+    label = label || e.rewardToken || (raw ? shortA(raw) : 'Token');
+    if(!rewardTally[label])rewardTally[label]={count:0,total:0,wallets:new Set()};
     rewardTally[label].count++;
-    rewardTally[label].total+=e.rewardAmount||0;
+    rewardTally[label].total+=Number(e.rewardAmount||0);
+    if(e.wallet) rewardTally[label].wallets.add(e.wallet);
   });
   const hasRewards=Object.keys(rewardTally).length>0;
 
   let rewardCurrencyHTML='';
   if(hasRewards){
+    const summaryLine = Object.entries(rewardTally)
+      .filter(([,d])=>d.total>0)
+      .map(([label,d])=>`<span style="font-family:'Chakra Petch',sans-serif;font-weight:700;color:var(--grn)">${fmtP(Math.round(d.total))} ${label}</span>`)
+      .join(' · ');
     rewardCurrencyHTML=`
       <div style="background:rgba(109,184,122,.06);border:1px solid rgba(109,184,122,.22);border-radius:9px;padding:.85rem;margin-bottom:.85rem">
-        <div style="font-family:'DM Mono',monospace;font-size:.6rem;color:var(--grn);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.5rem">💰 Reward Distributions Detected</div>
+        <div style="font-family:'DM Mono',monospace;font-size:.6rem;color:var(--grn);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.5rem">💰 All Rewards Claimed — Combined Totals</div>
+        ${summaryLine ? `<div style="font-size:.8rem;margin-bottom:.6rem;line-height:1.7">${summaryLine}</div>` : ''}
         <div style="display:flex;flex-wrap:wrap;gap:.5rem">
           ${Object.entries(rewardTally).map(([label,d])=>`
             <div style="background:var(--card);border:1px solid rgba(109,184,122,.2);border-radius:7px;padding:.45rem .75rem;text-align:center">
-              <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.88rem;color:var(--grn)">${label}</div>
-              <div style="font-family:'DM Mono',monospace;font-size:.52rem;color:var(--mut)">${d.count} event${d.count>1?'s':''}</div>
-              ${d.total>0?`<div style="font-family:'DM Mono',monospace;font-size:.6rem;color:var(--dim)">${fmtP(d.total)} distributed</div>`:''}
+              <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.88rem;color:var(--grn)">${d.total>0?fmtP(Math.round(d.total))+' ':''}<span style="font-size:.75rem">${label}</span></div>
+              <div style="font-family:'DM Mono',monospace;font-size:.52rem;color:var(--mut)">${d.count} claim event${d.count>1?'s':''}</div>
+              ${d.wallets.size>0?`<div style="font-family:'DM Mono',monospace;font-size:.5rem;color:var(--ash2)">${d.wallets.size} unique wallet${d.wallets.size>1?'s':''}</div>`:''}
             </div>`).join('')}
         </div>
       </div>`;
@@ -2872,10 +2763,10 @@ function renderMoatRewards(addr){
       <div class="reward-card" style="border-color:rgba(212,168,67,.2)"><div class="rv2 cg">${m.lockCount}</div><div class="rl2">⏳ Lockers</div><div style="font-size:.63rem;color:var(--dim);margin-top:3px">${fmtP(m.lockPts)} pts</div></div>
       <div class="reward-card" style="border-color:rgba(224,82,82,.2)"><div class="rv2 cr">${m.burnCount}</div><div class="rl2">🔥 Burners</div><div style="font-size:.63rem;color:var(--dim);margin-top:3px">${fmtP(m.burnPts)} pts</div></div>
     </div>
-    ${rewardEvs.length?`
+    ${allRewardEvs.length?`
     <div class="panel" style="margin-bottom:.85rem">
-      <div class="ph"><div class="ptitle">💰 Reward & Claim Events</div><span style="font-family:'DM Mono',monospace;font-size:.58rem;color:var(--mut)">${rewardEvs.length} events</span></div>
-      <div class="evf">${renderEvItemsInline(rewardEvs.slice(0,20))}</div>
+      <div class="ph"><div class="ptitle">💰 Reward & Claim Events</div><span style="font-family:'DM Mono',monospace;font-size:.58rem;color:var(--mut)">${allRewardEvs.length} events</span></div>
+      <div class="evf">${renderEvItemsInline(allRewardEvs.slice(0,20))}</div>
     </div>`:''}
     <div class="panel">
       <div class="ph"><div class="ptitle">Full Distribution (${pts.length} wallets)</div></div>
@@ -2900,9 +2791,24 @@ function renderEvItemsInline(evs){
     '0xb31f66aa3c1e785363f0875a1b74e27b85fd66c7':'WAVAX'};
   return evs.map(e=>{
     const ts=fmtTs(e.timestamp);
-    const _ep=getKnownProfile(e.wallet);const w=e.wallet?`<span class="wa" onclick="gotoW('${e.wallet}')" style="display:inline-flex;align-items:center;gap:4px">${_ep?`<img src="${_ep.pic}" style="width:16px;height:16px;border-radius:50%;object-fit:cover" onerror="this.style.display='none'">`:''}${shortA(e.wallet)}</span>`:'';
+    const _w=(e.wallet||e.user||e.walletAddress||'').toLowerCase();
+    const _ep=getKnownProfile(_w);
+    const _zn=_w?(zephyrNames[_w]||null):null;
+    const _dispName=_ep?('@'+_ep.twitter):(_zn||shortA(_w));
+    const _pic=_ep
+      ?`<img src="${_ep.pic}" style="width:16px;height:16px;border-radius:50%;object-fit:cover;flex-shrink:0" onerror="this.style.display='none'">`
+      :`<div style="width:16px;height:16px;border-radius:50%;background:var(--bor);display:flex;align-items:center;justify-content:center;font-size:.5rem;color:var(--dim);flex-shrink:0;font-weight:700">${(_w[2]||'?').toUpperCase()}</div>`;
+    const _bensiTag=_zn&&_zn.endsWith('.bensi')
+      ?`<span style="font-family:'DM Mono',monospace;font-size:.48rem;color:var(--gld);background:rgba(212,168,67,.1);border:1px solid rgba(212,168,67,.2);border-radius:3px;padding:0 3px">${_zn}</span>`:'';
+    const _twitterTag=_ep
+      ?`<a href="https://x.com/${_ep.twitter}" target="_blank" onclick="event.stopPropagation()" style="font-family:'DM Mono',monospace;font-size:.5rem;color:var(--acc);text-decoration:none">@${_ep.twitter}</a>`:'';
+    const _addrTag=_w
+      ?`<span onclick="event.stopPropagation();navigator.clipboard&&navigator.clipboard.writeText('${_w}').then(()=>showAppNotif('Copied','success',1200))" title="${_w}" style="font-family:'DM Mono',monospace;font-size:.48rem;color:var(--mut);background:var(--sur);border:1px solid var(--bor);border-radius:3px;padding:0 4px;cursor:copy">${shortA(_w)}</span>`:'';
+    const w=_w
+      ?`<span class="wa" onclick="gotoW('${_w}')" style="display:inline-flex;align-items:center;gap:3px;background:var(--sur);border:1px solid var(--bor);border-radius:5px;padding:1px 5px;cursor:pointer">${_pic}<span style="font-family:'DM Mono',monospace;font-size:.6rem;color:var(--txt)">${_dispName}</span>${_bensiTag}${_twitterTag}</span>${(_ep||_zn)?' '+_addrTag:_addrTag}`:'';
     const rkRaw=(e.rewardToken||'').toLowerCase();
-    const rkLabel=REWARD_TOKENS[rkRaw]||e.rewardToken||'tokens';
+    let rkLabel=REWARD_TOKENS[rkRaw]||e.rewardToken||'tokens';
+    if(!REWARD_TOKENS[rkRaw]&&rkRaw){Object.values(MOATS).forEach(mm=>{if(mm.tokenAddr&&mm.tokenAddr.toLowerCase()===rkRaw)rkLabel=mm.ticker;});}
     const amt=e.rewardAmount>0?`<span style="font-family:'DM Mono',monospace;font-size:.6rem;color:var(--grn);background:rgba(109,184,122,.1);border-radius:4px;padding:1px 5px">💰 ${fmtP(e.rewardAmount)} ${rkLabel}</span>`:'';
     const txLink=e.txHash?`<a href="https://snowtrace.io/tx/${e.txHash}" target="_blank" style="font-family:'DM Mono',monospace;font-size:.54rem;color:var(--mut)">${shortA(e.txHash)} ↗</a>`:'';
     return `<div class="ei">
@@ -3046,13 +2952,10 @@ async function loadPrice(addr){
 async function injectSupplyIntoTable(moatAddr) {
   const meta = MOATS[moatAddr]; if(!meta) return;
 
-  // ── hCASH LP Moat special handling ──
-  // hCASH LP moat tokens ARE the LP tokens from the AVAX+hCASH Pharaoh pool.
-  // They are inherently volatile (their value tracks AVAX + hCASH price).
-  // Distribution should show: LP tokens staked in moat vs total LP supply — NOT raw hCASH supply.
-  const isHcash = isHcashMoat(moatAddr);
+  // ── hCASH LP Moat: distribution based on LP token supply (WAVAX/hCASH Volatile LP), not $hcash itself ──
+  const isHcashLpMoat = moatAddr.toLowerCase() === '0x501f6e7bec3db63d8dacbc9fa0ce42d5d2329d53';
 
-  // Ensure supply is fetched (for hCASH this is LP token supply)
+  // Ensure supply is fetched
   let supply = getSupply(moatAddr);
   if (!supply) supply = await fetchTokenSupply(meta.tokenAddr);
   const tbl = document.querySelector('#mTokenTbl tbody');
@@ -3065,21 +2968,70 @@ async function injectSupplyIntoTable(moatAddr) {
 
   const m   = moatMap[moatAddr] || {};
   const ppt = estPtsPerToken(moatAddr);
-  const isDynamic  = meta.supplyType === 'dynamic' || isHcash; // hCASH LP is always dynamic
+  const isDynamic  = meta.supplyType === 'dynamic';
   const pxData     = priceCache[moatAddr];
   const price      = pxData?.price || 0;
   const totalSupply = supply.totalSupply || 0;
 
-  // For hCASH: In Moat = LP tokens staked. totalSupply = total LP tokens.
-  // LP tokens in pool ARE the volatile component — don't subtract them as "not circulating".
+  // ── Accurate figures ──
+  // In Moat = on-chain balanceOf(moatContract) — staked + locked tokens sitting in contract
   const inMoatRaw  = (totals && totals.staked > 0) ? totals.staked : (m.totalTokens || 0);
+  // Burned = on-chain balanceOf(0xDead)
   const burnedRaw  = (totals && totals.burned > 0) ? totals.burned : (m.burnTokens || 0);
-  // LP Pool liquidity USD / token price (for regular tokens only; hCASH LP price IS the LP token price)
-  const liqUsd     = pxData?.liq || 0;
-  const liqRaw     = (!isHcash && price > 0 && liqUsd > 0) ? (liqUsd / 2 / price) : 0;
 
-  // For hCASH: circulating = total LP supply - LP tokens locked in moat - burned
-  // The "pool" is external and separate from what's staked in the moat
+  // ── LP Pool: sum ALL pools from DexScreener for accurate combined liquidity ──
+  // For hCASH: use the LP token (pairAddr) supply — distribution is LP tokens, not hcash tokens
+  let liqRaw = 0;
+  let lpDistNote = '';
+  if (isHcashLpMoat) {
+    // hCASH moat stakes LP tokens — fetch LP token totalSupply for distribution basis
+    try {
+      const HCASH_LP_ADDR = meta.pairAddr || '0x8f961980518bc9ab302948de7948580666dc35d9';
+      const lpSupplyRes = await fetch(`https://api.avax.network/ext/bc/C/rpc`, {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ jsonrpc:'2.0', id:1, method:'eth_call',
+          params:[{ to: HCASH_LP_ADDR, data: '0x18160ddd' }, 'latest'] })
+      }).then(r=>r.json()).catch(()=>null);
+      if (lpSupplyRes?.result && lpSupplyRes.result !== '0x') {
+        const lpTotalSupply = Number(BigInt(lpSupplyRes.result)) / 1e18;
+        if (lpTotalSupply > 0) {
+          liqRaw = lpTotalSupply; // LP tokens in existence
+          lpDistNote = `Based on ${fmtP(lpTotalSupply)} total LP tokens (WAVAX/hCASH Volatile pool)`;
+        }
+      }
+    } catch(e) {}
+  } else if (meta.tokenAddr) {
+    // For regular tokens: query DexScreener for ALL pools, sum base token across all pools
+    try {
+      const dsRes = await fetch('https://api.dexscreener.com/latest/dex/tokens/' + meta.tokenAddr).then(r=>r.json()).catch(()=>null);
+      const pairs = (dsRes?.pairs||[]).filter(p=>(p.chainId==='avalanche'||p.chainId==='avax')&&Number(p.liquidity?.usd||0)>0);
+      if (pairs.length > 0 && price > 0) {
+        // Sum base token amounts: for each pool, base tokens ≈ (pool liq USD / 2) / token price
+        // But only count pools where this token IS the base (not quote)
+        let totalBaseTokenInLp = 0;
+        pairs.forEach(p => {
+          const poolLiqUsd = Number(p.liquidity?.usd || 0);
+          const poolPrice  = Number(p.priceUsd || price);
+          const isBase     = (p.baseToken?.address||'').toLowerCase() === meta.tokenAddr.toLowerCase();
+          if (poolLiqUsd > 0 && poolPrice > 0) {
+            totalBaseTokenInLp += (poolLiqUsd / 2) / poolPrice;
+          } else if (isBase && poolLiqUsd > 0 && price > 0) {
+            totalBaseTokenInLp += (poolLiqUsd / 2) / price;
+          }
+        });
+        liqRaw = totalBaseTokenInLp;
+      } else if (price > 0) {
+        // Fallback: use primary price cache
+        const liqUsd = pxData?.liq || 0;
+        liqRaw = liqUsd > 0 ? (liqUsd / 2 / price) : 0;
+      }
+    } catch(e) {
+      const liqUsd = pxData?.liq || 0;
+      liqRaw = (price > 0 && liqUsd > 0) ? (liqUsd / 2 / price) : 0;
+    }
+  }
+
+  // Circulating = total - inMoat - burned (LP is subset of circulating, not additive)
   const nonCirc    = inMoatRaw + burnedRaw;
   const circRaw    = Math.max(0, totalSupply - nonCirc);
 
@@ -3091,12 +3043,11 @@ async function injectSupplyIntoTable(moatAddr) {
   const liqPct    = pct(liqRaw);
   const circPct   = pct(circRaw);
 
-  // For hCASH LP: market cap is based on LP token price × LP supply (not raw hCASH count)
   const calcMcap  = (totalSupply > 0 && price > 0) ? '$' + fmtK(circRaw * price) : '—';
   const fdvMcap   = (totalSupply > 0 && price > 0) ? '$' + fmtK(totalSupply * price) : '—';
 
   const supplyTypeHtml = isDynamic
-    ? '<span style="color:var(--gld);font-size:.58rem">&#9889; Dynamic' + (isHcash ? ' · LP Pool Token' : '') + '</span>'
+    ? '<span style="color:var(--gld);font-size:.58rem">&#9889; Dynamic</span>'
     : '<span style="color:var(--grn);font-size:.58rem">&#128274; Fixed</span>';
 
   const dataSource = totals?.source === 'onchain'
@@ -3105,23 +3056,21 @@ async function injectSupplyIntoTable(moatAddr) {
 
   // ── Table rows ──
   const rows = [
-    ['Token',     (isHcash ? 'LP Token (WAVAX/hCASH)' : meta.ticker + ' (' + (supply.symbol || meta.ticker) + ')'), null],
-    ['Total LP Supply', isHcash ? fmtP(totalSupply) + ' LP tokens' : null, null],
-    ...(!isHcash ? [['Total Supply', fmtP(totalSupply), null]] : []),
-    ['Supply Type', null, supplyTypeHtml],
-    ...(isHcash ? [['Underlying Assets','WAVAX + hCASH (volatile LP)', null]] : []),
+    ['Token',          meta.ticker + ' (' + (supply.symbol || meta.ticker) + ')', null],
+    ['Total Supply',   fmtP(totalSupply), null],
+    ['Supply Type',    null, supplyTypeHtml],
     ['Circ. Market Cap', calcMcap, null],
     ['FDV',            fdvMcap, null],
-    ['Pts / LP Token (1×)', ppt !== null ? fmtPrice(ppt) : '—', null],
+    ['Pts / Token (1×)', ppt !== null ? fmtPrice(ppt) : '—', null],
     ['Data Source',    null, dataSource],
-  ].filter(r=>r[1]!==null||r[2]!==null);
+  ];
 
   rows.forEach(function(row) {
     var [label, val, html] = row;
     var tr  = document.createElement('tr'); tr.className = 'supply-row';
     var tdL = document.createElement('td'); tdL.className = 'il'; tdL.textContent = label;
     var tdV = document.createElement('td'); tdV.style.cssText = "font-family:'DM Mono',monospace;font-size:.72rem";
-    if (html) tdV.innerHTML = html; else tdV.textContent = val||'—';
+    if (html) tdV.innerHTML = html; else tdV.textContent = val;
     tr.appendChild(tdL); tr.appendChild(tdV); tbl.appendChild(tr);
   });
 
@@ -3129,17 +3078,14 @@ async function injectSupplyIntoTable(moatAddr) {
   var distTr = document.createElement('tr'); distTr.className = 'supply-row';
   var distTd = document.createElement('td'); distTd.colSpan = 2; distTd.style.cssText = 'padding:.8rem 0 .4rem';
 
-  // hCASH LP: segments show LP tokens staked in moat vs remaining LP tokens in wallets
-  var segments = isHcash ? [
-    { label:'Staked in Moat (LP)', pct: inMoatPct, color:'#d4a843', val: inMoatRaw },
-    { label:'In Wallets / Pool',   pct: circPct,   color:'#22d3ee', val: circRaw   },
-    ...(burnedRaw>0 ? [{ label:'Burned 🔥', pct: burnedPct, color:'#e05252', val: burnedRaw }] : []),
-  ].filter(s=>s.pct>0.001) : [
+  // Segments — LP is shown as subset of Circulating (informational), not additive
+  var segments = [
     { label:'In Moat',     pct: inMoatPct, color:'#f97316', val: inMoatRaw  },
     { label:'Burned 🔥',   pct: burnedPct, color:'#e05252', val: burnedRaw  },
     { label:'Circulating', pct: circPct,   color:'#6db87a', val: circRaw    },
   ].filter(s => s.pct > 0.001);
 
+  // If no segments have data, show a placeholder bar
   var hasData = segments.some(s => s.pct > 0);
 
   var barHtml = hasData
@@ -3161,8 +3107,8 @@ async function injectSupplyIntoTable(moatAddr) {
     </div>`
   ).join('');
 
-  // LP info row (subset note) — only for non-hCASH moats
-  var lpNote = (!isHcash && liqRaw > 0)
+  // LP info row (subset note)
+  var lpNote = liqRaw > 0
     ? `<div style="display:flex;align-items:center;justify-content:space-between;padding:.25rem 0;border-bottom:1px solid var(--bor)">
         <div style="display:flex;align-items:center;gap:6px">
           <span style="width:9px;height:9px;border-radius:2px;background:#22d3ee;flex-shrink:0;display:inline-block"></span>
@@ -3175,21 +3121,14 @@ async function injectSupplyIntoTable(moatAddr) {
       </div>`
     : '';
 
-  const hcashNote = isHcash
-    ? `<div style="margin-top:.5rem;background:rgba(212,168,67,.07);border:1px solid rgba(212,168,67,.2);border-radius:7px;padding:.45rem .65rem;font-family:'DM Mono',monospace;font-size:.52rem;color:var(--gld);line-height:1.55">
-        💧 hCASH LP Moat: distribution is based on <b>WAVAX/hCASH LP tokens</b>, not raw hCASH supply. LP token count is volatile — it changes as users add/remove liquidity from the Pharaoh pool. Points are earned per LP token staked.
-       </div>`
-    : '';
-
   distTd.innerHTML = `
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.55rem">
-      <span style="font-family:'DM Mono',monospace;font-size:.5rem;color:var(--mut);letter-spacing:.1em;text-transform:uppercase">${isHcash?'LP Token Distribution':'Token Distribution'}</span>
+      <span style="font-family:'DM Mono',monospace;font-size:.5rem;color:var(--mut);letter-spacing:.1em;text-transform:uppercase">Token Distribution</span>
       ${!hasData ? '<span style="font-family:\'DM Mono\',monospace;font-size:.5rem;color:var(--ash2)">awaiting on-chain data</span>' : ''}
     </div>
     <div style="display:flex;height:11px;border-radius:6px;overflow:hidden;margin-bottom:.65rem;background:var(--sur)">${barHtml}</div>
     <div style="display:flex;flex-direction:column">${legendHtml}${lpNote}</div>
-    ${!isHcash && liqRaw > 0 ? '<div style="font-family:\'DM Mono\',monospace;font-size:.48rem;color:var(--ash2);margin-top:.4rem">↳ LP tokens are a subset of Circulating supply · est. from pool USD ÷ price ÷ 2</div>' : ''}
-    ${hcashNote}
+    ${liqRaw > 0 ? `<div style="font-family:'DM Mono',monospace;font-size:.48rem;color:var(--ash2);margin-top:.4rem">${isHcashLpMoat ? '↳ hCASH Moat: distribution based on LP token supply (WAVAX/hCASH Volatile LP) · ' + (lpDistNote||'') : '↳ LP tokens are subset of Circulating supply · est. from all DexScreener pools combined'}</div>` : ''}
     <div id="distAllPools_${moatAddr}" style="margin-top:.7rem">
       <div style="font-family:'DM Mono',monospace;font-size:.5rem;color:var(--mut);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.35rem;display:flex;align-items:center;gap:6px">
         💧 All Liquidity Pools <span class="spin" style="width:8px;height:8px;border-width:1.5px"></span>
@@ -3773,7 +3712,10 @@ function renderEvItems(evs,id,freshIds=[]){
     const _w2     = (e.wallet || e.user || e.from || e.walletAddress || e.address || '').toLowerCase();
     const _ep2    = getKnownProfile(_w2);
     const _zn2    = _w2 ? (zephyrNames[_w2] || null) : null;
+    // Display name: @twitter > .bensi name > short address
     const _dispName = _ep2 ? ('@' + _ep2.twitter) : (_zn2 || shortA(_w2));
+    // Show short address if display name is not already the address
+    const _showAddr = _w2 && (_ep2 || _zn2); // only show addr tag if we have a real name
     const _picHtml  = _w2
       ? (_ep2
           ? `<img src="${_ep2.pic}" style="width:18px;height:18px;border-radius:50%;object-fit:cover;border:1px solid var(--bor);flex-shrink:0" onerror="this.style.display='none'">`
@@ -3785,12 +3727,16 @@ function renderEvItems(evs,id,freshIds=[]){
     const _twitterTag = _ep2
       ? `<a href="https://x.com/${_ep2.twitter}" target="_blank" onclick="event.stopPropagation()" style="font-family:'DM Mono',monospace;font-size:.52rem;color:var(--acc);text-decoration:none">@${_ep2.twitter}</a>`
       : '';
+    // Always show the short wallet address as a copyable tag
+    const _addrTag = _w2
+      ? `<span onclick="event.stopPropagation();navigator.clipboard&&navigator.clipboard.writeText('${_w2}').then(()=>showAppNotif('Address copied','success',1500))" title="${_w2}" style="font-family:'DM Mono',monospace;font-size:.5rem;color:var(--mut);background:var(--sur);border:1px solid var(--bor);border-radius:3px;padding:1px 5px;cursor:copy">${shortA(_w2)}</span>`
+      : '';
     const wallet = _w2
       ? `<span class="wa" onclick="gotoW('${_w2}')" title="${_w2}" style="display:inline-flex;align-items:center;gap:4px;background:var(--sur);border:1px solid var(--bor);border-radius:6px;padding:2px 6px;cursor:pointer">
           ${_picHtml}
           <span style="font-family:'DM Mono',monospace;font-size:.6rem;color:var(--txt)">${_dispName}</span>
           ${_bensiTag}${_twitterTag}
-        </span>`
+        </span>${_showAddr ? ' ' + _addrTag : (_addrTag)}`
       : '';
 
     // Token amount chip
@@ -3935,8 +3881,8 @@ async function gotoW(addr,silent=false){
     ${sr('Moats Joined',mCnt,'var(--acc)')}
     ${sr('Global Rank',rank?'#'+rank:'Unranked','var(--dim)')}
     ${sr('Top Percentile',rank?'Top '+(100-pct)+'%':'—','var(--grn)')}
-    ${sr('Eco Share',ecoTot?(totPts/ecoTot*100).toFixed(4)+'%':'—','var(--txt)')}
-    <div class="rr"><span class="rl">Last Seen</span><span id="wLastSeen" style="font-family:'DM Mono',monospace;font-size:.65rem;color:var(--cyn)">computing…</span></div>`;
+    ${sr('Eco Share',ecoTot?(totPts/ecoTot*100).toFixed(4)+'%':'—','var(--txt)')}`;
+
   // Known profile: show avatar + X link
   const knownP = getKnownProfile(norm);
   const wKnown = document.getElementById('wKnownProfile');
@@ -3980,389 +3926,15 @@ async function gotoW(addr,silent=false){
     var clk=t.action?' onclick="'+t.action+'"':'';
     return '<div style="'+cls+'"'+clk+'><b style="color:var(--acc)">'+t.t+'</b><br><span style="color:var(--dim)">'+t.b+'</span></div>';
   }).join('')||'<div style="color:var(--mut);font-size:.72rem">No specific signals.</div>';
-  buildWChart(moatPts, norm);
+  buildWChart(moatPts);
 }
-function buildWChart(pts, walletAddr){
+function buildWChart(pts){
   const ctx=document.getElementById('wChart'); if(!ctx)return;
   if(charts.wc)charts.wc.destroy();
   const s=pts.slice().sort((a,b)=>b.points-a.points);
   const labels=s.map(p=>{const m=MOATS[p.contractAddress];return m?m.short||m.name:shortA(p.contractAddress);});
   const cols=s.map(p=>{const m=MOATS[p.contractAddress];return m?m.color:'#6b5f54';});
   charts.wc=new Chart(ctx,{type:'doughnut',data:{labels,datasets:[{data:s.map(p=>p.points),backgroundColor:cols.map(c=>c+'55'),borderColor:cols,borderWidth:1.5}]},options:dopts()});
-  const addr = walletAddr || document.getElementById('wIn')?.value?.trim();
-  if (addr) { renderHealthScore(pts, addr); renderLastSeen(addr); }
-}
-
-// ══════════════════════════════════════════════════════
-// ── POSITION HEALTH SCORE ──
-// ══════════════════════════════════════════════════════
-function computeHealthScore(moatPts, wallet) {
-  const norm = wallet.toLowerCase();
-  const mCnt = new Set(moatPts.map(p=>p.contractAddress)).size;
-  const ecoTot = allPts.reduce((s,p)=>s+p.points,0);
-  const totPts = moatPts.reduce((s,p)=>s+p.points,0);
-
-  // 1. Diversity: 4+ moats = 25pts, scale down
-  const diversityScore = Math.min(25, Math.round(mCnt / 4 * 25));
-
-  // 2. Lock Depth: check if wallet has any lock events in allEvs (avg duration)
-  const walletEvs = allEvs.filter(e=>(e.wallet||'').toLowerCase()===norm);
-  const lockEvs = walletEvs.filter(e=>['locked','lock'].includes((e.eventType||'').toLowerCase()) && e.lockDays>0);
-  const avgLock = lockEvs.length ? lockEvs.reduce((s,e)=>s+(e.lockDays||0),0)/lockEvs.length : 0;
-  const lockScore = Math.min(25, Math.round(avgLock/730*25));
-
-  // 3. Eco Share: how much of total ecosystem points they own (higher = more established)
-  const ecoSharePct = ecoTot>0 ? totPts/ecoTot : 0;
-  const ecoScore = Math.min(25, Math.round(Math.log10(1+ecoSharePct*1000)*12.5));
-
-  // 4. Burn Ratio: burned tokens / total volume
-  const burnEvs = walletEvs.filter(e=>['burned','burn'].includes((e.eventType||'').toLowerCase()));
-  const burnAmt = burnEvs.reduce((s,e)=>s+(e.tokenAmount||0),0);
-  const totalEvAmt = walletEvs.reduce((s,e)=>s+(e.tokenAmount||0),0);
-  const burnRatio = totalEvAmt>0 ? burnAmt/totalEvAmt : 0;
-  const burnScore = Math.min(25, Math.round(burnRatio*25));
-
-  const total = diversityScore + lockScore + ecoScore + burnScore;
-  return { total, diversityScore, lockScore, ecoScore, burnScore, mCnt, avgLock, ecoSharePct, burnRatio };
-}
-
-function renderHealthScore(moatPts, wallet) {
-  const hCard = document.getElementById('wHealthCard');
-  if (!hCard) return;
-  if (!moatPts.length) { hCard.style.display='none'; return; }
-  hCard.style.display = 'block';
-
-  const h = computeHealthScore(moatPts, wallet);
-  const score = h.total;
-
-  // Grade
-  const grade = score>=85?'S':score>=70?'A':score>=55?'B':score>=40?'C':score>=25?'D':'F';
-  const gradeCol = score>=85?'var(--grn)':score>=55?'var(--acc)':score>=25?'var(--gld)':'var(--red)';
-
-  // Arc fill: path length = 172.8 (half circle). score/100 * 172.8
-  const arcLen = (score/100*172.8).toFixed(1);
-  const arcEl = document.getElementById('healthArcFill');
-  if (arcEl) { arcEl.setAttribute('stroke-dasharray', arcLen+' 172.8'); arcEl.setAttribute('stroke', gradeCol); }
-  const grEl = document.getElementById('healthGrade');
-  if (grEl) { grEl.textContent=grade; grEl.style.color=gradeCol; }
-  const scEl = document.getElementById('healthScore');
-  if (scEl) scEl.textContent=score;
-
-  // Component bars
-  const comps = [
-    { label:'🌐 Diversity',    score:h.diversityScore, max:25, note:h.mCnt+' moat'+(h.mCnt!==1?'s':'') },
-    { label:'⏳ Lock Depth',   score:h.lockScore,      max:25, note:h.avgLock>0?h.avgLock.toFixed(0)+'d avg lock':'no locks yet' },
-    { label:'🌊 Eco Share',    score:h.ecoScore,       max:25, note:(h.ecoSharePct*100).toFixed(4)+'%' },
-    { label:'🔥 Burn Ratio',   score:h.burnScore,      max:25, note:(h.burnRatio*100).toFixed(1)+'% of volume' },
-  ];
-  const compsEl = document.getElementById('healthComps');
-  if (compsEl) compsEl.innerHTML = comps.map(c=>`
-    <div class="health-comp-bar">
-      <div style="font-family:'DM Mono',monospace;font-size:.54rem;color:var(--mut);width:100px;flex-shrink:0">${c.label}</div>
-      <div class="health-comp-bg"><div class="health-comp-fill" style="width:${c.score/c.max*100}%;background:${gradeCol}"></div></div>
-      <div style="font-family:'DM Mono',monospace;font-size:.54rem;color:var(--txt);width:28px;text-align:right;flex-shrink:0">${c.score}/${c.max}</div>
-    </div>
-    <div style="font-family:'DM Mono',monospace;font-size:.48rem;color:var(--mut);margin-bottom:.35rem;padding-left:100px">${c.note}</div>
-  `).join('');
-
-  // Tips
-  const tips = [];
-  if (h.mCnt < 4) tips.push(`Join ${4-h.mCnt} more moat${4-h.mCnt>1?'s':''} for full Diversity bonus (+${(4-h.mCnt)*Math.round(25/4)} pts)`);
-  if (h.avgLock < 90) tips.push('Lock for 90+ days to boost Lock Depth score');
-  if (h.burnRatio < 0.1) tips.push('Burn a portion of your holdings for permanent 10× point boost');
-  const tipsEl = document.getElementById('healthTips');
-  if (tipsEl) tipsEl.innerHTML = tips.length
-    ? tips.map(t=>`<div class="health-tip">${t}</div>`).join('')
-    : '<div style="font-family:\'DM Mono\',monospace;font-size:.6rem;color:var(--grn)">✅ Excellent position health!</div>';
-}
-
-// ══════════════════════════════════════════════════════
-// ── LAST SEEN ──
-// ══════════════════════════════════════════════════════
-function computeLastSeen(wallet) {
-  const norm = wallet.toLowerCase();
-  // Find latest event for this wallet across allEvs
-  const walletEvs = allEvs.filter(e=>(e.wallet||'').toLowerCase()===norm && e.timestamp);
-  if (!walletEvs.length) return null;
-  const latest = walletEvs.reduce((best,e)=>Number(e.timestamp)>Number(best.timestamp)?e:best);
-  const ts = Number(latest.timestamp);
-  if (!ts) return null;
-  const ms = ts < 1e12 ? ts*1000 : ts;
-  const d = new Date(ms);
-  if (isNaN(d.getTime())) return null;
-  const now = Date.now();
-  const diff = now - ms;
-  const mins = Math.floor(diff/60000);
-  const hrs = Math.floor(diff/3600000);
-  const days = Math.floor(diff/86400000);
-  let rel = days>30 ? d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})
-           : days>0 ? days+'d ago'
-           : hrs>0  ? hrs+'h ago'
-           : mins>0 ? mins+'m ago'
-           : 'just now';
-  return { rel, date: d.toLocaleString('en-GB',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}), type: latest.eventType };
-}
-
-function renderLastSeen(wallet) {
-  const el = document.getElementById('wLastSeen');
-  if (!el) return;
-  const ls = computeLastSeen(wallet);
-  if (!ls) { el.textContent = 'no activity found'; el.style.color='var(--mut)'; return; }
-  el.innerHTML = `<span class="last-seen-badge" title="${ls.date} · ${ls.type||'activity'}">🕐 ${ls.rel}</span>`;
-}
-
-// ══════════════════════════════════════════════════════
-// ── WHALE ALERT FEED ──
-// ══════════════════════════════════════════════════════
-const WHALE_THRESHOLDS = { 10000:'10K', 100000:'100K', 500000:'500K', 1000000:'1M' };
-
-function getWhaleEvents() {
-  const threshold = Number(document.getElementById('whaleFeedThreshold')?.value||100000);
-  const typeFilter = document.getElementById('whaleFeedTypeFilter')?.value||'';
-  const moatEvs = allEvs.filter(e=>{
-    const amt = e.tokenAmount||0;
-    if (amt < threshold) return false;
-    const t = (e.eventType||'').toLowerCase();
-    if (typeFilter && !t.includes(typeFilter)) return false;
-    const isWhaleType = ['burned','burn','staked','stake','locked','lock'].some(x=>t.includes(x));
-    return isWhaleType;
-  });
-  return moatEvs.sort((a,b)=>Number(b.timestamp||0)-Number(a.timestamp||0));
-}
-
-function renderWhaleFeed() {
-  const el = document.getElementById('whaleFeedEl'); if (!el) return;
-  const whales = getWhaleEvents();
-
-  // Stats strip
-  const now24h = Date.now()/1000 - 86400;
-  const whales24h = whales.filter(e=>Number(e.timestamp||0)>now24h);
-  const burnEvs = whales.filter(e=>['burned','burn'].includes((e.eventType||'').toLowerCase()));
-  const bigBurn = burnEvs.length ? burnEvs.reduce((b,e)=>e.tokenAmount>b.tokenAmount?e:b,burnEvs[0]) : null;
-
-  // Whale of the day = biggest single move in last 24h
-  const wotd = whales24h.length ? whales24h.reduce((b,e)=>e.tokenAmount>b.tokenAmount?e:b,whales24h[0]) : whales[0]||null;
-
-  const setTxtEl = (id,v)=>{ const x=document.getElementById(id); if(x)x.textContent=v; };
-  setTxtEl('wss24hCount', whales24h.length || '—');
-  setTxtEl('wssBigBurn', bigBurn ? fmtP(bigBurn.tokenAmount)+(MOATS[bigBurn.contractAddress]?.ticker?` ${MOATS[bigBurn.contractAddress].ticker}`:'') : '—');
-  setTxtEl('wssWhaleDay', wotd ? (getWalletDisplayName(wotd.wallet||'')) : '—');
-  // Also update intel brief whale of day
-  setTxtEl('ibWhaleDay', wotd ? getWalletDisplayName(wotd.wallet||'') : '—');
-  if (wotd) { const ibWDS=document.getElementById('ibWhaleDaySub'); if(ibWDS)ibWDS.textContent=wotd.tokenAmount?fmtP(wotd.tokenAmount)+' tokens moved':'biggest single move'; }
-
-  if (!whales.length) {
-    el.innerHTML = `<div style="text-align:center;padding:1.5rem;font-family:'DM Mono',monospace;font-size:.62rem;color:var(--mut)">No whale moves above this threshold yet.</div>`;
-    return;
-  }
-
-  el.innerHTML = whales.slice(0,60).map(e=>{
-    const t = (e.eventType||'activity').toLowerCase();
-    const meta = e.contractAddress ? MOATS[e.contractAddress] : null;
-    const col = t.includes('burn')?'var(--red)':t.includes('lock')?'var(--gld)':'var(--acc)';
-    const icon = t.includes('burn')?'🔥':t.includes('lock')?'⏳':'🔒';
-    const verb = t.includes('burn')?'burned':t.includes('lock')?'locked':'staked';
-    const amt = e.tokenAmount||0;
-    const isMega = amt >= 1000000;
-    const ticker = meta?.ticker||'tokens';
-    const w = (e.wallet||'').toLowerCase();
-    const wName = getWalletDisplayName(w);
-    const ts = fmtTs(e.timestamp);
-    const moatTot = meta && moatMap[e.contractAddress]?.totalTokens>0 ? moatMap[e.contractAddress].totalTokens : 0;
-    const poolPct = moatTot>0 ? (amt/moatTot*100).toFixed(2)+'% of pool' : '';
-    return `<div class="whale-item">
-      <div class="whale-dot" style="background:${col};box-shadow:0 0 5px ${col}"></div>
-      <div style="flex:1;min-width:0">
-        <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-bottom:2px">
-          <span style="font-family:'DM Mono',monospace;font-size:.6rem;color:${col};font-weight:600">${icon} ${verb}</span>
-          ${isMega?'<span class="whale-mega">🔱 MEGA</span>':''}
-          ${meta?`<span style="font-family:'DM Mono',monospace;font-size:.52rem;background:${meta.color}18;border:1px solid ${meta.color}44;border-radius:99px;padding:1px 6px;color:${meta.color}">${meta.short}</span>`:''}
-          ${poolPct?`<span style="font-family:'DM Mono',monospace;font-size:.5rem;color:var(--mut)">${poolPct}</span>`:''}
-        </div>
-        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:2px">
-          <span class="wa" onclick="gotoW('${w}')" style="font-family:'DM Mono',monospace;font-size:.62rem;color:var(--acc);cursor:pointer">${wName}</span>
-          <span style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.75rem;color:${col}">${fmtP(amt)} ${ticker}</span>
-        </div>
-        ${ts?`<div style="font-family:'DM Mono',monospace;font-size:.52rem;color:var(--mut)">${ts}</div>`:''}
-      </div>
-    </div>`;
-  }).join('');
-}
-
-function getWalletDisplayName(w) {
-  if (!w) return '—';
-  const norm = w.toLowerCase();
-  const prof = getKnownProfile(norm);
-  if (prof) return '@'+prof.twitter;
-  const zn = zephyrNames[norm];
-  if (zn) return zn;
-  return shortA(norm);
-}
-
-// ══════════════════════════════════════════════════════
-// ── MOAT STREAK TRACKER ──
-// ══════════════════════════════════════════════════════
-function computeStreaks() {
-  // Build a map of wallet → set of ISO week strings they were active
-  const weekMap = {};
-  const now = Date.now();
-  const WEEK_MS = 7*24*3600*1000;
-
-  allEvs.forEach(e=>{
-    const w = (e.wallet||'').toLowerCase();
-    if (!w) return;
-    const ts = Number(e.timestamp||0);
-    if (!ts) return;
-    const ms = ts<1e12?ts*1000:ts;
-    if (isNaN(ms)||ms<1e12) return;
-    // ISO week key: year-week
-    const d = new Date(ms);
-    const startOfYear = new Date(d.getFullYear(),0,1);
-    const week = Math.ceil(((d-startOfYear)/86400000+startOfYear.getDay()+1)/7);
-    const key = d.getFullYear()+'-W'+String(week).padStart(2,'0');
-    if (!weekMap[w]) weekMap[w] = new Set();
-    weekMap[w].add(key);
-  });
-
-  // Get current week and 8 prior weeks
-  const currentDate = new Date();
-  const weeks = [];
-  for (let i=7;i>=0;i--) {
-    const d = new Date(now - i*WEEK_MS);
-    const soy = new Date(d.getFullYear(),0,1);
-    const wk = Math.ceil(((d-soy)/86400000+soy.getDay()+1)/7);
-    weeks.push(d.getFullYear()+'-W'+String(wk).padStart(2,'0'));
-  }
-
-  // Score each wallet
-  const scores = Object.entries(weekMap).map(([wallet, wkSet])=>{
-    const history = weeks.map(w=>wkSet.has(w));
-    // Consecutive streak from latest week backwards
-    let streak = 0;
-    for (let i=history.length-1;i>=0;i--) {
-      if (history[i]) streak++;
-      else break;
-    }
-    return { wallet, history, streak };
-  });
-
-  return scores.sort((a,b)=>b.streak-a.streak||b.history.filter(Boolean).length-a.history.filter(Boolean).length).slice(0,20);
-}
-
-function renderStreakTracker() {
-  const el = document.getElementById('streakTrackerEl'); if (!el) return;
-  if (!allEvs.length) { el.innerHTML='<div style="text-align:center;padding:1rem;font-family:\'DM Mono\',monospace;font-size:.6rem;color:var(--mut)">No event data yet.</div>'; return; }
-
-  const streaks = computeStreaks();
-  if (!streaks.length) { el.innerHTML='<div style="text-align:center;padding:1rem;font-family:\'DM Mono\',monospace;font-size:.6rem;color:var(--mut)">No activity data yet.</div>'; return; }
-
-  const medals = ['🥇','🥈','🥉'];
-  el.innerHTML = streaks.map((s,i)=>{
-    const prof = getKnownProfile(s.wallet);
-    const zn = zephyrNames[s.wallet];
-    const name = prof?'@'+prof.twitter:zn||shortA(s.wallet);
-    const isFire = s.streak >= 5;
-    const isBolt = s.streak >= 3 && !isFire;
-    const rankBadge = i<3 ? `<span style="font-size:.95rem">${medals[i]}</span>` : `<span style="font-family:'DM Mono',monospace;font-size:.58rem;color:var(--mut)">#${i+1}</span>`;
-    const pipHtml = s.history.map((active,wi)=>`<div class="streak-pip ${active?'active':'inactive'}" title="Week ${wi+1}: ${active?'active':'inactive'}"></div>`).join('');
-    const streakBadge = isFire ? `<span class="streak-badge badge-fire">🔥 ${s.streak}w</span>`
-                       : isBolt ? `<span class="streak-badge badge-bolt">⚡ ${s.streak}w</span>`
-                       : `<span style="font-family:'DM Mono',monospace;font-size:.58rem;color:var(--mut)">${s.streak}w</span>`;
-    const pic = prof?`<img src="${prof.pic}" style="width:22px;height:22px;border-radius:50%;object-fit:cover;border:1px solid var(--bor);flex-shrink:0" onerror="this.style.display='none'">`
-                    :`<div style="width:22px;height:22px;border-radius:50%;background:var(--bor);display:flex;align-items:center;justify-content:center;font-size:.55rem;color:var(--dim);flex-shrink:0">${(s.wallet[2]||'?').toUpperCase()}</div>`;
-    return `<div class="streak-row">
-      <div style="width:28px;flex-shrink:0;text-align:center">${rankBadge}</div>
-      ${pic}
-      <div class="wa" onclick="gotoW('${s.wallet}')" style="flex:1;min-width:0;font-family:'DM Mono',monospace;font-size:.62rem;color:var(--acc);cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${name}</div>
-      <div class="streak-pip-row">${pipHtml}</div>
-      <div style="width:50px;text-align:right;flex-shrink:0">${streakBadge}</div>
-    </div>`;
-  }).join('');
-}
-
-// ══════════════════════════════════════════════════════
-// ── DAILY INTEL BRIEF ──
-// ══════════════════════════════════════════════════════
-function renderDailyIntelBrief() {
-  const now = new Date();
-  const dateStr = now.toLocaleDateString('en-GB',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
-  const dateEl = document.getElementById('intelDate'); if (dateEl) dateEl.textContent = dateStr;
-
-  // Most active moat by event count in last 24h
-  const cutoff24 = Date.now()/1000 - 86400;
-  const recent = allEvs.filter(e=>Number(e.timestamp||0)>cutoff24);
-  const moatCounts = {};
-  recent.forEach(e=>{ if(e.contractAddress) moatCounts[e.contractAddress]=(moatCounts[e.contractAddress]||0)+1; });
-  const topMoatAddr = Object.keys(moatCounts).sort((a,b)=>moatCounts[b]-moatCounts[a])[0]||null;
-  const topMoat = topMoatAddr ? MOATS[topMoatAddr] : null;
-  setTxtId('ibActiveMoat', topMoat?topMoat.name:'—');
-  setTxtId('ibActiveMoatSub', topMoat?(moatCounts[topMoatAddr]+' events in 24h'):'no recent activity');
-
-  // Biggest mover (single event by tokenAmount)
-  const bigEv = recent.filter(e=>e.tokenAmount>0).sort((a,b)=>b.tokenAmount-a.tokenAmount)[0]||null;
-  setTxtId('ibBigMover', bigEv?getWalletDisplayName(bigEv.wallet||''):'—');
-  setTxtId('ibBigMoverSub', bigEv?(fmtP(bigEv.tokenAmount)+' '+(MOATS[bigEv.contractAddress]?.ticker||'tokens')+' '+((bigEv.eventType||'').toLowerCase())):'no moves today');
-
-  // All-time biggest burn
-  const allBurns = allEvs.filter(e=>['burned','burn'].includes((e.eventType||'').toLowerCase())&&e.tokenAmount>0);
-  const atBigBurn = allBurns.sort((a,b)=>b.tokenAmount-a.tokenAmount)[0]||null;
-  setTxtId('ibBigBurn', atBigBurn?fmtP(atBigBurn.tokenAmount):'—');
-  setTxtId('ibBigBurnSub', atBigBurn?getWalletDisplayName(atBigBurn.wallet||'')+(MOATS[atBigBurn.contractAddress]?' · '+MOATS[atBigBurn.contractAddress].short:''):'no burns yet');
-
-  // New entrants (24h) — wallets that appear in recent but NOT in older events
-  const oldWallets = new Set(allEvs.filter(e=>Number(e.timestamp||0)<=cutoff24).map(e=>(e.wallet||'').toLowerCase()));
-  const newWallets = new Set(recent.map(e=>(e.wallet||'').toLowerCase()).filter(w=>w&&!oldWallets.has(w)));
-  setTxtId('ibNewEntrants', String(newWallets.size||0));
-  setTxtId('ibNewEntrantsSub', newWallets.size>0?'first time in any moat today':'no newcomers yet');
-
-  // 24h active wallets
-  const activeWallets24h = new Set(recent.map(e=>(e.wallet||'').toLowerCase()).filter(Boolean));
-  setTxtId('ibActiveWallets', String(activeWallets24h.size||0));
-  setTxtId('ibActiveWalletsSub', activeWallets24h.size+' unique wallets today');
-
-  // Whale of the day already set in renderWhaleFeed, but set fallback here
-  if (!bigEv) { setTxtId('ibWhaleDay','—'); setTxtId('ibWhaleDaySub','no activity'); }
-
-  // Breaking headline — Forifi/Moat/Knight wordplay
-  const headlines = [];
-  if (topMoat) headlines.push(`The ${topMoat.name} Fortress is under siege — ${moatCounts[topMoatAddr]} attacks in the last 24h. Knights are mobilizing.`);
-  if (atBigBurn) headlines.push(`FORTIFI DISPATCH: The largest burn the Moats have ever seen — ${fmtP(atBigBurn.tokenAmount)} tokens sent to the void. The Moat grows deeper.`);
-  if (newWallets.size>5) headlines.push(`INTELLIGENCE: ${newWallets.size} new knights crossed the drawbridge today. The kingdom expands.`);
-  if (bigEv) headlines.push(`MOAT CHRONICLE: ${getWalletDisplayName(bigEv.wallet||'')} made a power move — ${fmtP(bigEv.tokenAmount)} tokens ${(bigEv.eventType||'').toLowerCase()} in one strike.`);
-  if (!headlines.length) headlines.push('MOAT INTEL DISPATCH: All quiet on the Avalanche front. Knights stand ready. The moats hold.');
-  const headlineEl = document.getElementById('intelHeadlineText');
-  if (headlineEl) headlineEl.textContent = headlines[Math.floor(Math.random()*headlines.length)];
-}
-
-function setTxtId(id, val) { const el=document.getElementById(id); if(el)el.textContent=val; }
-
-// ══════════════════════════════════════════════════════
-// ── HCASH LP: Fix token distribution calculation ──
-// In the moat token distribution, hCASH moat tokens are LP pool tokens
-// so the "In Moat" figure should reflect LP tokens staked, and
-// "Token Distribution" for hCASH must show LP token breakdown, not raw hcash supply
-// ══════════════════════════════════════════════════════
-function isHcashMoat(moatAddr) {
-  return moatAddr && moatAddr.toLowerCase() === '0x501f6e7bec3db63d8dacbc9fa0ce42d5d2329d53';
-}
-
-// Override for Quick Points Estimator: hCASH uses LP tokens, not base token count
-function getEffectiveTokensForCalc(moatAddr, tokenAmt) {
-  // For hCASH LP moat, token amount entered = LP tokens, not raw hCASH
-  // LP tokens represent a share of the AVAX+hCASH pool; treat 1:1 for points
-  return tokenAmt; // points are based on LP tokens staked
-}
-
-// ══════════════════════════════════════════════════════
-// ── HOOK: render new features after data loads ──
-// ══════════════════════════════════════════════════════
-const _origRenderEvs = window.renderEvs;
-// We patch via setTimeout post-load in initNewFeatures()
-
-function initNewFeatures() {
-  renderDailyIntelBrief();
-  renderWhaleFeed();
-  renderStreakTracker();
 }
 
 // ── INVESTMENT ALLOCATOR ──
@@ -4786,7 +4358,6 @@ async function runAllocatorCalc() {
     const fortShare = ecoTot ? (pts/(ecoTot+pts)*100).toFixed(5) : '0';
     const supply = getSupply(addr);
     const supplyPct = supply?.totalSupply>0&&tokens>0 ? (tokens/supply.totalSupply*100).toFixed(4) : null;
-    const supplyPctLabel = isHcashMoat(addr) ? (supplyPct ? supplyPct+'% of LP supply' : null) : (supplyPct ? supplyPct+'%' : null);
     const ch24 = px?.ch24||0;
     const liq = px?.liq||0;
 
@@ -5303,22 +4874,24 @@ function onMoatSelChange(){
   const meta = MOATS[addr]  || {};
   if (ctx) ctx.style.display = 'block';
 
-  const isHcash = isHcashMoat(addr);
+  // Use knownSupply as primary source — NEVER await anything, UI stays instant
   const knownSup = meta.knownSupply || 0;
+  // Try supplyCache first (may have been enriched), fall back to knownSupply
   const cached = getSupply(addr);
   const sup    = (cached && cached.totalSupply > 0) ? cached : (knownSup ? {totalSupply:knownSup, symbol:meta.ticker, decimals:18} : null);
+
+  // Estimated pts-per-token for rank preview
   const ppt = (knownSup > 0) ? (1000000 / knownSup) : (estPtsPerToken(addr) || null);
 
-  const dynTag = (meta.supplyType === 'dynamic' || isHcash)
-    ? '<span style="color:var(--gld)">⚡ Dynamic' + (isHcash ? ' · LP Token' : '') + '</span>'
+  const dynTag = meta.supplyType === 'dynamic'
+    ? '<span style="color:var(--gld)">⚡ Dynamic</span>'
     : '<span style="color:var(--grn)">🔒 Fixed</span>';
 
   const supplyLine = sup && sup.totalSupply > 0
-    ? '<div style="grid-column:1/-1;margin-top:5px;font-family:monospace;font-size:.56rem;color:var(--dim);display:flex;align-items:center;gap:8px;flex-wrap:wrap">'
-      + '<span>Supply: <b style="color:var(--txt)">'+fmtP(sup.totalSupply)+' '+(isHcash?'LP tokens':sup.symbol||meta.ticker||'')+'</b></span>'
+    ? '<div style="grid-column:1/-1;margin-top:5px;font-family:monospace;font-size:.56rem;color:var(--dim);display:flex;align-items:center;gap:8px">'
+      + '<span>Supply: <b style="color:var(--txt)">'+fmtP(sup.totalSupply)+' '+(sup.symbol||meta.ticker||'')+'</b></span>'
       + dynTag
-      + (ppt ? '<span style="color:var(--acc)">~'+fmtPrice(ppt)+' pts/'+(isHcash?'LP':'token')+' (stake)</span>' : '')
-      + (isHcash ? '<span style="color:var(--gld);background:rgba(212,168,67,.1);border:1px solid rgba(212,168,67,.22);border-radius:4px;padding:1px 5px;font-size:.5rem">Amount = LP tokens, not raw hCASH</span>' : '')
+      + (ppt ? '<span style="color:var(--acc)">~'+fmtPrice(ppt)+' pts/token (stake)</span>' : '')
       + '</div>'
     : '';
 
@@ -5328,20 +4901,21 @@ function onMoatSelChange(){
     +`<div style="text-align:center"><div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.88rem;color:var(--gld)">${Math.round(m.avgPoints||0)}</div><div style="font-family:'DM Mono',monospace;font-size:.5rem;color:var(--mut);text-transform:uppercase">Avg Pts</div></div>`
     + supplyLine;
 
-  calcPts();
+  calcPts(); // always synchronous
 }
 function calcPts(){
   const t    = Number(document.getElementById('cTok').value) || 0;
   const a    = document.getElementById('cAct').value;
   const addr = document.getElementById('cMoatSel').value;
   const meta = MOATS[addr] || {};
-  const isHcash = isHcashMoat(addr);
   document.getElementById('lockRow').style.display = a === 'lock' ? 'block' : 'none';
   if (!t) { document.getElementById('pRes').style.display = 'none'; return; }
 
   const days       = Number(document.getElementById('cDays').value) || 180;
   const multiplier = a === 'burn' ? 10 : a === 'lock' ? lockM(days) : 1;
 
+  // pts-per-token: knownSupply is the ground truth (hardcoded from moats.app docs)
+  // Formula: 1,000,000 base pts allocated per full token supply — standard Moats mechanic
   const knownSup = meta.knownSupply || 0;
   const cached   = getSupply(addr);
   const supply   = (cached && cached.totalSupply > 0) ? cached.totalSupply : knownSup;
@@ -5349,41 +4923,41 @@ function calcPts(){
   let pptSource  = '';
   if (supply > 0) {
     ppt       = 1000000 / supply;
-    pptSource = isHcash ? 'LP token supply' : 'hardcoded supply';
+    pptSource = 'hardcoded supply';
   } else if (addr) {
     ppt       = estPtsPerToken(addr);
     pptSource = 'live estimate';
   }
 
-  // For hCASH: t = LP tokens entered; points calc is the same (LP tokens × pts/LP × mult)
-  const tokenLabel = isHcash ? 'LP tokens' : (meta.ticker||'tokens');
   const pts = ppt !== null ? t * ppt * multiplier : t * multiplier;
 
+  // Formula note
   let ptsNote = '';
   if (ppt !== null) {
-    ptsNote = fmtP(t) + ' ' + tokenLabel + ' × ' + fmtPrice(ppt) + ' pts/LP (base) × ' + multiplier + '×';
+    ptsNote = fmtP(t) + ' ' + (meta.ticker||'tokens') + ' × ' + fmtPrice(ppt) + ' pts/token (base) × ' + multiplier + '×';
     if (a === 'lock') ptsNote += ' — ' + days + 'd lock';
     if (a === 'burn') ptsNote += ' — permanent 🔥';
-    if (isHcash) ptsNote += ' · hCASH LP moat';
   } else {
     ptsNote = fmtP(t) + ' × ' + multiplier + '× — no supply data yet';
   }
 
   document.getElementById('pRes').style.display = 'block';
-  setTxt('rT',  fmtP(t) + (isHcash ? ' LP' : ''));
+  setTxt('rT',  fmtP(t));
   setTxt('rM',  multiplier + '×');
   setTxt('rPt', fmtP(pts));
   const ptsnEl    = document.getElementById('rPtNote');
   const ptsnRowEl = document.getElementById('rPtNoteRow');
   if (ptsnEl) { ptsnEl.textContent = ptsNote; if (ptsnRowEl) ptsnRowEl.style.display = 'flex'; }
 
+  // Live rank projection using real leaderboard data
   const rR = document.getElementById('rRankRow');
   const rS = document.getElementById('rShareRow');
   if (addr && moatMap[addr]) {
     const md     = moatMap[addr];
     const sorted = (md.sorted || []).slice();
+    // Find rank: count how many wallets have MORE pts than our projection
     let rank = sorted.filter(w => (w.points || w.totalPoints || 0) > pts).length + 1;
-    const totalWallets  = (md.walletCount || sorted.length) + 1;
+    const totalWallets  = (md.walletCount || sorted.length) + 1; // +1 for this wallet
     const newPool       = (md.totalPoints || 0) + pts;
     const share         = newPool > 0 ? (pts / newPool * 100).toFixed(3) : '100';
     const percentile    = totalWallets > 1 ? (100 - ((rank - 1) / totalWallets * 100)).toFixed(1) : '100';
@@ -6679,24 +6253,74 @@ async function cmLoadTarget(addr) {
   const ecoTot   = allPts.reduce((s,p)=>s+p.points,0);
   const sh       = ecoTot ? (totPts/ecoTot*100).toFixed(3) : '0';
 
-  // Infer strategy per moat from point magnitude
+  // ── Fetch real on-chain positions for target wallet per moat ──
+  const MOAT_ABI_UI = ['function userInfo(address) view returns (uint256 stakedAmount, uint256 totalUserBurn, uint256 stakingPoints, uint256 burnPoints, uint256 activeLockCount)'];
+  const MOAT_ABI_LOCKS = ['function getUserLocks(address) view returns (tuple(uint256 amount, uint256 lockEnd, uint256 multiplier, uint256 lockDays, bool active)[] memory)'];
+  const rpcProv = cmProvider || new ethers.JsonRpcProvider('https://api.avax.network/ext/bc/C/rpc');
+
+  // Fetch on-chain info for every moat the target has points in
+  const onChainJobs = moatPts.map(async p => {
+    const addr = p.contractAddress;
+    const meta = MOATS[addr]; if (!meta || meta.lpOnly) return { addr, staked:0, burned:0, locked:0, lockDays:0 };
+    try {
+      const c = new ethers.Contract(addr, MOAT_ABI_UI, rpcProv);
+      const ui = await c.userInfo(target).catch(()=>null);
+      const dec = 18;
+      const stakedAmt = ui ? Number(ethers.formatUnits(ui[0], dec)) : 0;
+      const burnedAmt = ui ? Number(ethers.formatUnits(ui[1], dec)) : 0;
+      // Fetch locks
+      let lockedAmt = 0, bestLockDays = 0;
+      try {
+        const lc = new ethers.Contract(addr, MOAT_ABI_LOCKS, rpcProv);
+        const locks = await lc.getUserLocks(target).catch(()=>[]);
+        const activeLocks = (locks||[]).filter(l=>l.active);
+        lockedAmt = activeLocks.reduce((s,l)=>s+Number(ethers.formatUnits(l.amount, dec)), 0);
+        if (activeLocks.length) bestLockDays = Math.max(...activeLocks.map(l=>Number(l.lockDays||0)));
+      } catch(e2) {}
+      return { addr, staked: stakedAmt, burned: burnedAmt, locked: lockedAmt, lockDays: bestLockDays };
+    } catch(e) { return { addr, staked:0, burned:0, locked:0, lockDays:0 }; }
+  });
+  const onChainResults = await Promise.allSettled(onChainJobs);
+  const onChainMap = {};
+  onChainResults.forEach(r => { if (r.status==='fulfilled' && r.value) onChainMap[r.value.addr] = r.value; });
+
+  // Infer strategy per moat — prefer on-chain data, fall back to points ratio
   cmTargetMoats = moatPts.sort((a,b) => b.points-a.points).map(p => {
     const meta = MOATS[p.contractAddress];
     if (!meta) return null;
     const m = moatMap[p.contractAddress] || {};
-    const ratio = m.avgPoints ? p.points / m.avgPoints : 1;
+    const oc = onChainMap[p.contractAddress] || {};
+
     let strat = 'stake', lockDays = 0;
-    if      (ratio > 8)   { strat = 'burn'; }
-    else if (ratio > 4.5) { strat = 'lock'; lockDays = 365; }
-    else if (ratio > 2.8) { strat = 'lock'; lockDays = 180; }
-    else if (ratio > 1.5) { strat = 'lock'; lockDays = 90; }
+
+    // On-chain: determine dominant action by token amount
+    const ocStaked = oc.staked || 0;
+    const ocLocked = oc.locked || 0;
+    const ocBurned = oc.burned || 0;
+    const hasOnChain = ocStaked > 0 || ocLocked > 0 || ocBurned > 0;
+
+    if (hasOnChain) {
+      // Pick the action where the target has the MOST tokens
+      const max = Math.max(ocStaked, ocLocked, ocBurned);
+      if (max === ocBurned && ocBurned > 0)       { strat = 'burn'; lockDays = 0; }
+      else if (max === ocLocked && ocLocked > 0)  { strat = 'lock'; lockDays = oc.lockDays || 90; }
+      else                                         { strat = 'stake'; lockDays = 0; }
+    } else {
+      // Fallback: infer from points ratio
+      const ratio = m.avgPoints ? p.points / m.avgPoints : 1;
+      if      (ratio > 8)   { strat = 'burn'; }
+      else if (ratio > 4.5) { strat = 'lock'; lockDays = 365; }
+      else if (ratio > 2.8) { strat = 'lock'; lockDays = 180; }
+      else if (ratio > 1.5) { strat = 'lock'; lockDays = 90; }
+    }
 
     const stratLabel = strat==='burn' ? '🔥 Burn (10×)' : strat==='lock' ? `⏳ Lock ${lockDays}d (${lockM(lockDays).toFixed(2)}×)` : '🔒 Stake (1×)';
     const isLP = meta.lpOnly || false;
-    const canAuto = !isLP; // LP moats can't be auto-bought
+    const canAuto = !isLP;
 
     return { addr: p.contractAddress, meta, pts: p.points, weight: p.weight||0,
-             strat, lockDays, stratLabel, selected: canAuto, pct: 0, isLP, canAuto };
+             strat, lockDays, stratLabel, selected: canAuto, pct: 0, isLP, canAuto,
+             ocStaked, ocLocked, ocBurned, hasOnChain };
   }).filter(Boolean);
 
   // Calculate percentage split by points
@@ -6721,8 +6345,9 @@ async function cmLoadTarget(addr) {
         <div><div style="font-family:'Chakra Petch',sans-serif;font-weight:700;color:var(--dim)">${sh}%</div><div style="font-family:'DM Mono',monospace;font-size:.5rem;color:var(--mut)">Eco Share</div></div>
       </div>
       <div style="font-family:'DM Mono',monospace;font-size:.58rem;color:var(--mut);line-height:1.55">
-        Strategy inferred from points ratio vs moat average.
+        Strategy sourced from on-chain positions (staked/locked/burned amounts) where available, otherwise inferred from points ratio vs moat average.
         ${cmTargetMoats.filter(m=>m.isLP).length > 0 ? '<br>⚠️ LP NFT moats excluded — need manual liquidity provision.' : ''}
+        ${cmTargetMoats.filter(m=>m.hasOnChain).length > 0 ? `<br><span style="color:var(--grn)">● ${cmTargetMoats.filter(m=>m.hasOnChain).length} moat${cmTargetMoats.filter(m=>m.hasOnChain).length>1?'s':''} with live on-chain data</span>` : ''}
       </div>
     </div>`;
 
@@ -6783,6 +6408,19 @@ function cmRenderMoatPositions() {
     const sel = cmSelectedMoats.has(m.addr);
     const stratCol = m.strat==='burn'?'var(--red)':m.strat==='lock'?'var(--gld)':'var(--acc)';
     const isLP = m.isLP;
+
+    // On-chain position amounts for this moat (from target wallet fetch)
+    let onChainHtml = '';
+    if (m.hasOnChain) {
+      const parts = [];
+      if (m.ocStaked > 0.0001)  parts.push(`<span style="color:var(--acc)">🔒 ${fmtP(m.ocStaked)}</span>`);
+      if (m.ocLocked > 0.0001)  parts.push(`<span style="color:var(--gld)">⏳ ${fmtP(m.ocLocked)}</span>`);
+      if (m.ocBurned > 0.0001)  parts.push(`<span style="color:var(--red)">🔥 ${fmtP(m.ocBurned)}</span>`);
+      if (parts.length) onChainHtml = `<div style="font-family:'DM Mono',monospace;font-size:.52rem;margin-top:2px;display:flex;gap:5px;flex-wrap:wrap">${parts.join('')} <span style="color:var(--mut)">${m.meta.ticker}</span></div>`;
+    } else if (m.strat !== 'stake') {
+      onChainHtml = `<div style="font-family:'DM Mono',monospace;font-size:.5rem;color:var(--mut);margin-top:1px">inferred from pts ratio</div>`;
+    }
+
     return `<div class="moat-position-row${sel&&!isLP?' selected':''}" style="${isLP?'opacity:.55;cursor:not-allowed':''}" ${!isLP?`onclick="cmToggleMoat('${m.addr}')"`:''}>
       <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0">
         <div style="font-size:.9rem;flex-shrink:0">${isLP?'🏊':sel?'☑':'☐'}</div>
@@ -6790,11 +6428,13 @@ function cmRenderMoatPositions() {
         <div style="flex:1;min-width:0">
           <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.75rem;color:${m.meta.color};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.meta.short}</div>
           <div style="font-family:'DM Mono',monospace;font-size:.56rem;color:${isLP?'var(--gld)':stratCol}">${isLP?'⚠️ LP NFT — manual only':m.stratLabel}</div>
+          ${onChainHtml}
         </div>
       </div>
       <div style="text-align:right;flex-shrink:0">
         <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.75rem">${m.pct}%</div>
         <div style="font-family:'DM Mono',monospace;font-size:.54rem;color:var(--mut)">${fmtP(m.pts)} pts</div>
+        ${m.hasOnChain?'<div style="font-family:\'DM Mono\',monospace;font-size:.46rem;color:var(--grn)">● on-chain</div>':''}
       </div>
     </div>`;
   }).join('');
@@ -7004,8 +6644,8 @@ function cmRenderGlobe() {
       <!-- Navigation arrows -->
       <button onclick="cmGlobeNav(-1)" style="position:absolute;left:8px;top:50%;transform:translateY(-50%);z-index:10;background:rgba(249,115,22,.15);border:1px solid rgba(249,115,22,.3);border-radius:50%;width:32px;height:32px;color:var(--acc);font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center">◀</button>
       <button onclick="cmGlobeNav(1)"  style="position:absolute;right:8px;top:50%;transform:translateY(-50%);z-index:10;background:rgba(249,115,22,.15);border:1px solid rgba(249,115,22,.3);border-radius:50%;width:32px;height:32px;color:var(--acc);font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center">▶</button>
-      <!-- Globe canvas -->
-      <canvas id="cmGlobeCanvas" width="320" height="200" style="width:100%;display:block"></canvas>
+      <!-- Globe canvas — resolution scaled for crisp rendering -->
+      <canvas id="cmGlobeCanvas" style="width:100%;display:block"></canvas>
       <!-- Focused step info -->
       <div id="cmGlobeInfo" style="padding:.65rem 1rem .85rem;border-top:1px solid var(--bor)"></div>
       <!-- Dot nav -->
@@ -7064,10 +6704,22 @@ function _cmDrawGlobe() {
   const canvas = document.getElementById('cmGlobeCanvas'); if (!canvas) return;
   if (_cmGlobeAnimId) cancelAnimationFrame(_cmGlobeAnimId);
 
+  // ── HiDPI / Retina: scale canvas by devicePixelRatio for crisp rendering ──
+  const dpr = window.devicePixelRatio || 1;
+  const cssW = canvas.parentElement ? canvas.parentElement.clientWidth || 360 : 360;
+  const cssH = Math.round(cssW * 0.56); // ~16:9 aspect
+  if (canvas.width !== Math.round(cssW * dpr) || canvas.height !== Math.round(cssH * dpr)) {
+    canvas.width  = Math.round(cssW * dpr);
+    canvas.height = Math.round(cssH * dpr);
+    canvas.style.width  = cssW + 'px';
+    canvas.style.height = cssH + 'px';
+  }
+
   const ctx = canvas.getContext('2d');
-  const W = canvas.width, H = canvas.height;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0); // scale all drawing ops
+  const W = cssW, H = cssH;
   const cx = W/2, cy = H/2;
-  const R = 72; // globe radius
+  const R = Math.round(Math.min(W, H) * 0.36); // globe radius scales with canvas
   let angle = _cmGlobeAngle;
 
   const STATE_COLORS = {done:'#6db87a',active:'#f97316',error:'#e05252',waiting:'#4a4540'};
@@ -7126,14 +6778,36 @@ function _cmDrawGlobe() {
       const r=isFocus?18*scale:13*scale;
       const alpha=0.35+0.65*((depth+1)/2);
 
-      // Find the moat meta for this step — step id encodes moat index
-      // Steps are named like "moat_0_swap", "moat_0_approve", "lp_0", etc.
-      // We look up cmTargetMoats by iteration order
-      const moatIdx = parseInt((s.id||'').replace(/[^0-9]/g,'')) || i;
-      const moatMeta = (cmTargetMoats && cmTargetMoats[moatIdx]) ? cmTargetMoats[moatIdx].meta : null;
+      // Find the moat meta for this step — step id format: "moat_ADDR_swap", "moat_ADDR_approve", etc.
+      // Extract the full moat address from the step id
+      const stepIdParts = (s.id || '').split('_');
+      // Try to extract a 0x address from the step id
+      let moatAddrFromId = null;
+      for (const part of stepIdParts) {
+        if (/^0x[0-9a-fA-F]{30,}/i.test(part)) { moatAddrFromId = part.toLowerCase(); break; }
+      }
+      // If no address in id, fall back to iteration order through selected moats
+      const selectedMoats = cmTargetMoats ? cmTargetMoats.filter(m=>cmSelectedMoats.has(m.addr)) : [];
+      let moatMeta = null;
+      if (moatAddrFromId && MOATS[moatAddrFromId]) {
+        moatMeta = MOATS[moatAddrFromId];
+      } else if (s.moatAddr && MOATS[s.moatAddr]) {
+        moatMeta = MOATS[s.moatAddr];
+      } else {
+        // Fallback: count how many steps belong to each moat in order
+        let stepsPerMoat = [];
+        selectedMoats.forEach((sm, si) => {
+          const count = cmSteps.filter(st => (st.id||'').includes(sm.addr.slice(2,10))).length || 2;
+          for (let x=0; x<count; x++) stepsPerMoat.push(si);
+        });
+        const smIdx = stepsPerMoat[i] !== undefined ? stepsPerMoat[i] : Math.min(i, selectedMoats.length-1);
+        moatMeta = selectedMoats[smIdx]?.meta || null;
+      }
       const moatCol = moatMeta?.color || col;
       const logoSrc = moatMeta?.logo ? (RAW + moatMeta.logo) : null;
       const logoImg = logoSrc ? (_imgCache[logoSrc] || _loadImg(logoSrc)) : null;
+      // Also store moatAddr on step for future lookups
+      if (moatAddrFromId && !s.moatAddr) s.moatAddr = moatAddrFromId;
 
       ctx.save();
       ctx.globalAlpha=alpha;
@@ -7277,7 +6951,7 @@ async function cmExecute() {
 
       // ── STEP A: hCASH LP MOAT SPECIAL HANDLING ──
       if (m.addr.toLowerCase() === '0x501f6e7bec3db63d8dacbc9fa0ce42d5d2329d53') {
-        const stepLpId = `lp_${i}`;
+        const stepLpId = `lp_${m.addr}_${i}`;
         cmAddStep(stepLpId, `${i+1}. hCASH LP Moat — Buy & Add Liquidity`, `Preparing $${f2(moatUsd)} → WAVAX+hCASH LP…`, 'active');
         try {
           const ga        = (a) => ethers.getAddress(a);
@@ -7398,7 +7072,7 @@ async function cmExecute() {
       }
 
       // ── STEP A: SWAP ──
-      const stepSwapId = `swap_${i}`;
+      const stepSwapId = `swap_${m.addr}_${i}`;
       const inCur = cmCurrency==='AVAX' ? 'AVAX' : 'USDC';
       cmAddStep(stepSwapId, `${i+1}. Swap ${inCur} → ${m.meta.ticker}`, `Preparing $${f2(moatUsd)} swap…`, 'active');
 
@@ -7444,7 +7118,7 @@ async function cmExecute() {
       }
 
       // ── STEP B: APPROVE MOAT ──
-      const stepApproveId = `approve_${i}`;
+      const stepApproveId = `approve_${m.addr}_${i}`;
       cmAddStep(stepApproveId, `${i+1}. Approve ${m.meta.short} Moat`, 'Checking token allowance…', 'active');
       try {
         const tokenBal = await tokenContract.balanceOf(cmAddress);
@@ -7465,7 +7139,7 @@ async function cmExecute() {
       }
 
       // ── STEP C: STAKE / LOCK / BURN ──
-      const stepMoatId = `moat_${i}`;
+      const stepMoatId = `moat_${m.addr}_${i}`;
       try {
         const tokenBal = await tokenContract.balanceOf(cmAddress);
         if (tokenBal === 0n) {
