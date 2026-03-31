@@ -1616,50 +1616,7 @@ let dbLogEntries=0;
 const RAW = 'https://raw.githubusercontent.com/precidoboss/my-game-sprites/main/';
 const API  = 'https://moat-api.fortifi.network/api';
 
-// Cache for reward metadata — keyed by moat contract address (lowercase)
-// Populated by _cacheMoatRewardMeta() which is called from the TIER 2 per-moat fetch.
-// Fields: { _rewardsBySymbol: {USDC:{deposited,claimed,...}}, _totalDeposited, _totalClaimed }
-let moatsApiCache = {};
-
-function _cacheMoatRewardMeta(raw, addr) {
-  if (!raw || typeof raw !== 'object') return;
-  const key = addr.toLowerCase();
-  const rewardConfigs = raw.rewardTokens || raw.rewards || raw.rewardConfig || [];
-  const hasFlatReward = raw.totalRewardsDeposited != null || raw.totalRewardsClaimed != null;
-  const configs = rewardConfigs.length > 0 ? rewardConfigs : (hasFlatReward ? [raw] : []);
-  const bySymbol = {};
-  let grandDeposited = 0, grandClaimed = 0;
-  configs.forEach(cfg => {
-    if (!cfg || typeof cfg !== 'object') return;
-    const sym     = (cfg.symbol || cfg.rewardSymbol || cfg.currency || 'USDC').toUpperCase();
-    const tokAddr = (cfg.tokenAddress || cfg.tokenAddr || cfg.rewardTokenAddress || '').toLowerCase();
-    const dec     = Number(cfg.decimals ||
-      (tokAddr === '0xb97ef9ef8734c71904d8002f8b6bc66dd9c48a6e' ? 6 :
-       tokAddr === '0x9702230a8ea53601f5cd2dc00fdbc13d4df4a8c7' ? 6 : 18));
-    const rawDep   = Number(cfg.totalRewardsDeposited || cfg.deposited || 0);
-    const rawClaim = Number(cfg.totalRewardsClaimed   || cfg.claimed   || 0);
-    const dep   = rawDep   > 1e12 ? rawDep   / Math.pow(10, dec) : rawDep;
-    const claim = rawClaim > 1e12 ? rawClaim / Math.pow(10, dec) : rawClaim;
-    if (!bySymbol[sym]) bySymbol[sym] = {
-      symbol: sym, tokenAddress: tokAddr, decimals: dec,
-      deposited: 0, claimed: 0, enabled: cfg.enabled !== false,
-      name: cfg.name || sym, percentage: cfg.percentage || 100,
-      frequencyHours: cfg.frequencyHours || null,
-      nextDistributionTime: cfg.nextDistributionTime || null,
-    };
-    bySymbol[sym].deposited += dep;
-    bySymbol[sym].claimed   += claim;
-    grandDeposited += dep;
-    grandClaimed   += claim;
-  });
-  if (grandDeposited > 0 || Object.keys(bySymbol).length > 0) {
-    moatsApiCache[key] = { _rewardsBySymbol: bySymbol, _totalDeposited: grandDeposited, _totalClaimed: grandClaimed };
-    console.log('[RewardMeta] ' + key.slice(0,10) + '... deposited=' + grandDeposited, bySymbol);
-  }
-}
-
-// No-op — data is now captured inline from the TIER 2 per-moat fetches
-async function fetchMoatsApiData() {}
+// (reward metadata computed from /events in renderMoatRewards)
 const LOAD_QUIPS = [
   "Getting ready to be moated…",
   "Fortifying your dashboard…",
@@ -2049,11 +2006,10 @@ async function loadAll(){
     });
 
     // ── TIER 2: Per-moat breakdown (background, ~2-3s) ──
-    // Capture raw response wrapper first so _cacheMoatRewardMeta can read top-level
-    // reward fields (totalRewardsDeposited, rewardTokens, etc.) before normPts strips them.
+    // ── TIER 2: Per-moat breakdown (background, ~2-3s) ──
     const ptResults = await Promise.allSettled(
       addrs.map(a => fetch(`${API}/moat-points/all?contractAddress=${a}`)
-        .then(r=>r.json()).then(d=>{ _cacheMoatRewardMeta(d, a); return normPts(d,a); }).catch(()=>[]))
+        .then(r=>r.json()).then(d=>normPts(d,a)).catch(()=>[]))
     );
     const newPts = ptResults.flatMap(r=>r.status==='fulfilled'?r.value:[]);
 
@@ -2773,100 +2729,7 @@ async function renderMoatRewards(addr){
   const pts=m.sorted, tot=m.totalPoints;
   const top10=pts.slice(0,10).reduce((s,p)=>s+p.points,0);
 
-  // ── Pull totalRewardsDeposited from /api/moats cache ──
-  // Cache is populated by TIER 2 per-moat fetches. If this moat isn't cached yet
-  // (user clicked before TIER 2 finished), do a direct on-demand fetch now.
-  if(!moatsApiCache[addr.toLowerCase()]) {
-    try {
-      const raw = await fetch(API + '/moat-points/all?contractAddress=' + addr).then(r=>r.ok?r.json():null).catch(()=>null);
-      if(raw) _cacheMoatRewardMeta(raw, addr);
-    } catch(e) {}
-  }
-  const apiMoat = moatsApiCache[addr.toLowerCase()] || {};
-  const rewardsBySymbol = apiMoat._rewardsBySymbol || {};
-  const apiTotalDeposited = apiMoat._totalDeposited || 0;
-  const apiTotalClaimed   = apiMoat._totalClaimed   || 0;
-  const apiTotalUnclaimed = Math.max(0, apiTotalDeposited - apiTotalClaimed);
 
-  // Build per-token rows for the banner
-  const rewardSymbolEntries = Object.values(rewardsBySymbol).filter(r => r.deposited > 0 || r.enabled);
-
-  // Helper: get a token image for the reward symbol
-  const KNOWN_REWARD_IMGS = {
-    'USDC':  'https://assets.coingecko.com/coins/images/6319/small/usdc.png',
-    'USDT':  'https://assets.coingecko.com/coins/images/325/small/Tether.png',
-    'WAVAX': 'https://assets.coingecko.com/coins/images/15075/small/wrapped-avax.png',
-    'AVAX':  'https://assets.coingecko.com/coins/images/12559/small/Avalanche_Circle_RedWhite_Trans.png',
-    'WETH.E':'https://assets.coingecko.com/coins/images/2518/small/weth.png',
-    'BTC.B': 'https://assets.coingecko.com/coins/images/26115/small/btcb.png',
-  };
-  function rewardTokenImg(sym, size=18){
-    // Check moat token logos too
-    const moatMeta = Object.values(MOATS).find(mm => (mm.ticker||'').toUpperCase() === sym);
-    const src = KNOWN_REWARD_IMGS[sym] || (moatMeta?.logo ? RAW + encodeURIComponent(moatMeta.logo) : null);
-    return src
-      ? `<img src="${src}" style="width:${size}px;height:${size}px;border-radius:50%;object-fit:cover;flex-shrink:0;border:1px solid rgba(255,255,255,.1)" onerror="this.style.display='none'">`
-      : `<div style="width:${size}px;height:${size}px;border-radius:50%;background:var(--bor);display:flex;align-items:center;justify-content:center;font-size:${size*.55}px;flex-shrink:0">💰</div>`;
-  }
-
-  // Build the API-sourced deposited banner HTML
-  const depositedBannerHTML = apiTotalDeposited > 0 ? `
-    <div style="background:linear-gradient(135deg,rgba(109,184,122,.09),rgba(109,184,122,.03));border:1px solid rgba(109,184,122,.35);border-radius:10px;padding:.9rem 1rem;margin-bottom:.85rem">
-      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.4rem;margin-bottom:.65rem">
-        <div style="display:flex;align-items:center;gap:6px">
-          <span style="font-family:'DM Mono',monospace;font-size:.6rem;color:var(--grn);text-transform:uppercase;letter-spacing:.1em">🏦 Rewards Pool — API Data</span>
-          <span style="font-family:'DM Mono',monospace;font-size:.46rem;background:rgba(109,184,122,.15);color:var(--grn);border:1px solid rgba(109,184,122,.3);border-radius:4px;padding:1px 5px">live</span>
-        </div>
-        <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.95rem;color:var(--grn)">${fmtK(apiTotalDeposited)} total deposited</div>
-      </div>
-
-      ${rewardSymbolEntries.length > 0 ? `
-      <div style="display:flex;flex-direction:column;gap:.4rem;margin-bottom:.65rem">
-        ${rewardSymbolEntries.map(r => {
-          const uncl = Math.max(0, r.deposited - r.claimed);
-          const pct  = r.deposited > 0 ? (r.claimed / r.deposited * 100) : 0;
-          const freq = r.frequencyHours ? (r.frequencyHours >= 24 ? Math.round(r.frequencyHours/24)+'d' : r.frequencyHours+'h') : '';
-          const nextDist = r.nextDistributionTime ? new Date(r.nextDistributionTime).toLocaleDateString([],{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}) : null;
-          return `
-          <div style="background:var(--card);border:1px solid rgba(109,184,122,.18);border-radius:8px;padding:.6rem .75rem">
-            <div style="display:flex;align-items:center;justify-content:space-between;gap:.4rem;margin-bottom:.45rem">
-              <div style="display:flex;align-items:center;gap:6px">
-                ${rewardTokenImg(r.symbol, 18)}
-                <span style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.78rem;color:var(--txt)">${r.symbol}</span>
-                ${r.name && r.name !== r.symbol ? `<span style="font-family:'DM Mono',monospace;font-size:.52rem;color:var(--mut)">${r.name}</span>` : ''}
-                ${r.enabled ? `<span style="font-family:'DM Mono',monospace;font-size:.46rem;color:var(--grn);background:rgba(109,184,122,.12);border:1px solid rgba(109,184,122,.25);border-radius:3px;padding:0 4px">active</span>` : `<span style="font-family:'DM Mono',monospace;font-size:.46rem;color:var(--mut);background:var(--sur);border:1px solid var(--bor);border-radius:3px;padding:0 4px">inactive</span>`}
-                ${freq ? `<span style="font-family:'DM Mono',monospace;font-size:.46rem;color:var(--dim)">every ${freq}</span>` : ''}
-              </div>
-              <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.82rem;color:var(--grn)">${fmtK(r.deposited)}</div>
-            </div>
-            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.35rem;margin-bottom:.4rem">
-              <div style="text-align:center">
-                <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.8rem;color:var(--grn)">${fmtK(r.deposited)}</div>
-                <div style="font-family:'DM Mono',monospace;font-size:.46rem;color:var(--mut)">deposited</div>
-              </div>
-              <div style="text-align:center">
-                <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.8rem;color:var(--gld)">${r.claimed > 0 ? fmtK(r.claimed) : '—'}</div>
-                <div style="font-family:'DM Mono',monospace;font-size:.46rem;color:var(--mut)">claimed</div>
-              </div>
-              <div style="text-align:center">
-                <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.8rem;color:${uncl > 0 ? 'var(--acc)' : 'var(--mut)'}">${uncl > 0 ? fmtK(uncl) : '—'}</div>
-                <div style="font-family:'DM Mono',monospace;font-size:.46rem;color:var(--mut)">unclaimed</div>
-              </div>
-            </div>
-            ${r.deposited > 0 ? `
-            <div style="height:3px;background:var(--bor);border-radius:99px;overflow:hidden">
-              <div style="height:100%;width:${Math.min(100,pct).toFixed(1)}%;background:linear-gradient(90deg,var(--gld),var(--acc));border-radius:99px;transition:width .8s"></div>
-            </div>
-            <div style="display:flex;justify-content:space-between;margin-top:2px">
-              <div style="font-family:'DM Mono',monospace;font-size:.44rem;color:var(--mut)">${pct.toFixed(1)}% claimed</div>
-              ${nextDist ? `<div style="font-family:'DM Mono',monospace;font-size:.44rem;color:var(--cyn)">next: ${nextDist}</div>` : ''}
-            </div>` : ''}
-          </div>`;
-        }).join('')}
-      </div>` : ''}
-
-      <div style="font-family:'DM Mono',monospace;font-size:.44rem;color:var(--ash2)">Source: moat-api.fortifi.network/api/moats · live contract state</div>
-    </div>` : '';
 
   const REWARD_TOKENS={
     'usdc':'USDC','wavax':'WAVAX','avax':'AVAX','btc.b':'BTC.b','usdt':'USDT','weth.e':'WETH.e',
@@ -2882,9 +2745,8 @@ async function renderMoatRewards(addr){
   // Add all moat tokens
   Object.values(MOATS).forEach(mm=>{ if(mm.tokenAddr) REWARD_TOKENS[mm.tokenAddr.toLowerCase()]=mm.ticker; });
 
-  // ── Show loading state (with API banner already visible if available) ──
-  el.innerHTML = (depositedBannerHTML || '') +
-    '<div style="text-align:center;padding:1.5rem;color:var(--mut)"><span class="spin"></span> Loading reward history…</div>';
+  // ── Show loading state ──
+  el.innerHTML='<div style="text-align:center;padding:1.5rem;color:var(--mut)"><span class="spin"></span> Loading reward history…</div>';
 
   // ── Step 1: Local allEvs filtered for this moat ──
   const localRewardEvs = allEvs.filter(e=>e.contractAddress===addr&&
@@ -3113,6 +2975,7 @@ async function renderMoatRewards(addr){
   const hasRewards=Object.keys(rewardTally).length>0&&tallySource.some(e=>e.rewardAmount>0);
 
   let rewardCurrencyHTML='';
+  let rewardPriceMap = { 'USDC':1, 'USDT':1, 'DAI.e':1 }; // extended if hasRewards
   // ── Token image lookup: moat logos + well-known DeFi tokens ──
   const TOKEN_IMG = {
     'USDC':  'https://assets.coingecko.com/coins/images/6319/small/usdc.png',
@@ -3142,14 +3005,15 @@ async function renderMoatRewards(addr){
 
   if(hasRewards){
     // Build USD price map for known reward tokens
-    const rewardPriceMap = {
+    // extend rewardPriceMap (declared above) with live prices
+    Object.assign(rewardPriceMap, {
       'USDC':1, 'USDT':1, 'DAI.e':1,
       'WAVAX': priceCache['0xb31f66aa3c1e785363f0875a1b74e27b85fd66c7']?.price||0,
       'AVAX':  priceCache['0xb31f66aa3c1e785363f0875a1b74e27b85fd66c7']?.price||0,
       'WETH.e':priceCache['0x49d5c2bdffac6ce2bfdb6640f4f80f226bc10bab']?.price||0,
       'BTC.b': priceCache['0x152b9d0fdc40c096757f570a51e494bd4b943e50']?.price||0,
       'WBTC.e':priceCache['0x50b7545627a5162f82a992c33b87adc75187b218']?.price||0,
-    };
+    });
     // Add moat token prices to the map
     Object.entries(MOATS).forEach(([mAddr,mm])=>{ if(mm.ticker&&priceCache[mAddr]?.price>0) rewardPriceMap[mm.ticker]=priceCache[mAddr].price; });
     // Fetch missing prices for WAVAX and BTC.b from CoinGecko by contract address
@@ -3229,6 +3093,108 @@ async function renderMoatRewards(addr){
         <div style="font-size:.63rem;color:var(--mut);margin-top:.45rem">Check <a href="${meta.url||'https://moats.app'}" target="_blank" style="color:var(--acc)">moats.app</a> or project Discord for announced rounds.</div>
       </div>`;
   }
+
+  // ── Build "Rewards Deposited" banner from RewardsDeposited events ──
+  // The /events endpoint returns eventType="RewardsDeposited" with the deposited amount.
+  // We tally all deposit events for this moat across: local allEvs + the apiEvs already fetched.
+  const DEPOSIT_TOKEN_DECIMALS = {
+    '0xb97ef9ef8734c71904d8002f8b6bc66dd9c48a6e': 6,  // USDC
+    '0x9702230a8ea53601f5cd2dc00fdbc13d4df4a8c7': 6,  // USDT
+    '0xb31f66aa3c1e785363f0875a1b74e27b85fd66c7': 18, // WAVAX
+    '0x49d5c2bdffac6ce2bfdb6640f4f80f226bc10bab': 18, // WETH.e
+    '0x152b9d0fdc40c096757f570a51e494bd4b943e50': 8,  // BTC.b
+  };
+  // Collect all deposit events from both local cache and freshly-fetched apiEvs
+  const depositEvs = [
+    ...allEvs.filter(e => e.contractAddress === addr &&
+      (e.eventType||'').toLowerCase().includes('deposit')),
+    ...apiEvs.filter(e => (e.eventType||'').toLowerCase().includes('deposit'))
+  ];
+  // Tally deposited amounts by token
+  const depositTally = {}; // tokenLabel -> { total, rawAddr }
+  depositEvs.forEach(e => {
+    const tokRaw = (e.rewardToken || e.rewardTokenAddr || e.rewardTokenAddress ||
+                    e.token || e.tokenAddress || e.rewardCurrency || '').toLowerCase();
+    let label = REWARD_TOKENS[tokRaw];
+    if (!label && cgCache && cgCache[tokRaw]) label = cgCache[tokRaw].symbol;
+    if (!label) {
+      // Try to match by address in MOATS
+      const mm = Object.values(MOATS).find(x => x.tokenAddr && x.tokenAddr.toLowerCase() === tokRaw);
+      if (mm) label = mm.ticker;
+    }
+    label = label || (tokRaw && tokRaw.startsWith('0x') ? tokRaw.slice(0,6)+'…' : '?');
+    const dec = DEPOSIT_TOKEN_DECIMALS[tokRaw] ?? 18;
+    const rawAmt = Number(e.amount || e.rewardAmount || e.tokenAmount || e.value || 0);
+    const amt = rawAmt > 1e12 ? rawAmt / Math.pow(10, dec) : rawAmt;
+    if (!depositTally[label]) depositTally[label] = { total: 0, rawAddr: tokRaw };
+    depositTally[label].total += amt;
+  });
+  const hasDeposits = Object.values(depositTally).some(d => d.total > 0);
+
+  // Also compute total claimed from rewardTally (already built above)
+  // depositedBannerHTML: show per-token deposited vs claimed vs unclaimed
+  const DEPOSIT_IMGS = {
+    'USDC':  'https://assets.coingecko.com/coins/images/6319/small/usdc.png',
+    'USDT':  'https://assets.coingecko.com/coins/images/325/small/Tether.png',
+    'WAVAX': 'https://assets.coingecko.com/coins/images/15075/small/wrapped-avax.png',
+    'AVAX':  'https://assets.coingecko.com/coins/images/12559/small/Avalanche_Circle_RedWhite_Trans.png',
+    '$WAVAX':'https://assets.coingecko.com/coins/images/15075/small/wrapped-avax.png',
+  };
+  function depTokenImg(label, size=18) {
+    const mm = Object.values(MOATS).find(x => (x.ticker||'').toLowerCase() === label.toLowerCase());
+    const src = DEPOSIT_IMGS[label] || (mm?.logo ? RAW + encodeURIComponent(mm.logo) : null)
+             || (cgCache && Object.values(cgCache).find(d => d.symbol === label)?.thumb) || null;
+    return src
+      ? `<img src="${src}" style="width:${size}px;height:${size}px;border-radius:50%;object-fit:cover;flex-shrink:0" onerror="this.style.display='none'">`
+      : `<div style="width:${size}px;height:${size}px;border-radius:50%;background:var(--bor);display:flex;align-items:center;justify-content:center;font-size:${size*.5}px;flex-shrink:0">💰</div>`;
+  }
+  const grandDeposited = Object.values(depositTally).reduce((s,d) => s + d.total, 0);
+  const depositedBannerHTML = hasDeposits ? `
+    <div style="background:linear-gradient(135deg,rgba(109,184,122,.09),rgba(109,184,122,.03));border:1px solid rgba(109,184,122,.4);border-radius:10px;padding:.9rem 1rem;margin-bottom:.85rem">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.4rem;margin-bottom:.65rem">
+        <div style="display:flex;align-items:center;gap:7px">
+          <span style="font-size:.9rem">🏦</span>
+          <span style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.72rem;color:var(--grn);text-transform:uppercase;letter-spacing:.08em">Total Rewards Deposited</span>
+          <span style="font-family:'DM Mono',monospace;font-size:.46rem;background:rgba(109,184,122,.15);color:var(--grn);border:1px solid rgba(109,184,122,.3);border-radius:4px;padding:1px 5px">${depositEvs.length} events</span>
+        </div>
+        <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.95rem;color:var(--grn)">${fmtK(grandDeposited)}</div>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:.5rem;margin-bottom:.5rem">
+        ${Object.entries(depositTally).filter(([,d])=>d.total>0).map(([label,d]) => {
+          const claimed = rewardTally[label]?.total || 0;
+          const unclaimed = Math.max(0, d.total - claimed);
+          const pct = d.total > 0 ? Math.min(100, claimed / d.total * 100) : 0;
+          const usdDep = rewardPriceMap && rewardPriceMap[label] > 0 ? d.total * rewardPriceMap[label] : 0;
+          return `
+          <div style="background:var(--card);border:1px solid rgba(109,184,122,.2);border-radius:8px;padding:.65rem .85rem;flex:1;min-width:140px">
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:.5rem">
+              ${depTokenImg(label, 18)}
+              <span style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.78rem;color:var(--txt)">${label}</span>
+              ${usdDep > 0 ? `<span style="font-family:'DM Mono',monospace;font-size:.52rem;color:var(--mut)">≈ ${fmtK(usdDep)}</span>` : ''}
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.3rem;margin-bottom:.4rem">
+              <div style="text-align:center;background:var(--sur);border-radius:5px;padding:.3rem .2rem">
+                <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.75rem;color:var(--grn)">${fmtK(d.total)}</div>
+                <div style="font-family:'DM Mono',monospace;font-size:.44rem;color:var(--mut)">deposited</div>
+              </div>
+              <div style="text-align:center;background:var(--sur);border-radius:5px;padding:.3rem .2rem">
+                <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.75rem;color:var(--gld)">${claimed > 0 ? fmtK(claimed) : '—'}</div>
+                <div style="font-family:'DM Mono',monospace;font-size:.44rem;color:var(--mut)">claimed</div>
+              </div>
+              <div style="text-align:center;background:var(--sur);border-radius:5px;padding:.3rem .2rem">
+                <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.75rem;color:${unclaimed>0?'var(--acc)':'var(--mut)'}">${unclaimed > 0 ? fmtK(unclaimed) : '—'}</div>
+                <div style="font-family:'DM Mono',monospace;font-size:.44rem;color:var(--mut)">unclaimed</div>
+              </div>
+            </div>
+            <div style="height:3px;background:var(--bor);border-radius:99px;overflow:hidden">
+              <div style="height:100%;width:${pct.toFixed(1)}%;background:linear-gradient(90deg,var(--gld),var(--acc));border-radius:99px"></div>
+            </div>
+            <div style="font-family:'DM Mono',monospace;font-size:.44rem;color:var(--mut);margin-top:2px">${pct.toFixed(1)}% claimed</div>
+          </div>`;
+        }).join('')}
+      </div>
+      <div style="font-family:'DM Mono',monospace;font-size:.44rem;color:var(--ash2)">Source: /events RewardsDeposited · ${depositEvs.length} deposit event${depositEvs.length!==1?'s':''} found</div>
+    </div>` : '';
 
   el.innerHTML=`
     ${depositedBannerHTML}
