@@ -1616,59 +1616,50 @@ let dbLogEntries=0;
 const RAW = 'https://raw.githubusercontent.com/precidoboss/my-game-sprites/main/';
 const API  = 'https://moat-api.fortifi.network/api';
 
-// Cache for /api/moats data — keyed by moat contract address (lowercase)
-// Each entry: { totalRewardsDeposited, totalRewardsClaimed, name, symbol, tokenAddress, ... }
-let moatsApiCache = {}; // populated by fetchMoatsApiData()
+// Cache for reward metadata — keyed by moat contract address (lowercase)
+// Populated by _cacheMoatRewardMeta() which is called from the TIER 2 per-moat fetch.
+// Fields: { _rewardsBySymbol: {USDC:{deposited,claimed,...}}, _totalDeposited, _totalClaimed }
+let moatsApiCache = {};
 
-async function fetchMoatsApiData(){
-  try {
-    const res = await fetch(API + '/moats').then(r => r.ok ? r.json() : null).catch(() => null);
-    if (!res) return;
-    const arr = Array.isArray(res) ? res : (res.results || res.data || res.moats || []);
-    arr.forEach(moat => {
-      const key = (moat.contractAddress || moat.address || moat._id || '').toLowerCase();
-      if (!key) return;
-
-      // /moats returns each moat with a nested rewardTokens (or rewards) array.
-      // Each entry looks like: { symbol, tokenAddress, totalRewardsDeposited, totalRewardsClaimed,
-      //   decimals, enabled, name, percentage, frequencyHours, nextDistributionTime, ... }
-      // We accumulate totals across all reward token configs for this moat.
-      const rewardConfigs = moat.rewardTokens || moat.rewards || moat.rewardConfig || [];
-      // Also handle the case where the moat object itself IS a reward config (flat structure)
-      const configs = rewardConfigs.length > 0 ? rewardConfigs : [moat];
-
-      // Build a per-symbol breakdown + grand totals
-      const bySymbol = {};
-      let grandDeposited = 0, grandClaimed = 0;
-
-      configs.forEach(cfg => {
-        if (!cfg || typeof cfg !== 'object') return;
-        const sym      = (cfg.symbol || cfg.rewardSymbol || 'USDC').toUpperCase();
-        const tokAddr  = (cfg.tokenAddress || cfg.tokenAddr || cfg.rewardTokenAddress || '').toLowerCase();
-        const dec      = Number(cfg.decimals || (tokAddr === '0xb97ef9ef8734c71904d8002f8b6bc66dd9c48a6e' ? 6
-                                                : tokAddr === '0x9702230a8ea53601f5cd2dc00fdbc13d4df4a8c7' ? 6 : 18));
-        const rawDep   = Number(cfg.totalRewardsDeposited   || cfg.deposited   || 0);
-        const rawClaim = Number(cfg.totalRewardsClaimed     || cfg.claimed     || 0);
-        // Guard against raw-wei values (heuristic: > 1e12 means it's in wei)
-        const dep   = rawDep   > 1e12 ? rawDep   / Math.pow(10, dec) : rawDep;
-        const claim = rawClaim > 1e12 ? rawClaim / Math.pow(10, dec) : rawClaim;
-
-        if (!bySymbol[sym]) bySymbol[sym] = { symbol: sym, tokenAddress: tokAddr, decimals: dec, deposited: 0, claimed: 0, enabled: cfg.enabled !== false, name: cfg.name || sym, percentage: cfg.percentage || 100, frequencyHours: cfg.frequencyHours || 24, nextDistributionTime: cfg.nextDistributionTime || null };
-        bySymbol[sym].deposited += dep;
-        bySymbol[sym].claimed   += claim;
-        grandDeposited += dep;
-        grandClaimed   += claim;
-      });
-
-      moatsApiCache[key] = {
-        ...moat,
-        _rewardsBySymbol: bySymbol,           // { USDC: { deposited, claimed, ... }, ... }
-        _totalDeposited:  grandDeposited,      // sum across all reward tokens
-        _totalClaimed:    grandClaimed,
-      };
-    });
-  } catch(e) { console.warn('fetchMoatsApiData failed:', e); }
+function _cacheMoatRewardMeta(raw, addr) {
+  if (!raw || typeof raw !== 'object') return;
+  const key = addr.toLowerCase();
+  const rewardConfigs = raw.rewardTokens || raw.rewards || raw.rewardConfig || [];
+  const hasFlatReward = raw.totalRewardsDeposited != null || raw.totalRewardsClaimed != null;
+  const configs = rewardConfigs.length > 0 ? rewardConfigs : (hasFlatReward ? [raw] : []);
+  const bySymbol = {};
+  let grandDeposited = 0, grandClaimed = 0;
+  configs.forEach(cfg => {
+    if (!cfg || typeof cfg !== 'object') return;
+    const sym     = (cfg.symbol || cfg.rewardSymbol || cfg.currency || 'USDC').toUpperCase();
+    const tokAddr = (cfg.tokenAddress || cfg.tokenAddr || cfg.rewardTokenAddress || '').toLowerCase();
+    const dec     = Number(cfg.decimals ||
+      (tokAddr === '0xb97ef9ef8734c71904d8002f8b6bc66dd9c48a6e' ? 6 :
+       tokAddr === '0x9702230a8ea53601f5cd2dc00fdbc13d4df4a8c7' ? 6 : 18));
+    const rawDep   = Number(cfg.totalRewardsDeposited || cfg.deposited || 0);
+    const rawClaim = Number(cfg.totalRewardsClaimed   || cfg.claimed   || 0);
+    const dep   = rawDep   > 1e12 ? rawDep   / Math.pow(10, dec) : rawDep;
+    const claim = rawClaim > 1e12 ? rawClaim / Math.pow(10, dec) : rawClaim;
+    if (!bySymbol[sym]) bySymbol[sym] = {
+      symbol: sym, tokenAddress: tokAddr, decimals: dec,
+      deposited: 0, claimed: 0, enabled: cfg.enabled !== false,
+      name: cfg.name || sym, percentage: cfg.percentage || 100,
+      frequencyHours: cfg.frequencyHours || null,
+      nextDistributionTime: cfg.nextDistributionTime || null,
+    };
+    bySymbol[sym].deposited += dep;
+    bySymbol[sym].claimed   += claim;
+    grandDeposited += dep;
+    grandClaimed   += claim;
+  });
+  if (grandDeposited > 0 || Object.keys(bySymbol).length > 0) {
+    moatsApiCache[key] = { _rewardsBySymbol: bySymbol, _totalDeposited: grandDeposited, _totalClaimed: grandClaimed };
+    console.log('[RewardMeta] ' + key.slice(0,10) + '... deposited=' + grandDeposited, bySymbol);
+  }
 }
+
+// No-op — data is now captured inline from the TIER 2 per-moat fetches
+async function fetchMoatsApiData() {}
 const LOAD_QUIPS = [
   "Getting ready to be moated…",
   "Fortifying your dashboard…",
@@ -2040,8 +2031,6 @@ async function loadAll(){
       fetch(`${API}/events?limit=200`).then(r=>r.json()).catch(()=>null),
       fetch(`${API}/moat-points/all`).then(r=>r.json()).catch(()=>null),
     ]);
-    // Fetch /moats metadata (includes totalRewardsDeposited) in the background
-    fetchMoatsApiData();
 
     // Process events immediately
     const evData = evR.status==='fulfilled' ? evR.value : null;
@@ -2060,9 +2049,11 @@ async function loadAll(){
     });
 
     // ── TIER 2: Per-moat breakdown (background, ~2-3s) ──
+    // Capture raw response wrapper first so _cacheMoatRewardMeta can read top-level
+    // reward fields (totalRewardsDeposited, rewardTokens, etc.) before normPts strips them.
     const ptResults = await Promise.allSettled(
       addrs.map(a => fetch(`${API}/moat-points/all?contractAddress=${a}`)
-        .then(r=>r.json()).then(d=>normPts(d,a)).catch(()=>[]))
+        .then(r=>r.json()).then(d=>{ _cacheMoatRewardMeta(d, a); return normPts(d,a); }).catch(()=>[]))
     );
     const newPts = ptResults.flatMap(r=>r.status==='fulfilled'?r.value:[]);
 
@@ -2783,8 +2774,14 @@ async function renderMoatRewards(addr){
   const top10=pts.slice(0,10).reduce((s,p)=>s+p.points,0);
 
   // ── Pull totalRewardsDeposited from /api/moats cache ──
-  // If the cache isn't populated yet, fetch now (only happens if page loaded very fast)
-  if(!Object.keys(moatsApiCache).length) await fetchMoatsApiData();
+  // Cache is populated by TIER 2 per-moat fetches. If this moat isn't cached yet
+  // (user clicked before TIER 2 finished), do a direct on-demand fetch now.
+  if(!moatsApiCache[addr.toLowerCase()]) {
+    try {
+      const raw = await fetch(API + '/moat-points/all?contractAddress=' + addr).then(r=>r.ok?r.json():null).catch(()=>null);
+      if(raw) _cacheMoatRewardMeta(raw, addr);
+    } catch(e) {}
+  }
   const apiMoat = moatsApiCache[addr.toLowerCase()] || {};
   const rewardsBySymbol = apiMoat._rewardsBySymbol || {};
   const apiTotalDeposited = apiMoat._totalDeposited || 0;
