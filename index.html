@@ -3094,42 +3094,116 @@ async function renderMoatRewards(addr){
       </div>`;
   }
 
-  // ── Build "Rewards Deposited" banner from RewardsDeposited events ──
-  // The /events endpoint returns eventType="RewardsDeposited" with the deposited amount.
-  // We tally all deposit events for this moat across: local allEvs + the apiEvs already fetched.
+  // ── Step 4b: Fetch RewardsDeposited on-chain via eth_getLogs ──
+  // RewardsDeposited(address indexed token, uint256 amount)
+  // keccak256("RewardsDeposited(address,uint256)") — token NOT indexed
+  // keccak256("RewardsDeposited(address,uint256)") with indexed token = different topic
+  // We try both common topic hashes used by Fortifi moat contracts.
   const DEPOSIT_TOKEN_DECIMALS = {
     '0xb97ef9ef8734c71904d8002f8b6bc66dd9c48a6e': 6,  // USDC
     '0x9702230a8ea53601f5cd2dc00fdbc13d4df4a8c7': 6,  // USDT
     '0xb31f66aa3c1e785363f0875a1b74e27b85fd66c7': 18, // WAVAX
     '0x49d5c2bdffac6ce2bfdb6640f4f80f226bc10bab': 18, // WETH.e
     '0x152b9d0fdc40c096757f570a51e494bd4b943e50': 8,  // BTC.b
+    '0x50b7545627a5162f82a992c33b87adc75187b218': 8,  // WBTC.e
   };
-  // Collect all deposit events from both local cache and freshly-fetched apiEvs
-  const depositEvs = [
-    ...allEvs.filter(e => e.contractAddress === addr &&
-      (e.eventType||'').toLowerCase().includes('deposit')),
-    ...apiEvs.filter(e => (e.eventType||'').toLowerCase().includes('deposit'))
-  ];
-  // Tally deposited amounts by token
-  const depositTally = {}; // tokenLabel -> { total, rawAddr }
-  depositEvs.forEach(e => {
-    const tokRaw = (e.rewardToken || e.rewardTokenAddr || e.rewardTokenAddress ||
-                    e.token || e.tokenAddress || e.rewardCurrency || '').toLowerCase();
-    let label = REWARD_TOKENS[tokRaw];
-    if (!label && cgCache && cgCache[tokRaw]) label = cgCache[tokRaw].symbol;
-    if (!label) {
-      // Try to match by address in MOATS
-      const mm = Object.values(MOATS).find(x => x.tokenAddr && x.tokenAddr.toLowerCase() === tokRaw);
-      if (mm) label = mm.ticker;
+  const depositTally = {};  // tokenLabel -> { total, rawAddr, count, currentBalance }
+  let depositLogCount = 0;
+  try {
+    const RPC2 = 'https://api.avax.network/ext/bc/C/rpc';
+    // topic0 candidates — try indexed-token variant first, then non-indexed
+    const DEP_TOPICS = [
+      '0x6a86a23c5d1ac4a72a3ecfe585f1e6da6eaf894e58edb478d76e2b97ce8a8a04', // RewardsDeposited(address indexed,uint256)
+      '0xac24935fd910bc682b5ccf12f3156c97e85e2cc6e6e0671f1e7ec8af2eb1be00', // RewardsDeposited(address,uint256) non-indexed
+      '0x7f26b83ff96e1f2b6a682f133852f6798a09c465da95921460cefb3847402498', // RewardAdded(uint256) — single arg
+    ];
+    let depLogs = [];
+    for (const topic0 of DEP_TOPICS) {
+      const res = await fetch(RPC2, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ jsonrpc: '2.0', id: 99, method: 'eth_getLogs',
+          params: [{ fromBlock: '0x1', toBlock: 'latest', address: addr, topics: [topic0] }] })
+      }).then(r => r.json()).catch(() => null);
+      const logs = res?.result || [];
+      if (logs.length > 0) { depLogs = logs; break; }
     }
-    label = label || (tokRaw && tokRaw.startsWith('0x') ? tokRaw.slice(0,6)+'…' : '?');
-    const dec = DEPOSIT_TOKEN_DECIMALS[tokRaw] ?? 18;
-    const rawAmt = Number(e.amount || e.rewardAmount || e.tokenAmount || e.value || 0);
-    const amt = rawAmt > 1e12 ? rawAmt / Math.pow(10, dec) : rawAmt;
-    if (!depositTally[label]) depositTally[label] = { total: 0, rawAddr: tokRaw };
-    depositTally[label].total += amt;
-  });
-  const hasDeposits = Object.values(depositTally).some(d => d.total > 0);
+    depositLogCount = depLogs.length;
+
+    depLogs.forEach(log => {
+      try {
+        let tokRaw = '', amtRaw;
+        const data = (log.data || '0x').replace('0x', '');
+        if (log.topics?.length >= 2) {
+          // indexed token: topics[1] = address, data = uint256 amount
+          tokRaw = ('0x' + log.topics[1].slice(26)).toLowerCase();
+          amtRaw = BigInt('0x' + data.padStart(64, '0').slice(0, 64));
+        } else {
+          // non-indexed: data = address(32 bytes) + uint256(32 bytes)
+          tokRaw = ('0x' + data.slice(24, 64)).toLowerCase();
+          amtRaw = BigInt('0x' + data.slice(64, 128));
+        }
+        const dec = DEPOSIT_TOKEN_DECIMALS[tokRaw] ?? 18;
+        const amt = Number(amtRaw) / Math.pow(10, dec);
+        if (amt <= 0) return;
+        let label = REWARD_TOKENS[tokRaw];
+        if (!label && cgCache?.[tokRaw]) label = cgCache[tokRaw].symbol;
+        if (!label) { const mm = Object.values(MOATS).find(x => x.tokenAddr?.toLowerCase() === tokRaw); if (mm) label = mm.ticker; }
+        label = label || shortA(tokRaw);
+        if (!depositTally[label]) depositTally[label] = { total: 0, rawAddr: tokRaw, count: 0 };
+        depositTally[label].total += amt;
+        depositTally[label].count++;
+      } catch(e3) {}
+    });
+
+    // Regardless of log results, also fetch current reward-token balance of moat contract
+    // (= unclaimed pool sitting in contract right now — always accurate)
+    const seenRewardToks = [...new Set([
+      ...onChainEvs.map(e => e.rewardTokenAddr),
+      ...Object.values(depositTally).map(d => d.rawAddr),
+    ].filter(Boolean))];
+    await Promise.allSettled(seenRewardToks.map(async tokRaw => {
+      if (!tokRaw || tokRaw.length !== 42) return;
+      try {
+        const balRes = await fetch(RPC2, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ jsonrpc: '2.0', id: 100, method: 'eth_call',
+            params: [{ to: tokRaw, data: '0x70a08231000000000000000000000000' + addr.slice(2).toLowerCase() }, 'latest'] })
+        }).then(r => r.json()).catch(() => null);
+        const bal = Number(BigInt(balRes?.result || '0x0')) / Math.pow(10, DEPOSIT_TOKEN_DECIMALS[tokRaw] ?? 18);
+        if (bal <= 0) return;
+        let label = REWARD_TOKENS[tokRaw];
+        if (!label && cgCache?.[tokRaw]) label = cgCache[tokRaw].symbol;
+        label = label || shortA(tokRaw);
+        if (!depositTally[label]) depositTally[label] = { total: 0, rawAddr: tokRaw, count: 0 };
+        depositTally[label].currentBalance = bal;
+      } catch(e4) {}
+    }));
+  } catch(e) { console.warn('RewardsDeposited on-chain scan failed:', e); }
+
+  // Resolve unknown token symbols via CoinGecko
+  const unknownDepAddrs = [...new Set(
+    Object.values(depositTally)
+      .filter(d => d.rawAddr?.startsWith('0x') && !REWARD_TOKENS[d.rawAddr] && !cgCache?.[d.rawAddr])
+      .map(d => d.rawAddr)
+  )];
+  if (unknownDepAddrs.length > 0) {
+    await Promise.allSettled(unknownDepAddrs.map(async tAddr => {
+      try {
+        const cgR = await fetch('https://api.coingecko.com/api/v3/coins/avalanche/contract/' + tAddr)
+          .then(r => r.ok ? r.json() : null).catch(() => null);
+        if (cgR?.symbol) {
+          const sym = cgR.symbol.toUpperCase();
+          REWARD_TOKENS[tAddr] = sym;
+          if (!cgCache) return;
+          cgCache[tAddr] = { symbol: sym, name: cgR.name, thumb: cgR.image?.thumb || '' };
+          const oldKey = shortA(tAddr);
+          if (depositTally[oldKey] && oldKey !== sym) { depositTally[sym] = depositTally[oldKey]; delete depositTally[oldKey]; }
+        }
+      } catch(e5) {}
+    }));
+  }
+
+  const hasDeposits = Object.values(depositTally).some(d => d.total > 0 || (d.currentBalance || 0) > 0);
 
   // Also compute total claimed from rewardTally (already built above)
   // depositedBannerHTML: show per-token deposited vs claimed vs unclaimed
@@ -3155,7 +3229,7 @@ async function renderMoatRewards(addr){
         <div style="display:flex;align-items:center;gap:7px">
           <span style="font-size:.9rem">🏦</span>
           <span style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.72rem;color:var(--grn);text-transform:uppercase;letter-spacing:.08em">Total Rewards Deposited</span>
-          <span style="font-family:'DM Mono',monospace;font-size:.46rem;background:rgba(109,184,122,.15);color:var(--grn);border:1px solid rgba(109,184,122,.3);border-radius:4px;padding:1px 5px">${depositEvs.length} events</span>
+          <span style="font-family:'DM Mono',monospace;font-size:.46rem;background:rgba(109,184,122,.15);color:var(--grn);border:1px solid rgba(109,184,122,.3);border-radius:4px;padding:1px 5px">on-chain</span>
         </div>
         <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.95rem;color:var(--grn)">${fmtK(grandDeposited)}</div>
       </div>
@@ -3182,8 +3256,9 @@ async function renderMoatRewards(addr){
                 <div style="font-family:'DM Mono',monospace;font-size:.44rem;color:var(--mut)">claimed</div>
               </div>
               <div style="text-align:center;background:var(--sur);border-radius:5px;padding:.3rem .2rem">
-                <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.75rem;color:${unclaimed>0?'var(--acc)':'var(--mut)'}">${unclaimed > 0 ? fmtK(unclaimed) : '—'}</div>
-                <div style="font-family:'DM Mono',monospace;font-size:.44rem;color:var(--mut)">unclaimed</div>
+                <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.75rem;color:${(d.currentBalance||unclaimed)>0?'var(--acc)':'var(--mut)'}">
+                  ${(d.currentBalance||0) > 0 ? fmtK(d.currentBalance) : (unclaimed > 0 ? fmtK(unclaimed) : '—')}</div>
+                <div style="font-family:'DM Mono',monospace;font-size:.44rem;color:var(--mut)">${(d.currentBalance||0)>0?'in contract':'unclaimed'}</div>
               </div>
             </div>
             <div style="height:3px;background:var(--bor);border-radius:99px;overflow:hidden">
@@ -3193,7 +3268,7 @@ async function renderMoatRewards(addr){
           </div>`;
         }).join('')}
       </div>
-      <div style="font-family:'DM Mono',monospace;font-size:.44rem;color:var(--ash2)">Source: /events RewardsDeposited · ${depositEvs.length} deposit event${depositEvs.length!==1?'s':''} found</div>
+      <div style="font-family:'DM Mono',monospace;font-size:.44rem;color:var(--ash2)">Source: on-chain eth_getLogs · ${depositLogCount} deposit log${depositLogCount!==1?'s':''} · balanceOf = live unclaimed</div>
     </div>` : '';
 
   el.innerHTML=`
