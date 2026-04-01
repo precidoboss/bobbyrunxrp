@@ -375,8 +375,14 @@ main{position:relative;z-index:1;padding:.8rem;max-width:1440px;margin:0 auto}
 .cmp-tbl tr.best td{background:rgba(249,115,22,.05)}
 .cmp-best-badge{font-family:'DM Mono',monospace;font-size:.52rem;background:rgba(249,115,22,.15);color:var(--acc);border-radius:3px;padding:1px 5px}
 
-/* MISC */
-.empty{text-align:center;padding:2rem;color:var(--mut);font-size:.76rem;line-height:1.6}
+/* LOCK DURATION SLIDER */
+input[type=range]#lockDaysSlider::-webkit-slider-thumb,
+input[type=range]#hcashLockDaysSlider::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:var(--gld);cursor:pointer;border:2px solid var(--card);box-shadow:0 0 0 1px var(--gld)}
+input[type=range]#lockDaysSlider::-moz-range-thumb,
+input[type=range]#hcashLockDaysSlider::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:var(--gld);cursor:pointer;border:2px solid var(--card)}
+/* DETAILS/SUMMARY */
+details>summary{user-select:none;list-style:none}
+details>summary::-webkit-details-marker{display:none}
 
 /* ── IN-APP NOTIFICATION ── */
 .app-notif{position:fixed;top:70px;right:14px;z-index:600;max-width:340px;padding:.75rem 1rem;border-radius:10px;font-family:'DM Mono',monospace;font-size:.68rem;line-height:1.5;border:1px solid;display:flex;align-items:flex-start;gap:9px;transform:translateX(380px);transition:transform .3s cubic-bezier(.4,0,.2,1);pointer-events:none;backdrop-filter:blur(12px)}
@@ -676,6 +682,33 @@ main{position:relative;z-index:1;padding:.8rem;max-width:1440px;margin:0 auto}
     <div class="sc"><div class="sl">Insights</div><div class="sv cg" id="sigNeut">—</div></div>
   </div>
   <div class="sig-grid" id="sigGrid"></div>
+
+  <!-- 🐳 WHALE FEED -->
+  <div class="panel" style="margin-bottom:.85rem">
+    <div class="ph" style="flex-wrap:wrap;gap:.5rem">
+      <div class="ptitle">🐳 Whale Feed <span style="font-family:'DM Mono',monospace;font-size:.52rem;color:var(--mut);font-weight:400;margin-left:4px">$100+ moves across all moats · last 24h</span></div>
+      <div style="display:flex;align-items:center;gap:.5rem;flex-wrap:wrap">
+        <select id="whaleMoatFilter" onchange="renderWhaleFeed()" style="padding:3px 7px;background:var(--sur);border:1px solid var(--bor);border-radius:5px;color:var(--dim);font-family:'DM Mono',monospace;font-size:.56rem;outline:none">
+          <option value="">All Moats</option>
+        </select>
+        <select id="whaleActionFilter" onchange="renderWhaleFeed()" style="padding:3px 7px;background:var(--sur);border:1px solid var(--bor);border-radius:5px;color:var(--dim);font-family:'DM Mono',monospace;font-size:.56rem;outline:none">
+          <option value="">All Actions</option>
+          <option value="stake">🔒 Stake</option>
+          <option value="lock">⏳ Lock</option>
+          <option value="burn">🔥 Burn</option>
+          <option value="unstake">↩️ Unstake</option>
+          <option value="unlock">🔓 Unlock</option>
+          <option value="eel">🚨 EEL</option>
+        </select>
+        <span id="whaleFeedCount" style="font-family:'DM Mono',monospace;font-size:.56rem;color:var(--mut)"></span>
+        <button onclick="renderWhaleFeed(true)" class="btn btn-sm btn-g" style="padding:2px 8px;font-size:.54rem">↻ Refresh</button>
+      </div>
+    </div>
+    <div id="whaleFeedBody" style="max-height:440px;overflow-y:auto;padding:.4rem .75rem">
+      <div style="text-align:center;padding:1.5rem;color:var(--mut);font-family:'DM Mono',monospace;font-size:.65rem"><span class="spin"></span> Loading whale moves…</div>
+    </div>
+  </div>
+
   <div class="panel">
     <div class="ph"><div class="ptitle">📊 Opportunity Matrix</div><span style="font-family:'DM Mono',monospace;font-size:.58rem;color:var(--mut)">lower eco share = higher upside</span></div>
     <div class="pb0 tw"><table class="tbl" id="oppTbl"><thead><tr><th>Moat</th><th>Eco Share</th><th>Wallets</th><th>Avg Points</th><th>Opportunity Score</th><th>Signal</th></tr></thead><tbody></tbody></table></div>
@@ -877,6 +910,11 @@ main{position:relative;z-index:1;padding:.8rem;max-width:1440px;margin:0 auto}
         <div class="rr" id="rPtNoteRow" style="display:none"><span class="rl">Formula</span><span id="rPtNote" style="font-family:'DM Mono',monospace;font-size:.58rem;color:var(--mut);text-align:right;max-width:200px"></span></div>
         <div class="rr" id="rRankRow" style="display:none"><span class="rl">Est. Rank in Moat</span><span class="rv cd" id="rRank">—</span></div>
         <div class="rr" id="rShareRow" style="display:none"><span class="rl">Est. Pool Share</span><span class="rv cgn" id="rShare">—</span></div>
+        <!-- Advanced breakdown panel -->
+        <div id="rBreakdown" style="display:none;margin-top:.55rem;background:var(--bg);border:1px solid var(--bor);border-radius:8px;padding:.65rem">
+          <div style="font-family:'DM Mono',monospace;font-size:.5rem;text-transform:uppercase;letter-spacing:.1em;color:var(--mut);margin-bottom:.45rem">📐 Advanced Breakdown</div>
+          <div id="rBreakdownRows"></div>
+        </div>
       </div>
     </div>
 
@@ -1615,8 +1653,6 @@ let dbLogEntries=0;
 
 const RAW = 'https://raw.githubusercontent.com/precidoboss/my-game-sprites/main/';
 const API  = 'https://moat-api.fortifi.network/api';
-
-// (reward metadata computed from /events in renderMoatRewards)
 const LOAD_QUIPS = [
   "Getting ready to be moated…",
   "Fortifying your dashboard…",
@@ -1983,7 +2019,7 @@ async function loadAll(){
   try{
     const addrs=Object.keys(MOATS);
 
-    // ── TIER 1: Fast parallel — events + global LB + /moats meta (3 requests, ~500ms) ──
+    // ── TIER 1: Fast parallel — events + global LB (2 requests, ~500ms) ──
     const [evR, globalLbR] = await Promise.allSettled([
       fetch(`${API}/events?limit=200`).then(r=>r.json()).catch(()=>null),
       fetch(`${API}/moat-points/all`).then(r=>r.json()).catch(()=>null),
@@ -2005,7 +2041,6 @@ async function loadAll(){
       if (uname && !uname.startsWith('0x')) zephyrNames[addr] = uname;
     });
 
-    // ── TIER 2: Per-moat breakdown (background, ~2-3s) ──
     // ── TIER 2: Per-moat breakdown (background, ~2-3s) ──
     const ptResults = await Promise.allSettled(
       addrs.map(a => fetch(`${API}/moat-points/all?contractAddress=${a}`)
@@ -2729,8 +2764,6 @@ async function renderMoatRewards(addr){
   const pts=m.sorted, tot=m.totalPoints;
   const top10=pts.slice(0,10).reduce((s,p)=>s+p.points,0);
 
-
-
   const REWARD_TOKENS={
     'usdc':'USDC','wavax':'WAVAX','avax':'AVAX','btc.b':'BTC.b','usdt':'USDT','weth.e':'WETH.e',
     '0xb97ef9ef8734c71904d8002f8b6bc66dd9c48a6e':'USDC',
@@ -2975,7 +3008,6 @@ async function renderMoatRewards(addr){
   const hasRewards=Object.keys(rewardTally).length>0&&tallySource.some(e=>e.rewardAmount>0);
 
   let rewardCurrencyHTML='';
-  let rewardPriceMap = { 'USDC':1, 'USDT':1, 'DAI.e':1 }; // extended if hasRewards
   // ── Token image lookup: moat logos + well-known DeFi tokens ──
   const TOKEN_IMG = {
     'USDC':  'https://assets.coingecko.com/coins/images/6319/small/usdc.png',
@@ -3005,15 +3037,14 @@ async function renderMoatRewards(addr){
 
   if(hasRewards){
     // Build USD price map for known reward tokens
-    // extend rewardPriceMap (declared above) with live prices
-    Object.assign(rewardPriceMap, {
+    const rewardPriceMap = {
       'USDC':1, 'USDT':1, 'DAI.e':1,
       'WAVAX': priceCache['0xb31f66aa3c1e785363f0875a1b74e27b85fd66c7']?.price||0,
       'AVAX':  priceCache['0xb31f66aa3c1e785363f0875a1b74e27b85fd66c7']?.price||0,
       'WETH.e':priceCache['0x49d5c2bdffac6ce2bfdb6640f4f80f226bc10bab']?.price||0,
       'BTC.b': priceCache['0x152b9d0fdc40c096757f570a51e494bd4b943e50']?.price||0,
       'WBTC.e':priceCache['0x50b7545627a5162f82a992c33b87adc75187b218']?.price||0,
-    });
+    };
     // Add moat token prices to the map
     Object.entries(MOATS).forEach(([mAddr,mm])=>{ if(mm.ticker&&priceCache[mAddr]?.price>0) rewardPriceMap[mm.ticker]=priceCache[mAddr].price; });
     // Fetch missing prices for WAVAX and BTC.b from CoinGecko by contract address
@@ -3094,185 +3125,7 @@ async function renderMoatRewards(addr){
       </div>`;
   }
 
-  // ── Step 4b: Fetch RewardsDeposited on-chain via eth_getLogs ──
-  // RewardsDeposited(address indexed token, uint256 amount)
-  // keccak256("RewardsDeposited(address,uint256)") — token NOT indexed
-  // keccak256("RewardsDeposited(address,uint256)") with indexed token = different topic
-  // We try both common topic hashes used by Fortifi moat contracts.
-  const DEPOSIT_TOKEN_DECIMALS = {
-    '0xb97ef9ef8734c71904d8002f8b6bc66dd9c48a6e': 6,  // USDC
-    '0x9702230a8ea53601f5cd2dc00fdbc13d4df4a8c7': 6,  // USDT
-    '0xb31f66aa3c1e785363f0875a1b74e27b85fd66c7': 18, // WAVAX
-    '0x49d5c2bdffac6ce2bfdb6640f4f80f226bc10bab': 18, // WETH.e
-    '0x152b9d0fdc40c096757f570a51e494bd4b943e50': 8,  // BTC.b
-    '0x50b7545627a5162f82a992c33b87adc75187b218': 8,  // WBTC.e
-  };
-  const depositTally = {};  // tokenLabel -> { total, rawAddr, count, currentBalance }
-  let depositLogCount = 0;
-  try {
-    const RPC2 = 'https://api.avax.network/ext/bc/C/rpc';
-    // topic0 candidates — try indexed-token variant first, then non-indexed
-    const DEP_TOPICS = [
-      '0x6a86a23c5d1ac4a72a3ecfe585f1e6da6eaf894e58edb478d76e2b97ce8a8a04', // RewardsDeposited(address indexed,uint256)
-      '0xac24935fd910bc682b5ccf12f3156c97e85e2cc6e6e0671f1e7ec8af2eb1be00', // RewardsDeposited(address,uint256) non-indexed
-      '0x7f26b83ff96e1f2b6a682f133852f6798a09c465da95921460cefb3847402498', // RewardAdded(uint256) — single arg
-    ];
-    let depLogs = [];
-    for (const topic0 of DEP_TOPICS) {
-      const res = await fetch(RPC2, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ jsonrpc: '2.0', id: 99, method: 'eth_getLogs',
-          params: [{ fromBlock: '0x1', toBlock: 'latest', address: addr, topics: [topic0] }] })
-      }).then(r => r.json()).catch(() => null);
-      const logs = res?.result || [];
-      if (logs.length > 0) { depLogs = logs; break; }
-    }
-    depositLogCount = depLogs.length;
-
-    depLogs.forEach(log => {
-      try {
-        let tokRaw = '', amtRaw;
-        const data = (log.data || '0x').replace('0x', '');
-        if (log.topics?.length >= 2) {
-          // indexed token: topics[1] = address, data = uint256 amount
-          tokRaw = ('0x' + log.topics[1].slice(26)).toLowerCase();
-          amtRaw = BigInt('0x' + data.padStart(64, '0').slice(0, 64));
-        } else {
-          // non-indexed: data = address(32 bytes) + uint256(32 bytes)
-          tokRaw = ('0x' + data.slice(24, 64)).toLowerCase();
-          amtRaw = BigInt('0x' + data.slice(64, 128));
-        }
-        const dec = DEPOSIT_TOKEN_DECIMALS[tokRaw] ?? 18;
-        const amt = Number(amtRaw) / Math.pow(10, dec);
-        if (amt <= 0) return;
-        let label = REWARD_TOKENS[tokRaw];
-        if (!label && cgCache?.[tokRaw]) label = cgCache[tokRaw].symbol;
-        if (!label) { const mm = Object.values(MOATS).find(x => x.tokenAddr?.toLowerCase() === tokRaw); if (mm) label = mm.ticker; }
-        label = label || shortA(tokRaw);
-        if (!depositTally[label]) depositTally[label] = { total: 0, rawAddr: tokRaw, count: 0 };
-        depositTally[label].total += amt;
-        depositTally[label].count++;
-      } catch(e3) {}
-    });
-
-    // Regardless of log results, also fetch current reward-token balance of moat contract
-    // (= unclaimed pool sitting in contract right now — always accurate)
-    const seenRewardToks = [...new Set([
-      ...onChainEvs.map(e => e.rewardTokenAddr),
-      ...Object.values(depositTally).map(d => d.rawAddr),
-    ].filter(Boolean))];
-    await Promise.allSettled(seenRewardToks.map(async tokRaw => {
-      if (!tokRaw || tokRaw.length !== 42) return;
-      try {
-        const balRes = await fetch(RPC2, {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ jsonrpc: '2.0', id: 100, method: 'eth_call',
-            params: [{ to: tokRaw, data: '0x70a08231000000000000000000000000' + addr.slice(2).toLowerCase() }, 'latest'] })
-        }).then(r => r.json()).catch(() => null);
-        const bal = Number(BigInt(balRes?.result || '0x0')) / Math.pow(10, DEPOSIT_TOKEN_DECIMALS[tokRaw] ?? 18);
-        if (bal <= 0) return;
-        let label = REWARD_TOKENS[tokRaw];
-        if (!label && cgCache?.[tokRaw]) label = cgCache[tokRaw].symbol;
-        label = label || shortA(tokRaw);
-        if (!depositTally[label]) depositTally[label] = { total: 0, rawAddr: tokRaw, count: 0 };
-        depositTally[label].currentBalance = bal;
-      } catch(e4) {}
-    }));
-  } catch(e) { console.warn('RewardsDeposited on-chain scan failed:', e); }
-
-  // Resolve unknown token symbols via CoinGecko
-  const unknownDepAddrs = [...new Set(
-    Object.values(depositTally)
-      .filter(d => d.rawAddr?.startsWith('0x') && !REWARD_TOKENS[d.rawAddr] && !cgCache?.[d.rawAddr])
-      .map(d => d.rawAddr)
-  )];
-  if (unknownDepAddrs.length > 0) {
-    await Promise.allSettled(unknownDepAddrs.map(async tAddr => {
-      try {
-        const cgR = await fetch('https://api.coingecko.com/api/v3/coins/avalanche/contract/' + tAddr)
-          .then(r => r.ok ? r.json() : null).catch(() => null);
-        if (cgR?.symbol) {
-          const sym = cgR.symbol.toUpperCase();
-          REWARD_TOKENS[tAddr] = sym;
-          if (!cgCache) return;
-          cgCache[tAddr] = { symbol: sym, name: cgR.name, thumb: cgR.image?.thumb || '' };
-          const oldKey = shortA(tAddr);
-          if (depositTally[oldKey] && oldKey !== sym) { depositTally[sym] = depositTally[oldKey]; delete depositTally[oldKey]; }
-        }
-      } catch(e5) {}
-    }));
-  }
-
-  const hasDeposits = Object.values(depositTally).some(d => d.total > 0 || (d.currentBalance || 0) > 0);
-
-  // Also compute total claimed from rewardTally (already built above)
-  // depositedBannerHTML: show per-token deposited vs claimed vs unclaimed
-  const DEPOSIT_IMGS = {
-    'USDC':  'https://assets.coingecko.com/coins/images/6319/small/usdc.png',
-    'USDT':  'https://assets.coingecko.com/coins/images/325/small/Tether.png',
-    'WAVAX': 'https://assets.coingecko.com/coins/images/15075/small/wrapped-avax.png',
-    'AVAX':  'https://assets.coingecko.com/coins/images/12559/small/Avalanche_Circle_RedWhite_Trans.png',
-    '$WAVAX':'https://assets.coingecko.com/coins/images/15075/small/wrapped-avax.png',
-  };
-  function depTokenImg(label, size=18) {
-    const mm = Object.values(MOATS).find(x => (x.ticker||'').toLowerCase() === label.toLowerCase());
-    const src = DEPOSIT_IMGS[label] || (mm?.logo ? RAW + encodeURIComponent(mm.logo) : null)
-             || (cgCache && Object.values(cgCache).find(d => d.symbol === label)?.thumb) || null;
-    return src
-      ? `<img src="${src}" style="width:${size}px;height:${size}px;border-radius:50%;object-fit:cover;flex-shrink:0" onerror="this.style.display='none'">`
-      : `<div style="width:${size}px;height:${size}px;border-radius:50%;background:var(--bor);display:flex;align-items:center;justify-content:center;font-size:${size*.5}px;flex-shrink:0">💰</div>`;
-  }
-  const grandDeposited = Object.values(depositTally).reduce((s,d) => s + d.total, 0);
-  const depositedBannerHTML = hasDeposits ? `
-    <div style="background:linear-gradient(135deg,rgba(109,184,122,.09),rgba(109,184,122,.03));border:1px solid rgba(109,184,122,.4);border-radius:10px;padding:.9rem 1rem;margin-bottom:.85rem">
-      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.4rem;margin-bottom:.65rem">
-        <div style="display:flex;align-items:center;gap:7px">
-          <span style="font-size:.9rem">🏦</span>
-          <span style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.72rem;color:var(--grn);text-transform:uppercase;letter-spacing:.08em">Total Rewards Deposited</span>
-          <span style="font-family:'DM Mono',monospace;font-size:.46rem;background:rgba(109,184,122,.15);color:var(--grn);border:1px solid rgba(109,184,122,.3);border-radius:4px;padding:1px 5px">on-chain</span>
-        </div>
-        <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.95rem;color:var(--grn)">${fmtK(grandDeposited)}</div>
-      </div>
-      <div style="display:flex;flex-wrap:wrap;gap:.5rem;margin-bottom:.5rem">
-        ${Object.entries(depositTally).filter(([,d])=>d.total>0).map(([label,d]) => {
-          const claimed = rewardTally[label]?.total || 0;
-          const unclaimed = Math.max(0, d.total - claimed);
-          const pct = d.total > 0 ? Math.min(100, claimed / d.total * 100) : 0;
-          const usdDep = rewardPriceMap && rewardPriceMap[label] > 0 ? d.total * rewardPriceMap[label] : 0;
-          return `
-          <div style="background:var(--card);border:1px solid rgba(109,184,122,.2);border-radius:8px;padding:.65rem .85rem;flex:1;min-width:140px">
-            <div style="display:flex;align-items:center;gap:6px;margin-bottom:.5rem">
-              ${depTokenImg(label, 18)}
-              <span style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.78rem;color:var(--txt)">${label}</span>
-              ${usdDep > 0 ? `<span style="font-family:'DM Mono',monospace;font-size:.52rem;color:var(--mut)">≈ ${fmtK(usdDep)}</span>` : ''}
-            </div>
-            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.3rem;margin-bottom:.4rem">
-              <div style="text-align:center;background:var(--sur);border-radius:5px;padding:.3rem .2rem">
-                <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.75rem;color:var(--grn)">${fmtK(d.total)}</div>
-                <div style="font-family:'DM Mono',monospace;font-size:.44rem;color:var(--mut)">deposited</div>
-              </div>
-              <div style="text-align:center;background:var(--sur);border-radius:5px;padding:.3rem .2rem">
-                <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.75rem;color:var(--gld)">${claimed > 0 ? fmtK(claimed) : '—'}</div>
-                <div style="font-family:'DM Mono',monospace;font-size:.44rem;color:var(--mut)">claimed</div>
-              </div>
-              <div style="text-align:center;background:var(--sur);border-radius:5px;padding:.3rem .2rem">
-                <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.75rem;color:${(d.currentBalance||unclaimed)>0?'var(--acc)':'var(--mut)'}">
-                  ${(d.currentBalance||0) > 0 ? fmtK(d.currentBalance) : (unclaimed > 0 ? fmtK(unclaimed) : '—')}</div>
-                <div style="font-family:'DM Mono',monospace;font-size:.44rem;color:var(--mut)">${(d.currentBalance||0)>0?'in contract':'unclaimed'}</div>
-              </div>
-            </div>
-            <div style="height:3px;background:var(--bor);border-radius:99px;overflow:hidden">
-              <div style="height:100%;width:${pct.toFixed(1)}%;background:linear-gradient(90deg,var(--gld),var(--acc));border-radius:99px"></div>
-            </div>
-            <div style="font-family:'DM Mono',monospace;font-size:.44rem;color:var(--mut);margin-top:2px">${pct.toFixed(1)}% claimed</div>
-          </div>`;
-        }).join('')}
-      </div>
-      <div style="font-family:'DM Mono',monospace;font-size:.44rem;color:var(--ash2)">Source: on-chain eth_getLogs · ${depositLogCount} deposit log${depositLogCount!==1?'s':''} · balanceOf = live unclaimed</div>
-    </div>` : '';
-
   el.innerHTML=`
-    ${depositedBannerHTML}
     <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:.55rem;margin-bottom:.85rem">
       <div class="reward-card"><div class="rv2" style="color:${meta.color||'var(--acc)'}">${fmtP(tot)}</div><div class="rl2">Total Points Pool</div></div>
       <div class="reward-card"><div class="rv2 ca">${pts.length}</div><div class="rl2">Recipients</div></div>
@@ -3984,6 +3837,10 @@ function renderSignals(){
   setTxt('sigBear', sigsFinal.filter(s=>s.type==='bear').length);
   setTxt('sigNeut', sigsFinal.filter(s=>s.type==='neut').length);
 
+  // Populate whale feed moat filter and render
+  populateWhaleMoatFilter();
+  renderWhaleFeed();
+
   const grid=document.getElementById('sigGrid');
   grid.innerHTML=sigsFinal.slice(0,15).map(s=>`
     <div class="sig">
@@ -4012,6 +3869,135 @@ function renderSignals(){
       <td><div class="bw"><div class="bt"><div class="bf" style="width:${oppScore}%;background:${oppScore>70?'var(--grn)':oppScore>40?'var(--gld)':'var(--acc)'}"></div></div><span class="bv">${oppScore}/100</span></div></td>
       <td>${sig}</td>
     </tr>`;
+  }).join('');
+}
+
+// ── WHALE FEED ──
+function populateWhaleMoatFilter() {
+  const sel = document.getElementById('whaleMoatFilter');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">All Moats</option>'
+    + Object.entries(MOATS).map(([a,m]) => `<option value="${a}">${m.emoji} ${m.short}</option>`).join('');
+}
+
+function renderWhaleFeed(force=false) {
+  const el = document.getElementById('whaleFeedBody');
+  const countEl = document.getElementById('whaleFeedCount');
+  if (!el) return;
+
+  const moatFilter   = document.getElementById('whaleMoatFilter')?.value || '';
+  const actionFilter = document.getElementById('whaleActionFilter')?.value || '';
+  const cutoff24h    = Date.now()/1000 - 86400;
+
+  // Filter events: last 24h, $100+ USD value only
+  let whaleEvs = allEvs.filter(e => {
+    if (!e.timestamp || Number(e.timestamp) < cutoff24h) return false;
+    const evType = (e.eventType||'').toLowerCase();
+    // Exclude rewards/claims (we only want position moves)
+    if (evType.includes('reward')||evType.includes('claim')||evType.includes('distribut')) return false;
+    // Must have a token amount
+    if (!e.tokenAmount || e.tokenAmount <= 0) return false;
+    // Must have a price to calculate USD value
+    const meta = MOATS[e.contractAddress];
+    if (!meta) return false;
+    const px = priceCache[e.contractAddress]?.price || 0;
+    if (px <= 0) return true; // include if we have amount but no price (show anyway with no USD)
+    const usd = e.tokenAmount * px;
+    return usd >= 100; // $100+ threshold
+  });
+
+  // Apply filters
+  if (moatFilter) whaleEvs = whaleEvs.filter(e => e.contractAddress === moatFilter);
+  if (actionFilter) {
+    whaleEvs = whaleEvs.filter(e => {
+      const t = (e.eventType||'').toLowerCase();
+      if (actionFilter==='stake')   return (t.includes('stake')||t.includes('deposit')) && !t.includes('unstake');
+      if (actionFilter==='unstake') return t.includes('unstake')||t.includes('withdraw');
+      if (actionFilter==='lock')    return t.includes('lock') && !t.includes('unlock') && !t.includes('eel') && !t.includes('earlyexit');
+      if (actionFilter==='unlock')  return t.includes('unlock') || t.includes('exitlock');
+      if (actionFilter==='burn')    return t.includes('burn');
+      if (actionFilter==='eel')     return t.includes('eel')||t.includes('earlyexit')||t.includes('emergencyendlock');
+      return true;
+    });
+  }
+
+  // Sort by USD value desc
+  whaleEvs.sort((a,b) => {
+    const pxA = priceCache[a.contractAddress]?.price||0;
+    const pxB = priceCache[b.contractAddress]?.price||0;
+    const usdA = pxA > 0 ? (a.tokenAmount||0)*pxA : 0;
+    const usdB = pxB > 0 ? (b.tokenAmount||0)*pxB : 0;
+    return usdB - usdA;
+  });
+
+  if (countEl) countEl.textContent = whaleEvs.length + ' whale move' + (whaleEvs.length!==1?'s':'');
+
+  if (!whaleEvs.length) {
+    el.innerHTML = `<div style="text-align:center;padding:2rem;color:var(--mut);font-family:'DM Mono',monospace;font-size:.65rem">
+      <div style="font-size:1.8rem;margin-bottom:.5rem">🐳</div>
+      No whale moves found in the last 24h${moatFilter||actionFilter?' matching your filters.':'. Make sure data is loaded.'}</div>`;
+    return;
+  }
+
+  el.innerHTML = whaleEvs.slice(0, 50).map(e => {
+    const meta = MOATS[e.contractAddress] || {};
+    const col  = meta.color || '#f97316';
+    const px   = priceCache[e.contractAddress]?.price || 0;
+    const usd  = px > 0 ? e.tokenAmount * px : 0;
+    const t    = (e.eventType||'activity').toLowerCase();
+    const ts   = e.timestamp ? new Date(Number(e.timestamp)*1000).toLocaleString([],{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '—';
+
+    let evLabel, evIcon, evColor;
+    if (t.includes('burn'))                                              { evLabel='Burn'; evIcon='🔥'; evColor='var(--red)'; }
+    else if (t.includes('eel')||t.includes('earlyexit')||t.includes('emergencyendlock')) { evLabel='EEL'; evIcon='🚨'; evColor='var(--red)'; }
+    else if (t.includes('unlock')||t.includes('exitlock'))               { evLabel='Unlock'; evIcon='🔓'; evColor='var(--pur)'; }
+    else if (t.includes('lock')&&!t.includes('unlock'))                  { evLabel='Lock'; evIcon='⏳'; evColor='var(--gld)'; }
+    else if (t.includes('unstake')||t.includes('withdraw'))              { evLabel='Unstake'; evIcon='↩️'; evColor='var(--mut)'; }
+    else if (t.includes('stake')||t.includes('deposit'))                 { evLabel='Stake'; evIcon='🔒'; evColor='var(--acc)'; }
+    else                                                                 { evLabel=e.eventType||'Move'; evIcon='📋'; evColor='var(--mut)'; }
+
+    const _w = (e.wallet||'').toLowerCase();
+    const _ep = getKnownProfile(_w);
+    const _zn = _w ? (zephyrNames[_w]||null) : null;
+    const _dispName = _ep ? ('@'+_ep.twitter) : (_zn || (_w ? _w.slice(0,6)+'…'+_w.slice(-4) : '—'));
+
+    const whaleSizeClass = usd >= 10000 ? { emoji:'🐋', label:'Mega Whale', bg:'rgba(167,139,250,.1)', border:'rgba(167,139,250,.3)', textCol:'var(--pur)' }
+      : usd >= 2500 ? { emoji:'🐳', label:'Whale', bg:'rgba(34,211,238,.08)', border:'rgba(34,211,238,.25)', textCol:'var(--cyn)' }
+      : usd >= 500  ? { emoji:'🦈', label:'Shark', bg:'rgba(249,115,22,.07)', border:'rgba(249,115,22,.22)', textCol:'var(--acc)' }
+      :               { emoji:'🐬', label:'$100+', bg:'rgba(109,184,122,.06)', border:'rgba(109,184,122,.2)', textCol:'var(--grn)' };
+
+    const txLink = e.txHash ? `<a href="https://snowtrace.io/tx/${e.txHash}" target="_blank" style="font-family:'DM Mono',monospace;font-size:.52rem;color:var(--acc);text-decoration:none">${e.txHash.slice(0,6)}…${e.txHash.slice(-4)} ↗</a>` : '';
+
+    const picHtml = _ep
+      ? `<img src="${_ep.pic}" style="width:32px;height:32px;border-radius:50%;object-fit:cover;border:1.5px solid ${col};flex-shrink:0" onerror="this.style.display='none'">`
+      : `<div style="width:32px;height:32px;border-radius:50%;background:${col}22;border:1.5px solid ${col}44;display:flex;align-items:center;justify-content:center;font-family:'DM Mono',monospace;font-size:.7rem;font-weight:700;color:${col};flex-shrink:0">${(_w[2]||'?').toUpperCase()}</div>`;
+
+    return `<div style="display:flex;align-items:flex-start;gap:10px;padding:.65rem 0;border-bottom:1px solid rgba(51,46,40,.28)">
+      <!-- whale size badge -->
+      <div style="flex-shrink:0;text-align:center;min-width:38px">
+        <div style="font-size:1.3rem;line-height:1">${whaleSizeClass.emoji}</div>
+        <div style="font-family:'DM Mono',monospace;font-size:.42rem;color:${whaleSizeClass.textCol};white-space:nowrap">${whaleSizeClass.label}</div>
+      </div>
+      <!-- wallet avatar -->
+      ${picHtml}
+      <!-- content -->
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-bottom:3px">
+          <span style="font-family:'DM Mono',monospace;font-size:.62rem;font-weight:700;color:${evColor}">${evIcon} ${evLabel}</span>
+          ${meta.name?`<span style="display:inline-flex;align-items:center;gap:3px;background:${col}16;border:1px solid ${col}36;border-radius:99px;padding:1px 6px;font-family:'DM Mono',monospace;font-size:.52rem;color:${col}">${meta.short||meta.name}</span>`:''}
+          ${_ep?`<a href="https://x.com/${_ep.twitter}" target="_blank" style="font-family:'DM Mono',monospace;font-size:.52rem;color:var(--acc);text-decoration:none">@${_ep.twitter} ↗</a>`:''}
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:2px">
+          <span onclick="gotoW('${_w}')" style="font-family:'DM Mono',monospace;font-size:.6rem;color:var(--txt);cursor:pointer;background:var(--sur);border:1px solid var(--bor);border-radius:5px;padding:1px 6px">${_dispName}</span>
+          <span style="font-family:'DM Mono',monospace;font-size:.62rem;color:${evColor};font-weight:700">${fmtP(e.tokenAmount)} ${e.tokenSymbol||meta.ticker||''}</span>
+          ${usd>0?`<span style="font-family:'DM Mono',monospace;font-size:.6rem;color:${whaleSizeClass.textCol};background:${whaleSizeClass.bg};border:1px solid ${whaleSizeClass.border};border-radius:4px;padding:1px 5px;font-weight:700">$${fmtK(usd)}</span>`:''}
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;font-family:'DM Mono',monospace;font-size:.54rem;color:var(--mut)">
+          <span>${ts}</span>
+          ${txLink}
+        </div>
+      </div>
+    </div>`;
   }).join('');
 }
 
@@ -4234,8 +4220,18 @@ function renderEvItems(evs,id,freshIds=[]){
   el.innerHTML=s.map(e=>{
     const t=(e.eventType||'activity').toLowerCase();
     const isNew=freshSet.has(e.id);
-    const col=TYPE_COLOR[t]||'var(--mut)';
-    const icon=TYPE_ICON[t]||'·';
+
+    // Resolve proper action label
+    let resolvedLabel, col, icon;
+    if (t.includes('burn'))                                              { resolvedLabel='Burn'; col='var(--red)'; icon='🔥'; }
+    else if (t.includes('eel')||t.includes('earlyexit')||t.includes('emergencyendlock')) { resolvedLabel='EEL'; col='var(--red)'; icon='🚨'; }
+    else if (t.includes('unlock')&&!t.includes('lock')||t.includes('exitlock')) { resolvedLabel='Unlock'; col='var(--pur)'; icon='🔓'; }
+    else if (t.includes('lock')&&!t.includes('unlock'))                  { resolvedLabel='Lock'; col='var(--gld)'; icon='⏳'; }
+    else if (t.includes('unstake')||t.includes('withdraw'))              { resolvedLabel='Unstake'; col='var(--mut)'; icon='↩️'; }
+    else if (t.includes('stake')||t.includes('deposit'))                 { resolvedLabel='Stake'; col='var(--acc)'; icon='🔒'; }
+    else if (t.includes('claim')||t.includes('reward')||t.includes('distribut')) { resolvedLabel='Claim / Reward'; col='var(--grn)'; icon='💰'; }
+    else                                                                 { resolvedLabel=e.eventType||'Activity'; col='var(--mut)'; icon='📋'; }
+
     const isReward=t.includes('reward')||t.includes('claim')||t.includes('distribut');
 
     const ts=fmtTs(e.timestamp);
@@ -4320,7 +4316,7 @@ function renderEvItems(evs,id,freshIds=[]){
       <div style="width:6px;height:6px;border-radius:50%;background:${col};box-shadow:0 0 4px ${col};margin-top:7px;flex-shrink:0"></div>
       <div style="flex:1;min-width:0">
         <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-bottom:3px">
-          <span style="font-family:'DM Mono',monospace;font-size:.6rem;text-transform:uppercase;letter-spacing:.07em;color:${col};font-weight:500">${icon} ${t}</span>
+          <span style="font-family:'DM Mono',monospace;font-size:.6rem;text-transform:uppercase;letter-spacing:.07em;color:${col};font-weight:600">${icon} ${resolvedLabel}</span>
           ${synthTag}
           ${moatChip}
         </div>
@@ -5010,6 +5006,29 @@ async function runAllocatorCalc() {
           <div class="res-sub">${r.price>0?r.estShare+'% pool share':'—'}</div>
         </div>
       </div>
+      ${r.price>0?`
+      <!-- Advanced breakdown -->
+      <details style="margin-top:.5rem">
+        <summary style="font-family:'DM Mono',monospace;font-size:.54rem;color:var(--mut);cursor:pointer;list-style:none;display:flex;align-items:center;gap:5px;padding:3px 0"><span style="font-size:.65rem">📐</span> Advanced Points Breakdown</summary>
+        <div style="background:var(--bg);border:1px solid var(--bor);border-radius:8px;padding:.6rem;margin-top:.4rem">
+          ${(()=>{
+            const knownSup = r.meta.knownSupply || r.meta.totalSupply || (getSupply(r.addr)?.totalSupply) || 0;
+            const ppt2 = knownSup > 0 ? 1000000/knownSup : null;
+            const rows = [];
+            rows.push(['Tokens to buy', (r.price>0?f2(isHcash?hcashSplit?.hcashTokens||0:r.tokens):'—') + ' ' + r.meta.ticker]);
+            if(r.price>0) rows.push(['Token price', '$'+fmtPrice(r.price)]);
+            if(knownSup>0) rows.push(['Total supply', fmtP(knownSup)+' '+r.meta.ticker]);
+            if(r.price>0&&knownSup>0) rows.push(['% of supply', ((isHcash?hcashSplit?.hcashTokens||0:r.tokens)/knownSup*100).toFixed(5)+'%']);
+            if(ppt2) rows.push(['Base pts/token (1×)', fmtPrice(ppt2)]);
+            if(ppt2&&r.price>0) rows.push(['Points at 1× (stake)', fmtP((isHcash?hcashSplit?.hcashTokens||0:r.tokens)*ppt2)]);
+            rows.push(['Multiplier ('+r.methodLabel+')', r.mult+'×']);
+            rows.push(['= Final est. points', fmtP(r.pts)]);
+            rows.push(['Est. rank in moat', '#'+r.estRank+' · '+r.estShare+'% share']);
+            rows.push(['Fort score share', r.fortShare+'%']);
+            return rows.map((row,i)=>`<div style="display:flex;justify-content:space-between;padding:2px 0;font-family:'DM Mono',monospace;font-size:.54rem;${i===rows.length-3?'border-top:1px solid var(--bor);padding-top:4px;margin-top:2px;font-weight:700':'border-bottom:1px solid rgba(51,46,40,.25)'}"><span style="color:var(--mut)">${row[0]}</span><span style="color:${i>=rows.length-3?'var(--acc)':'var(--txt)'}">${row[1]}</span></div>`).join('');
+          })()}
+        </div>
+      </details>`:''}
       ${r.price>0?`<div style="margin-top:.55rem;display:flex;flex-wrap:wrap;gap:.4rem">
         ${r.liq>0?`<span style="font-family:'DM Mono',monospace;font-size:.56rem;color:var(--mut);background:var(--sur);border:1px solid var(--bor);border-radius:4px;padding:1px 6px">Liq: ${fmtK(r.liq)}</span>`:''}
         ${r.supplyPct?`<span style="font-family:'DM Mono',monospace;font-size:.56rem;color:var(--mut);background:var(--sur);border:1px solid var(--bor);border-radius:4px;padding:1px 6px">Supply %: ${r.supplyPct}%</span>`:''}
@@ -5479,7 +5498,12 @@ function calcPts(){
   const addr = document.getElementById('cMoatSel').value;
   const meta = MOATS[addr] || {};
   document.getElementById('lockRow').style.display = a === 'lock' ? 'block' : 'none';
-  if (!t) { document.getElementById('pRes').style.display = 'none'; return; }
+  if (!t) {
+    document.getElementById('pRes').style.display = 'none';
+    const bd = document.getElementById('rBreakdown');
+    if (bd) bd.style.display = 'none';
+    return;
+  }
 
   const days       = Number(document.getElementById('cDays').value) || 180;
   const multiplier = a === 'burn' ? 10 : a === 'lock' ? lockM(days) : 1;
@@ -5501,6 +5525,9 @@ function calcPts(){
 
   const pts = ppt !== null ? t * ppt * multiplier : t * multiplier;
 
+  // hCASH LP moat special note
+  const isHcashMoat = addr && addr.toLowerCase() === '0x501f6e7bec3db63d8dacbc9fa0ce42d5d2329d53';
+
   // Formula note
   let ptsNote = '';
   if (ppt !== null) {
@@ -5510,6 +5537,7 @@ function calcPts(){
   } else {
     ptsNote = fmtP(t) + ' × ' + multiplier + '× — no supply data yet';
   }
+  if (isHcashMoat) ptsNote += ' (LP token input — add AVAX+hCASH on Pharaoh first)';
 
   document.getElementById('pRes').style.display = 'block';
   setTxt('rT',  fmtP(t));
@@ -5518,6 +5546,35 @@ function calcPts(){
   const ptsnEl    = document.getElementById('rPtNote');
   const ptsnRowEl = document.getElementById('rPtNoteRow');
   if (ptsnEl) { ptsnEl.textContent = ptsNote; if (ptsnRowEl) ptsnRowEl.style.display = 'flex'; }
+
+  // Advanced breakdown
+  const bdEl = document.getElementById('rBreakdown');
+  const bdRowsEl = document.getElementById('rBreakdownRows');
+  if (bdEl && bdRowsEl) {
+    const moatName = meta.name || 'Selected Moat';
+    const totalSup = supply > 0 ? supply : 0;
+    const supplyPct = totalSup > 0 ? (t / totalSup * 100).toFixed(5) : null;
+    const pptBase = ppt ? ppt : null;
+    const px = addr ? (priceCache[addr]?.price||0) : 0;
+    const tokenUsd = px > 0 ? t * px : null;
+
+    let bdRows = '';
+    bdRows += `<div class="rr" style="font-size:.55rem"><span class="rl" style="font-size:.52rem">Token Input</span><span style="font-family:'DM Mono',monospace;font-size:.55rem;color:var(--txt)">${fmtP(t)} ${meta.ticker||'tokens'}</span></div>`;
+    if (tokenUsd) bdRows += `<div class="rr" style="font-size:.55rem"><span class="rl" style="font-size:.52rem">USD Value</span><span style="font-family:'DM Mono',monospace;font-size:.55rem;color:var(--grn)">≈ $${fmtK(tokenUsd)}</span></div>`;
+    if (totalSup > 0) bdRows += `<div class="rr" style="font-size:.55rem"><span class="rl" style="font-size:.52rem">Total Supply</span><span style="font-family:'DM Mono',monospace;font-size:.55rem;color:var(--mut)">${fmtP(totalSup)} ${meta.ticker||''}</span></div>`;
+    if (supplyPct) bdRows += `<div class="rr" style="font-size:.55rem"><span class="rl" style="font-size:.52rem">% of Supply</span><span style="font-family:'DM Mono',monospace;font-size:.55rem;color:var(--dim)">${supplyPct}%</span></div>`;
+    if (pptBase) bdRows += `<div class="rr" style="font-size:.55rem"><span class="rl" style="font-size:.52rem">Base Pts/Token (1×)</span><span style="font-family:'DM Mono',monospace;font-size:.55rem;color:var(--acc)">${fmtPrice(pptBase)}</span></div>`;
+    bdRows += `<div class="rr" style="font-size:.55rem"><span class="rl" style="font-size:.52rem">Points at 1× (Stake)</span><span style="font-family:'DM Mono',monospace;font-size:.55rem;color:var(--acc)">${pptBase ? fmtP(t * pptBase) : fmtP(t)}</span></div>`;
+    if (multiplier > 1) {
+      bdRows += `<div class="rr" style="font-size:.55rem"><span class="rl" style="font-size:.52rem">Action Multiplier</span><span style="font-family:'DM Mono',monospace;font-size:.55rem;color:var(--gld)">× ${multiplier}${a==='lock'?' ('+days+'d lock)':a==='burn'?' 🔥':''}</span></div>`;
+      bdRows += `<div class="rr" style="font-size:.55rem;border-top:1px solid var(--bor);padding-top:.35rem;margin-top:2px"><span class="rl" style="font-size:.52rem;font-weight:700">Final Points</span><span style="font-family:'DM Mono',monospace;font-size:.6rem;color:var(--acc);font-weight:700">${fmtP(pts)}</span></div>`;
+    }
+    if (isHcashMoat) {
+      bdRows += `<div style="margin-top:.4rem;padding:.4rem .55rem;background:rgba(212,168,67,.08);border:1px solid rgba(212,168,67,.2);border-radius:6px;font-family:'DM Mono',monospace;font-size:.52rem;color:var(--gld);line-height:1.5">⚠️ hCASH LP Moat: input is LP token amount, not raw hCASH. Add AVAX+hCASH on Pharaoh first to get LP tokens, then stake/lock them here.</div>`;
+    }
+    bdRowsEl.innerHTML = bdRows;
+    bdEl.style.display = 'block';
+  }
 
   // Live rank projection using real leaderboard data
   const rR = document.getElementById('rRankRow');
@@ -8620,6 +8677,18 @@ async function posOpenDetail(moatAddr) {
                 <div style="font-family:'DM Mono',monospace;font-size:.5rem;color:${i===4?'var(--gld)':'var(--mut)'}">${m}</div>
               </div>`).join('')}
           </div>
+          <!-- Custom day slider -->
+          <div style="background:rgba(212,168,67,.05);border:1px solid rgba(212,168,67,.18);border-radius:9px;padding:.6rem .75rem;margin-bottom:.65rem">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.4rem">
+              <span style="font-family:'DM Mono',monospace;font-size:.52rem;color:var(--mut);text-transform:uppercase">Custom Days</span>
+              <div style="display:flex;align-items:center;gap:6px">
+                <input type="number" id="hcashLockDaysNumInput" min="1" max="730" value="180" style="width:52px;padding:2px 5px;background:var(--sur);border:1px solid var(--bor);border-radius:5px;color:var(--txt);font-family:'DM Mono',monospace;font-size:.65rem;text-align:center;outline:none" oninput="hcashCustomLockDayInput(this.value)">
+                <span style="font-family:'DM Mono',monospace;font-size:.6rem;color:var(--gld);min-width:40px" id="hcashLockDaysMultLabel">3.23×</span>
+              </div>
+            </div>
+            <input type="range" id="hcashLockDaysSlider" min="1" max="730" value="180" style="width:100%;-webkit-appearance:none;height:4px;border-radius:99px;background:linear-gradient(90deg,var(--gld) 0%,var(--gld) 24.7%,var(--bor) 24.7%,var(--bor) 100%);outline:none;cursor:pointer" oninput="hcashLockSliderChange(this.value)">
+            <div style="display:flex;justify-content:space-between;font-family:'DM Mono',monospace;font-size:.48rem;color:var(--mut);margin-top:3px"><span>1d (2.04×)</span><span>365d (4.00×)</span><span>730d (5.00×)</span></div>
+          </div>
           <input type="hidden" id="hcashLockDays" value="180">
           <div id="hcashLockPreview" style="font-family:'DM Mono',monospace;font-size:.65rem;color:var(--gld);margin-bottom:.7rem"></div>
           ${canManage ? `<button class="btn" style="width:100%;background:var(--gld);color:#141210" onclick="hcashDoLock()">⏳ Lock LP Now</button>` : `<div style="font-family:'DM Mono',monospace;font-size:.65rem;color:var(--mut);text-align:center">Connect wallet to lock</div>`}
@@ -8799,7 +8868,7 @@ async function posOpenDetail(moatAddr) {
             <input id="lockAmt" type="number" class="inp" placeholder="0.00" oninput="posCalcPoints('lock',this.value,'${moatAddr}')">
             <button onclick="document.getElementById('lockAmt').value='${data.wBal.toFixed(6)}';posCalcPoints('lock','${data.wBal}','${moatAddr}')" class="btn btn-sm btn-g">MAX</button>
           </div>
-          <!-- Duration picker — visual cards -->
+          <!-- Duration picker — visual cards + slider -->
           <div style="font-family:'DM Mono',monospace;font-size:.54rem;color:var(--mut);margin-bottom:6px">Choose lock duration</div>
           <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-bottom:.65rem" id="lockDurGrid">
             ${[[1,'2.04×'],[7,'2.11×'],[30,'2.31×'],[90,'2.73×'],[180,'3.23×'],[365,'4.00×'],[540,'4.57×'],[730,'5.00×']].map(([d,m],i)=>`
@@ -8807,6 +8876,18 @@ async function posOpenDetail(moatAddr) {
                 <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.7rem;color:${i===4?'var(--gld)':'var(--txt)'}">${d}d</div>
                 <div style="font-family:'DM Mono',monospace;font-size:.5rem;color:${i===4?'var(--gld)':'var(--mut)'}">${m}</div>
               </div>`).join('')}
+          </div>
+          <!-- Custom day slider -->
+          <div style="background:rgba(212,168,67,.05);border:1px solid rgba(212,168,67,.18);border-radius:9px;padding:.6rem .75rem;margin-bottom:.65rem">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.4rem">
+              <span style="font-family:'DM Mono',monospace;font-size:.52rem;color:var(--mut);text-transform:uppercase">Custom Days</span>
+              <div style="display:flex;align-items:center;gap:6px">
+                <input type="number" id="lockDaysCustomInput" min="1" max="730" value="180" style="width:52px;padding:2px 5px;background:var(--sur);border:1px solid var(--bor);border-radius:5px;color:var(--txt);font-family:'DM Mono',monospace;font-size:.65rem;text-align:center;outline:none" oninput="posCustomLockDayInput(this.value,'${moatAddr}')">
+                <span style="font-family:'DM Mono',monospace;font-size:.6rem;color:var(--gld);min-width:40px" id="lockDaysMultLabel">3.23×</span>
+              </div>
+            </div>
+            <input type="range" id="lockDaysSlider" min="1" max="730" value="180" style="width:100%;-webkit-appearance:none;height:4px;border-radius:99px;background:linear-gradient(90deg,var(--gld) 0%,var(--gld) ${(180/730*100).toFixed(1)}%,var(--bor) ${(180/730*100).toFixed(1)}%,var(--bor) 100%);outline:none;cursor:pointer" oninput="posLockSliderChange(this.value,'${moatAddr}')">
+            <div style="display:flex;justify-content:space-between;font-family:'DM Mono',monospace;font-size:.48rem;color:var(--mut);margin-top:3px"><span>1d (2.04×)</span><span>365d (4.00×)</span><span>730d (5.00×)</span></div>
           </div>
           <input type="hidden" id="lockDays" value="180">
           <div id="lockPreview" style="font-family:'DM Mono',monospace;font-size:.65rem;color:var(--gld);margin-bottom:.7rem"></div>
@@ -9190,6 +9271,21 @@ function posCalcPoints(action, amtStr, moatAddr) {
   const newPool = (m.totalPoints || 0) + pts;
   const share   = newPool > 0 ? (pts / newPool * 100).toFixed(3) : '100';
   const percentile = sorted.length ? (100 - ((rank-1)/(sorted.length+1)*100)).toFixed(0) : '100';
+  const px = priceCache[moatAddr]?.price || 0;
+  const tokenUsd = px > 0 ? amt * px : 0;
+
+  // Advanced breakdown rows
+  let breakdownHtml = '';
+  breakdownHtml += `<div style="display:flex;justify-content:space-between;padding:3px 0;font-family:'DM Mono',monospace;font-size:.56rem;border-bottom:1px solid rgba(51,46,40,.3)"><span style="color:var(--mut)">Tokens</span><span>${fmtP(amt)} ${meta.ticker||''}</span></div>`;
+  if (tokenUsd > 0) breakdownHtml += `<div style="display:flex;justify-content:space-between;padding:3px 0;font-family:'DM Mono',monospace;font-size:.56rem;border-bottom:1px solid rgba(51,46,40,.3)"><span style="color:var(--mut)">USD value</span><span style="color:var(--grn)">≈ $${fmtK(tokenUsd)}</span></div>`;
+  if (supplyV > 0) breakdownHtml += `<div style="display:flex;justify-content:space-between;padding:3px 0;font-family:'DM Mono',monospace;font-size:.56rem;border-bottom:1px solid rgba(51,46,40,.3)"><span style="color:var(--mut)">Total supply</span><span>${fmtP(supplyV)}</span></div>`;
+  if (ppt) {
+    breakdownHtml += `<div style="display:flex;justify-content:space-between;padding:3px 0;font-family:'DM Mono',monospace;font-size:.56rem;border-bottom:1px solid rgba(51,46,40,.3)"><span style="color:var(--mut)">Base pts/token (1×)</span><span style="color:var(--acc)">${fmtPrice(ppt)}</span></div>`;
+    breakdownHtml += `<div style="display:flex;justify-content:space-between;padding:3px 0;font-family:'DM Mono',monospace;font-size:.56rem;border-bottom:1px solid rgba(51,46,40,.3)"><span style="color:var(--mut)">Points at 1× (stake)</span><span>${fmtP(amt * ppt)}</span></div>`;
+  }
+  breakdownHtml += `<div style="display:flex;justify-content:space-between;padding:3px 0;font-family:'DM Mono',monospace;font-size:.56rem;border-bottom:1px solid rgba(51,46,40,.3)"><span style="color:var(--mut)">Multiplier</span><span style="color:var(--gld)">${mult}× ${action==='lock'?'('+days+'d lock)':action==='burn'?'🔥 permanent':''}</span></div>`;
+  breakdownHtml += `<div style="display:flex;justify-content:space-between;padding:4px 0;font-family:'DM Mono',monospace;font-size:.6rem;font-weight:700"><span style="color:var(--mut)">Final points</span><span style="color:var(--acc)">${fmtP(pts)}</span></div>`;
+  breakdownHtml += `<div style="display:flex;justify-content:space-between;padding:3px 0;font-family:'DM Mono',monospace;font-size:.56rem"><span style="color:var(--mut)">Est. rank / pool share</span><span>#${rank} · ${share}% (top ${percentile}%)</span></div>`;
 
   const previewEl = document.getElementById(action + 'Preview');
   if (previewEl) previewEl.innerHTML =
@@ -9197,8 +9293,71 @@ function posCalcPoints(action, amtStr, moatAddr) {
     + ' · <b>~' + fmtP(pts) + ' pts</b>'
     + ' · est. rank <span style="color:var(--gld)">#' + rank + '</span>'
     + ' (top ' + percentile + '%)'
-    + ' · ' + share + '% of pool';
+    + ' · ' + share + '% of pool'
+    + `<div style="margin-top:.45rem;background:var(--bg);border:1px solid var(--bor);border-radius:7px;padding:.5rem">`
+    + `<div style="font-family:'DM Mono',monospace;font-size:.48rem;text-transform:uppercase;letter-spacing:.1em;color:var(--mut);margin-bottom:.3rem">📐 Breakdown</div>`
+    + breakdownHtml + '</div>';
 }
+
+// ── LOCK SLIDER ──
+function posLockSliderChange(val, moatAddr) {
+  const days = Math.min(730, Math.max(1, parseInt(val)||1));
+  const mult = lockM(days);
+  const hid = document.getElementById('lockDays');
+  const numInput = document.getElementById('lockDaysCustomInput');
+  const multLbl = document.getElementById('lockDaysMultLabel');
+  const slider = document.getElementById('lockDaysSlider');
+  if (hid) hid.value = days;
+  if (numInput) numInput.value = days;
+  if (multLbl) multLbl.textContent = mult.toFixed(2) + '×';
+  if (slider) {
+    const pct = (days/730*100).toFixed(1);
+    slider.style.background = `linear-gradient(90deg,var(--gld) 0%,var(--gld) ${pct}%,var(--bor) ${pct}%,var(--bor) 100%)`;
+  }
+  // Deselect quick-pick cards
+  document.querySelectorAll('#lockDurGrid > div').forEach(d => {
+    const sel = Number(d.dataset.days) === days;
+    d.style.background = sel ? 'rgba(212,168,67,.15)' : 'var(--sur)';
+    d.style.borderColor = sel ? 'var(--gld)' : 'var(--bor)';
+    if (d.querySelector('div')) d.querySelector('div').style.color = sel ? 'var(--gld)' : 'var(--txt)';
+    if (d.querySelector('div:last-child')) d.querySelector('div:last-child').style.color = sel ? 'var(--gld)' : 'var(--mut)';
+  });
+  const lockAmt = parseFloat(document.getElementById('lockAmt')?.value)||0;
+  if (lockAmt && moatAddr) posCalcPoints('lock', lockAmt, moatAddr);
+}
+
+function posCustomLockDayInput(val, moatAddr) {
+  const days = Math.min(730, Math.max(1, parseInt(val)||1));
+  const slider = document.getElementById('lockDaysSlider');
+  if (slider) slider.value = days;
+  posLockSliderChange(days, moatAddr);
+}
+
+function posSelectLockDur(days, el) {
+  const hid = document.getElementById('lockDays');
+  if (hid) hid.value = days;
+  // sync slider + number input
+  const slider = document.getElementById('lockDaysSlider');
+  const numInput = document.getElementById('lockDaysCustomInput');
+  const multLbl = document.getElementById('lockDaysMultLabel');
+  if (slider) { slider.value = days; const pct=(days/730*100).toFixed(1); slider.style.background=`linear-gradient(90deg,var(--gld) 0%,var(--gld) ${pct}%,var(--bor) ${pct}%,var(--bor) 100%)`; }
+  if (numInput) numInput.value = days;
+  if (multLbl) multLbl.textContent = lockM(days).toFixed(2) + '×';
+  document.querySelectorAll('#lockDurGrid > div').forEach(d => {
+    const sel = Number(d.dataset.days) === days;
+    d.style.background = sel ? 'rgba(212,168,67,.15)' : 'var(--sur)';
+    d.style.borderColor = sel ? 'var(--gld)' : 'var(--bor)';
+    if (d.querySelector('div')) d.querySelector('div').style.color = sel ? 'var(--gld)' : 'var(--txt)';
+    if (d.querySelector('div:last-child')) d.querySelector('div:last-child').style.color = sel ? 'var(--gld)' : 'var(--mut)';
+  });
+  const lockAmt = parseFloat(document.getElementById('lockAmt')?.value)||0;
+  if (lockAmt) {
+    const moatAddr = posActiveMoat;
+    if (moatAddr) posCalcPoints('lock', lockAmt, moatAddr);
+  }
+}
+
+function posSelectLockDur_old(days, el) { posSelectLockDur(days, el); } // compat alias
 
 // ── STAKE ──
 async function posDoStake(moatAddr) {
@@ -9287,18 +9446,6 @@ async function posDoUnstake(moatAddr) {
     return moat.unstake(amtWei);
   });
 }
-function posSelectLockDur(days, el) {
-  document.getElementById('lockDays').value = days;
-  document.querySelectorAll('#lockDurGrid > div').forEach(d=>{
-    const sel = parseInt(d.dataset.days)===days;
-    d.style.background = sel ? 'rgba(212,168,67,.15)' : 'var(--sur)';
-    d.style.borderColor = sel ? 'var(--gld)' : 'var(--bor)';
-    d.querySelectorAll('div').forEach((c,i)=>{ c.style.color = sel ? (i===0?'var(--gld)':'var(--gld)') : (i===0?'var(--txt)':'var(--mut)'); });
-  });
-  const amt = parseFloat(document.getElementById('lockAmt')?.value)||0;
-  if (amt) posCalcPoints('lock', amt, posActiveMoat);
-}
-
 // ── EXIT LOCK ──
 async function posDoExitLock(moatAddr,lockIdx,short,amt,statusId='unlockStatus') {
   if(!posSigner) return;
@@ -9464,15 +9611,53 @@ function hcashStakeMethodSet(method, el) {
 }
 
 // ── hCASH LP LOCK FUNCTIONS ──
+function hcashLockSliderChange(val) {
+  const days = Math.min(730, Math.max(1, parseInt(val)||1));
+  const mult = lockM(days);
+  const hid = document.getElementById('hcashLockDays');
+  const numInput = document.getElementById('hcashLockDaysNumInput');
+  const multLbl = document.getElementById('hcashLockDaysMultLabel');
+  const slider = document.getElementById('hcashLockDaysSlider');
+  if (hid) hid.value = days;
+  if (numInput) numInput.value = days;
+  if (multLbl) multLbl.textContent = mult.toFixed(2) + '×';
+  if (slider) {
+    const pct = (days/730*100).toFixed(1);
+    slider.style.background = `linear-gradient(90deg,var(--gld) 0%,var(--gld) ${pct}%,var(--bor) ${pct}%,var(--bor) 100%)`;
+  }
+  // Deselect quick-pick cards
+  document.querySelectorAll('#hcashLockDurGrid > div').forEach(d => {
+    const sel = Number(d.dataset.days) === days;
+    d.style.background = sel ? 'rgba(212,168,67,.15)' : 'var(--sur)';
+    d.style.borderColor = sel ? 'var(--gld)' : 'var(--bor)';
+    if (d.querySelector('div')) d.querySelector('div').style.color = sel ? 'var(--gld)' : 'var(--txt)';
+    if (d.querySelector('div:last-child')) d.querySelector('div:last-child').style.color = sel ? 'var(--gld)' : 'var(--mut)';
+  });
+  hcashCalcLockPts();
+}
+
+function hcashCustomLockDayInput(val) {
+  const days = Math.min(730, Math.max(1, parseInt(val)||1));
+  const slider = document.getElementById('hcashLockDaysSlider');
+  if (slider) slider.value = days;
+  hcashLockSliderChange(days);
+}
+
 function hcashSelectLockDur(days, el) {
   const hid = document.getElementById('hcashLockDays');
   if (hid) hid.value = days;
+  const slider = document.getElementById('hcashLockDaysSlider');
+  const numInput = document.getElementById('hcashLockDaysNumInput');
+  const multLbl = document.getElementById('hcashLockDaysMultLabel');
+  if (slider) { slider.value = days; const pct=(days/730*100).toFixed(1); slider.style.background=`linear-gradient(90deg,var(--gld) 0%,var(--gld) ${pct}%,var(--bor) ${pct}%,var(--bor) 100%)`; }
+  if (numInput) numInput.value = days;
+  if (multLbl) multLbl.textContent = lockM(days).toFixed(2) + '×';
   document.querySelectorAll('#hcashLockDurGrid > div').forEach(d => {
     const sel = Number(d.dataset.days) === days;
-    d.style.background     = sel ? 'rgba(212,168,67,.15)' : 'var(--sur)';
-    d.style.borderColor    = sel ? 'var(--gld)' : 'var(--bor)';
-    d.querySelector('div').style.color              = sel ? 'var(--gld)' : 'var(--txt)';
-    d.querySelector('div:last-child').style.color   = sel ? 'var(--gld)' : 'var(--mut)';
+    d.style.background = sel ? 'rgba(212,168,67,.15)' : 'var(--sur)';
+    d.style.borderColor = sel ? 'var(--gld)' : 'var(--bor)';
+    if (d.querySelector('div')) d.querySelector('div').style.color = sel ? 'var(--gld)' : 'var(--txt)';
+    if (d.querySelector('div:last-child')) d.querySelector('div:last-child').style.color = sel ? 'var(--gld)' : 'var(--mut)';
   });
   hcashCalcLockPts();
 }
@@ -10597,17 +10782,27 @@ function posEvRow(e, showMoat=false) {
   const meta = e.contractAddress ? (MOATS[e.contractAddress]||{}) : {};
   const col = meta.color||'#f97316';
   const ts = e.timestamp ? new Date(Number(e.timestamp)*1000).toLocaleString([],{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '—';
-  const evType = (e.eventType||'activity').toLowerCase();
-  const evIcon = evType.includes('stake')||evType.includes('deposit')?'🔒':evType.includes('lock')?'⏳':evType.includes('burn')?'🔥':evType.includes('unstake')||evType.includes('withdraw')||evType.includes('unlock')?'↩':evType.includes('reward')||evType.includes('claim')?'💰':'📋';
-  const evColor = evType.includes('burn')?'var(--red)':evType.includes('lock')?'var(--gld)':evType.includes('reward')||evType.includes('claim')?'var(--grn)':evType.includes('unstake')?'var(--mut)':'var(--acc)';
-  const evLabel = (e.eventType||'Activity').replace(/([a-z])([A-Z])/g,'$1 $2');
+  const evRaw = (e.eventType||'activity').toLowerCase();
+
+  // Proper label resolution
+  let evLabel, evIcon, evColor;
+  if (evRaw.includes('burn'))                                          { evLabel='Burn'; evIcon='🔥'; evColor='var(--red)'; }
+  else if (evRaw.includes('eel')||evRaw.includes('earlyexit')||evRaw.includes('early exit')||evRaw.includes('emergencyendlock')) { evLabel='EEL'; evIcon='🚨'; evColor='var(--red)'; }
+  else if (evRaw.includes('unlock')&&!evRaw.includes('lock'))         { evLabel='Unlock'; evIcon='🔓'; evColor='var(--pur)'; }
+  else if (evRaw.includes('lock')&&!evRaw.includes('unlock'))         { evLabel='Lock'; evIcon='⏳'; evColor='var(--gld)'; }
+  else if (evRaw.includes('unstake')||evRaw.includes('withdraw'))     { evLabel='Unstake'; evIcon='↩️'; evColor='var(--mut)'; }
+  else if (evRaw.includes('stake')||evRaw.includes('deposit'))        { evLabel='Stake'; evIcon='🔒'; evColor='var(--acc)'; }
+  else if (evRaw.includes('claim')||evRaw.includes('reward'))         { evLabel='Claimed Reward'; evIcon='💰'; evColor='var(--grn)'; }
+  else if (evRaw.includes('distribut'))                               { evLabel='Reward Distributed'; evIcon='💰'; evColor='var(--grn)'; }
+  else                                                                 { evLabel=e.eventType||'Activity'; evIcon='📋'; evColor='var(--mut)'; }
+
   const amt = (e.tokenAmount||e.rewardAmount)>0 ? fmtP(Number(e.tokenAmount||e.rewardAmount||0).toFixed(4))+(e.tokenSymbol||meta.ticker?(' '+(e.tokenSymbol||meta.ticker)):'') : '—';
   const txLink = e.txHash ? `<a href="https://snowtrace.io/tx/${e.txHash}" target="_blank" style="font-family:'DM Mono',monospace;font-size:.56rem;color:var(--acc)" title="${e.txHash}">${e.txHash.slice(0,6)}…${e.txHash.slice(-4)} ↗</a>` : '—';
   const moatCell = showMoat && meta.name ? `<td><div style="display:flex;align-items:center;gap:5px">${logoImg(meta.logo,'moat-logo-fb-sm',meta.emoji,col)}<span style="font-family:'DM Mono',monospace;font-size:.62rem;color:${col}">${meta.short||meta.name}</span></div></td>` : '';
   return `<tr>
     <td style="font-family:'DM Mono',monospace;font-size:.6rem;color:var(--mut);white-space:nowrap">${ts}</td>
     ${moatCell}
-    <td><span style="font-family:'DM Mono',monospace;font-size:.62rem;color:${evColor}">${evIcon} ${evLabel}</span></td>
+    <td><span style="font-family:'DM Mono',monospace;font-size:.62rem;color:${evColor};display:inline-flex;align-items:center;gap:3px">${evIcon} <b>${evLabel}</b></span></td>
     <td style="font-family:'DM Mono',monospace;font-size:.62rem">${amt}</td>
     <td>${txLink}</td>
   </tr>`;
