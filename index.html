@@ -910,6 +910,10 @@ details>summary::-webkit-details-marker{display:none}
         <div class="rr" id="rPtNoteRow" style="display:none"><span class="rl">Formula</span><span id="rPtNote" style="font-family:'DM Mono',monospace;font-size:.58rem;color:var(--mut);text-align:right;max-width:200px"></span></div>
         <div class="rr" id="rRankRow" style="display:none"><span class="rl">Est. Rank in Moat</span><span class="rv cd" id="rRank">—</span></div>
         <div class="rr" id="rShareRow" style="display:none"><span class="rl">Est. Pool Share</span><span class="rv cgn" id="rShare">—</span></div>
+        <div class="rr" id="rNextRankRow" style="display:none;flex-direction:column;align-items:flex-start;gap:3px;padding:.5rem 0;border-top:1px solid var(--bor);margin-top:2px">
+          <span class="rl" style="font-size:.52rem;color:var(--gld)">🎯 Person above you</span>
+          <div id="rNextRank" style="width:100%"></div>
+        </div>
         <!-- Advanced breakdown panel -->
         <div id="rBreakdown" style="display:none;margin-top:.55rem;background:var(--bg);border:1px solid var(--bor);border-radius:8px;padding:.65rem">
           <div style="font-family:'DM Mono',monospace;font-size:.5rem;text-transform:uppercase;letter-spacing:.1em;color:var(--mut);margin-bottom:.45rem">📐 Advanced Breakdown</div>
@@ -1926,10 +1930,35 @@ function normEvs(d){
     const moatMeta = MOATS[cAddr];
     const tokenSymbol = e.tokenSymbol||e.symbol||moatMeta?.ticker||null;
 
+    // Resolve eventType: prefer explicit fields, then try to infer from raw string
+    const _rawType = (e.eventType||e.type||e.event||e.action||e.name||'').toLowerCase();
+    let _resolvedType = _rawType || 'activity';
+    // Map common API naming variants to canonical types
+    if (!_rawType || _rawType === 'activity' || _rawType === 'unknown' || _rawType === 'event') {
+      // Try to infer from method/function name if provided
+      const _fn = (e.functionName||e.method||e.function||e.methodName||'').toLowerCase();
+      if (_fn.includes('burn'))                           _resolvedType = 'burn';
+      else if (_fn.includes('emergencyendlock')||_fn.includes('earlyexit')) _resolvedType = 'eel';
+      else if (_fn.includes('unlock')||_fn.includes('exitlock'))            _resolvedType = 'unlock';
+      else if (_fn.includes('lock'))                      _resolvedType = 'lock';
+      else if (_fn.includes('unstake')||_fn.includes('withdraw'))           _resolvedType = 'unstake';
+      else if (_fn.includes('stake')||_fn.includes('deposit'))              _resolvedType = 'stake';
+      else if (_fn.includes('claim')||_fn.includes('reward'))               _resolvedType = 'claim';
+    } else {
+      // Normalise known API variants
+      if (_rawType==='staked'||_rawType==='tokenstaked'||_rawType==='deposited') _resolvedType='stake';
+      else if (_rawType==='burned'||_rawType==='tokensburned')                   _resolvedType='burn';
+      else if (_rawType==='locked'||_rawType==='tokenslocked')                   _resolvedType='lock';
+      else if (_rawType==='unlocked'||_rawType==='tokensunlocked'||_rawType==='lockexited') _resolvedType='unlock';
+      else if (_rawType==='unstaked'||_rawType==='tokensunstaked'||_rawType==='withdrawn')  _resolvedType='unstake';
+      else if (_rawType==='emergencyendlock'||_rawType==='earlyexit'||_rawType==='eel')     _resolvedType='eel';
+      else if (_rawType==='claimed'||_rawType==='rewardclaimed'||_rawType==='distributed')  _resolvedType='claim';
+    }
+
     return {
       ...e,
       id: e._id||e.id||txHash||Math.random().toString(36).slice(2),
-      eventType: e.eventType||e.type||e.event||e.action||e.name||'activity',
+      eventType: _resolvedType,
       timestamp: ts,
       contractAddress: cAddr,
       txHash,
@@ -2019,11 +2048,24 @@ async function loadAll(){
   try{
     const addrs=Object.keys(MOATS);
 
-    // ── TIER 1: Fast parallel — events + global LB (2 requests, ~500ms) ──
-    const [evR, globalLbR] = await Promise.allSettled([
+    // ── TIER 1: Fast parallel — events + global LB + hCASH LP supply ──
+    const HCASH_LP_ADDR_LOAD = '0x8f961980518bc9ab302948de7948580666dc35d9';
+    const [evR, globalLbR, hcashLpSupR] = await Promise.allSettled([
       fetch(`${API}/events?limit=200`).then(r=>r.json()).catch(()=>null),
       fetch(`${API}/moat-points/all`).then(r=>r.json()).catch(()=>null),
+      // Fetch hCASH LP totalSupply on-chain via Avalanche RPC (eth_call on ERC20.totalSupply)
+      fetch('https://api.avax.network/ext/bc/C/rpc', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({jsonrpc:'2.0',id:1,method:'eth_call',
+          params:[{to:HCASH_LP_ADDR_LOAD, data:'0x18160ddd'},'latest']})
+      }).then(r=>r.json()).catch(()=>null),
     ]);
+    // Cache hCASH LP total supply globally for use in calcPts and investment calc
+    if (hcashLpSupR.status==='fulfilled' && hcashLpSupR.value?.result && hcashLpSupR.value.result!=='0x') {
+      try {
+        window._hcashLpTotalSupply = Number(BigInt(hcashLpSupR.value.result)) / 1e18;
+      } catch(e) { window._hcashLpTotalSupply = 0; }
+    }
 
     // Process events immediately
     const evData = evR.status==='fulfilled' ? evR.value : null;
@@ -3900,7 +3942,10 @@ function renderWhaleFeed(force=false) {
     // Must have a price to calculate USD value
     const meta = MOATS[e.contractAddress];
     if (!meta) return false;
-    const px = priceCache[e.contractAddress]?.price || 0;
+    const _px1 = priceCache[e.contractAddress]?.price || 0;
+    const _px2 = meta.tokenAddr ? (priceCache[meta.tokenAddr]||priceCache[meta.tokenAddr?.toLowerCase()])?.price||0 : 0;
+    const _px3 = meta.pairAddr  ? (priceCache[meta.pairAddr] ||priceCache[meta.pairAddr?.toLowerCase()])?.price||0  : 0;
+    const px = _px1 || _px2 || _px3 || 0;
     if (px <= 0) return true; // include if we have amount but no price (show anyway with no USD)
     const usd = e.tokenAmount * px;
     return usd >= 100; // $100+ threshold
@@ -3922,11 +3967,16 @@ function renderWhaleFeed(force=false) {
   }
 
   // Sort by USD value desc
+  function _whalePx(e) {
+    const m = MOATS[e.contractAddress]||{};
+    const p1 = priceCache[e.contractAddress]?.price||0;
+    const p2 = m.tokenAddr ? (priceCache[m.tokenAddr]||priceCache[m.tokenAddr?.toLowerCase()])?.price||0 : 0;
+    const p3 = m.pairAddr  ? (priceCache[m.pairAddr] ||priceCache[m.pairAddr?.toLowerCase()])?.price||0  : 0;
+    return p1||p2||p3||0;
+  }
   whaleEvs.sort((a,b) => {
-    const pxA = priceCache[a.contractAddress]?.price||0;
-    const pxB = priceCache[b.contractAddress]?.price||0;
-    const usdA = pxA > 0 ? (a.tokenAmount||0)*pxA : 0;
-    const usdB = pxB > 0 ? (b.tokenAmount||0)*pxB : 0;
+    const usdA = (a.tokenAmount||0)*_whalePx(a);
+    const usdB = (b.tokenAmount||0)*_whalePx(b);
     return usdB - usdA;
   });
 
@@ -3942,17 +3992,26 @@ function renderWhaleFeed(force=false) {
   el.innerHTML = whaleEvs.slice(0, 50).map(e => {
     const meta = MOATS[e.contractAddress] || {};
     const col  = meta.color || '#f97316';
-    const px   = priceCache[e.contractAddress]?.price || 0;
+    // Resolve token price: try moat address cache, then meta.tokenAddr, then pair address
+    const _moatPx  = priceCache[e.contractAddress]?.price || 0;
+    const _tokPx   = meta.tokenAddr ? (priceCache[meta.tokenAddr]||priceCache[meta.tokenAddr?.toLowerCase()])?.price || 0 : 0;
+    const _pairPx  = meta.pairAddr  ? (priceCache[meta.pairAddr] ||priceCache[meta.pairAddr?.toLowerCase()])?.price  || 0 : 0;
+    const px = _moatPx || _tokPx || _pairPx || 0;
     const usd  = px > 0 ? e.tokenAmount * px : 0;
     const t    = (e.eventType||'activity').toLowerCase();
     const ts   = e.timestamp ? new Date(Number(e.timestamp)*1000).toLocaleString([],{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '—';
 
     let evLabel, evIcon, evColor;
-    if (t.includes('burn'))                                              { evLabel='Burn'; evIcon='🔥'; evColor='var(--red)'; }
-    else if (t.includes('eel')||t.includes('earlyexit')||t.includes('emergencyendlock')) { evLabel='EEL'; evIcon='🚨'; evColor='var(--red)'; }
-    else if (t.includes('unlock')||t.includes('exitlock'))               { evLabel='Unlock'; evIcon='🔓'; evColor='var(--pur)'; }
-    else if (t.includes('lock')&&!t.includes('unlock'))                  { evLabel='Lock'; evIcon='⏳'; evColor='var(--gld)'; }
-    else if (t.includes('unstake')||t.includes('withdraw'))              { evLabel='Unstake'; evIcon='↩️'; evColor='var(--mut)'; }
+    if (t==='burn'||t==='burned')                                        { evLabel='Burn'; evIcon='🔥'; evColor='var(--red)'; }
+    else if (t==='eel'||t.includes('earlyexit')||t.includes('emergencyendlock')) { evLabel='EEL'; evIcon='🚨'; evColor='var(--red)'; }
+    else if (t==='unlock'||t==='unlocked'||t==='exitlock'||t==='lockexited') { evLabel='Unlock'; evIcon='🔓'; evColor='var(--pur)'; }
+    else if (t==='lock'||t==='locked')                                   { evLabel='Lock'; evIcon='⏳'; evColor='var(--gld)'; }
+    else if (t==='unstake'||t==='unstaked'||t==='withdraw'||t==='withdrawn') { evLabel='Unstake'; evIcon='↩️'; evColor='var(--mut)'; }
+    else if (t==='stake'||t==='staked'||t==='deposit'||t==='deposited')  { evLabel='Stake'; evIcon='🔒'; evColor='var(--acc)'; }
+    else if (t==='claim'||t==='claimed'||t.includes('reward')||t.includes('distribut')) { evLabel='Claim'; evIcon='💰'; evColor='var(--grn)'; }
+    else if (t.includes('burn'))                                         { evLabel='Burn'; evIcon='🔥'; evColor='var(--red)'; }
+    else if (t.includes('lock')&&!t.startsWith('un'))                    { evLabel='Lock'; evIcon='⏳'; evColor='var(--gld)'; }
+    else if (t.startsWith('un')||t.includes('unstake')||t.includes('withdraw')) { evLabel='Unstake'; evIcon='↩️'; evColor='var(--mut)'; }
     else if (t.includes('stake')||t.includes('deposit'))                 { evLabel='Stake'; evIcon='🔒'; evColor='var(--acc)'; }
     else                                                                 { evLabel=e.eventType||'Move'; evIcon='📋'; evColor='var(--mut)'; }
 
@@ -3968,9 +4027,10 @@ function renderWhaleFeed(force=false) {
 
     const txLink = e.txHash ? `<a href="https://snowtrace.io/tx/${e.txHash}" target="_blank" style="font-family:'DM Mono',monospace;font-size:.52rem;color:var(--acc);text-decoration:none">${e.txHash.slice(0,6)}…${e.txHash.slice(-4)} ↗</a>` : '';
 
+    const _initials = _w.length >= 4 ? (_w[2]||'?').toUpperCase() + (_w[3]||'').toUpperCase() : '??';
     const picHtml = _ep
       ? `<img src="${_ep.pic}" style="width:32px;height:32px;border-radius:50%;object-fit:cover;border:1.5px solid ${col};flex-shrink:0" onerror="this.style.display='none'">`
-      : `<div style="width:32px;height:32px;border-radius:50%;background:${col}22;border:1.5px solid ${col}44;display:flex;align-items:center;justify-content:center;font-family:'DM Mono',monospace;font-size:.7rem;font-weight:700;color:${col};flex-shrink:0">${(_w[2]||'?').toUpperCase()}</div>`;
+      : `<div style="width:32px;height:32px;border-radius:50%;background:${col}22;border:1.5px solid ${col}44;display:flex;align-items:center;justify-content:center;font-family:'DM Mono',monospace;font-size:.62rem;font-weight:700;color:${col};flex-shrink:0;letter-spacing:-.5px">${_initials}</div>`;
 
     return `<div style="display:flex;align-items:flex-start;gap:10px;padding:.65rem 0;border-bottom:1px solid rgba(51,46,40,.28)">
       <!-- whale size badge -->
@@ -3984,7 +4044,7 @@ function renderWhaleFeed(force=false) {
       <div style="flex:1;min-width:0">
         <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-bottom:3px">
           <span style="font-family:'DM Mono',monospace;font-size:.62rem;font-weight:700;color:${evColor}">${evIcon} ${evLabel}</span>
-          ${meta.name?`<span style="display:inline-flex;align-items:center;gap:3px;background:${col}16;border:1px solid ${col}36;border-radius:99px;padding:1px 6px;font-family:'DM Mono',monospace;font-size:.52rem;color:${col}">${meta.short||meta.name}</span>`:''}
+          ${meta.name?`<span style="display:inline-flex;align-items:center;gap:3px;background:${col}16;border:1px solid ${col}36;border-radius:99px;padding:1px 6px;font-family:'DM Mono',monospace;font-size:.52rem;color:${col}">${logoImg(meta.logo,'moat-logo-fb-sm',meta.emoji,col)}${meta.short||meta.name}</span>`:''}
           ${_ep?`<a href="https://x.com/${_ep.twitter}" target="_blank" style="font-family:'DM Mono',monospace;font-size:.52rem;color:var(--acc);text-decoration:none">@${_ep.twitter} ↗</a>`:''}
         </div>
         <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:2px">
@@ -4223,14 +4283,19 @@ function renderEvItems(evs,id,freshIds=[]){
 
     // Resolve proper action label
     let resolvedLabel, col, icon;
-    if (t.includes('burn'))                                              { resolvedLabel='Burn'; col='var(--red)'; icon='🔥'; }
-    else if (t.includes('eel')||t.includes('earlyexit')||t.includes('emergencyendlock')) { resolvedLabel='EEL'; col='var(--red)'; icon='🚨'; }
-    else if (t.includes('unlock')&&!t.includes('lock')||t.includes('exitlock')) { resolvedLabel='Unlock'; col='var(--pur)'; icon='🔓'; }
-    else if (t.includes('lock')&&!t.includes('unlock'))                  { resolvedLabel='Lock'; col='var(--gld)'; icon='⏳'; }
-    else if (t.includes('unstake')||t.includes('withdraw'))              { resolvedLabel='Unstake'; col='var(--mut)'; icon='↩️'; }
-    else if (t.includes('stake')||t.includes('deposit'))                 { resolvedLabel='Stake'; col='var(--acc)'; icon='🔒'; }
-    else if (t.includes('claim')||t.includes('reward')||t.includes('distribut')) { resolvedLabel='Claim / Reward'; col='var(--grn)'; icon='💰'; }
-    else                                                                 { resolvedLabel=e.eventType||'Activity'; col='var(--mut)'; icon='📋'; }
+    if (t==='burn'||t==='burned')                                         { resolvedLabel='Burn'; col='var(--red)'; icon='🔥'; }
+    else if (t==='eel'||t.includes('earlyexit')||t.includes('emergencyendlock')) { resolvedLabel='EEL'; col='var(--red)'; icon='🚨'; }
+    else if (t==='unlock'||t==='unlocked'||t==='exitlock'||t==='lockexited') { resolvedLabel='Unlock'; col='var(--pur)'; icon='🔓'; }
+    else if (t==='lock'||t==='locked')                                    { resolvedLabel='Lock'; col='var(--gld)'; icon='⏳'; }
+    else if (t==='unstake'||t==='unstaked'||t==='withdraw'||t==='withdrawn') { resolvedLabel='Unstake'; col='var(--mut)'; icon='↩️'; }
+    else if (t==='stake'||t==='staked'||t==='deposit'||t==='deposited')   { resolvedLabel='Stake'; col='var(--acc)'; icon='🔒'; }
+    else if (t==='claim'||t==='claimed'||t==='reward'||t.includes('distribut')) { resolvedLabel='Claim / Reward'; col='var(--grn)'; icon='💰'; }
+    else if (t.includes('burn'))                                          { resolvedLabel='Burn'; col='var(--red)'; icon='🔥'; }
+    else if (t.includes('lock')&&!t.startsWith('un'))                     { resolvedLabel='Lock'; col='var(--gld)'; icon='⏳'; }
+    else if (t.startsWith('un')||t.includes('unstake')||t.includes('withdraw')) { resolvedLabel='Unstake/Unlock'; col='var(--mut)'; icon='↩️'; }
+    else if (t.includes('stake')||t.includes('deposit'))                  { resolvedLabel='Stake'; col='var(--acc)'; icon='🔒'; }
+    else if (t.includes('claim')||t.includes('reward'))                   { resolvedLabel='Claim / Reward'; col='var(--grn)'; icon='💰'; }
+    else                                                                  { resolvedLabel=e.eventType||'Activity'; col='var(--mut)'; icon='📋'; }
 
     const isReward=t.includes('reward')||t.includes('claim')||t.includes('distribut');
 
@@ -4946,19 +5011,31 @@ async function runAllocatorCalc() {
     <!-- Per-moat result cards -->
     ${moatResults.map(r => {
       const isHcash = r.addr.toLowerCase() === '0x501f6e7bec3db63d8dacbc9fa0ce42d5d2329d53';
-      // hCASH LP split: budget is split 50/50 — half buys hCASH, half goes as WAVAX for LP
-      const hcashSplit = isHcash && r.usd > 0 ? {
-        hcashUsd: r.usd / 2,
-        wavaxUsd: r.usd / 2,
-        // hCASH tokens = half the budget / hCASH price
-        hcashTokens: r.price > 0 ? (r.usd / 2) / r.price : 0,
-        // WAVAX needed = roughly same USD value paired with hCASH
-        wavaxAvax: priceCache['0xb31f66aa3c1e785363f0875a1b74e27b85fd66c7']?.price > 0
-          ? (r.usd / 2) / priceCache['0xb31f66aa3c1e785363f0875a1b74e27b85fd66c7'].price
-          : (r.usd / 2) / 25, // fallback ~$25/AVAX
-      } : null;
-      // Points calc for hCASH: based on LP token amount not raw token amount
-      const hcashPtsNote = isHcash ? '(LP token points — stake LP after adding liquidity on Pharaoh)' : r.ptsMethod;
+      // hCASH LP split: budget split 50/50 — live prices for both sides
+      const _wavaxPx = priceCache['0xb31f66aa3c1e785363f0875a1b74e27b85fd66c7']?.price || 0;
+      const hcashSplit = isHcash && r.usd > 0 ? (() => {
+        const halfUsd   = r.usd / 2;
+        const hcashToks = r.price > 0 ? halfUsd / r.price : 0;
+        const wavaxAmt  = _wavaxPx > 0 ? halfUsd / _wavaxPx : 0;
+        // Estimate LP tokens: your USD / pool TVL * LP total supply
+        const _lpSup  = window._hcashLpTotalSupply || 0;
+        const _poolTvl = r.liq > 0 ? r.liq : 0;
+        const estLpToks = (_lpSup > 0 && _poolTvl > 0) ? (r.usd / _poolTvl) * _lpSup : 0;
+        return { hcashUsd: halfUsd, wavaxUsd: halfUsd,
+                 hcashTokens: hcashToks, wavaxAvax: wavaxAmt,
+                 wavaxUsdActual: _wavaxPx > 0 ? wavaxAmt * _wavaxPx : halfUsd,
+                 estLpTokens: estLpToks };
+      })() : null;
+      // Points for hCASH: based on estimated LP tokens received, not raw hCASH
+      const _hcashLpSup = window._hcashLpTotalSupply || 0;
+      const _hcashLpPpt = _hcashLpSup > 0 ? 1000000 / _hcashLpSup : null;
+      const hcashLpPts  = isHcash && hcashSplit?.estLpTokens > 0 && _hcashLpPpt
+        ? hcashSplit.estLpTokens * _hcashLpPpt * r.mult : null;
+      const hcashPtsNote = isHcash
+        ? (hcashSplit?.estLpTokens > 0
+            ? '~' + f2(hcashSplit.estLpTokens) + ' est. LP tokens x ' + (_hcashLpPpt ? fmtPrice(_hcashLpPpt) : '?') + ' pts/LP x ' + r.mult + 'x'
+            : '(LP token pts — stake LP after adding liquidity on Pharaoh)')
+        : r.ptsMethod;
       return `
     <div class="res-moat-card" style="background:${r.meta.color}10;border-color:${r.meta.color};border:1px solid ${r.meta.color}44;border-left:3px solid ${r.meta.color}">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:.6rem">
@@ -4982,22 +5059,22 @@ async function runAllocatorCalc() {
             <div style="font-family:'DM Mono',monospace;font-size:.5rem;color:var(--mut)">≈ ${hcashSplit.hcashUsd.toFixed(0)}</div>
           </div>
           <div style="background:var(--card);border-radius:7px;padding:.5rem;text-align:center">
-            <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.9rem;color:var(--acc)">${hcashSplit.wavaxAvax.toFixed(4)}</div>
+            <div style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:.9rem;color:var(--acc)">${hcashSplit.wavaxAvax > 0 ? hcashSplit.wavaxAvax.toFixed(4) : '—'}</div>
             <div style="font-family:'DM Mono',monospace;font-size:.52rem;color:var(--txt);margin-top:1px">WAVAX for LP</div>
-            <div style="font-family:'DM Mono',monospace;font-size:.5rem;color:var(--mut)">≈ ${hcashSplit.wavaxUsd.toFixed(0)}</div>
+            <div style="font-family:'DM Mono',monospace;font-size:.5rem;color:var(--mut)">≈ $${hcashSplit.wavaxUsdActual.toFixed(0)}</div>
           </div>
         </div>
-        <div style="font-family:'DM Mono',monospace;font-size:.55rem;color:var(--mut);line-height:1.5">① Buy ${f2(hcashSplit.hcashTokens)} hCASH + ${hcashSplit.wavaxAvax.toFixed(4)} WAVAX → ② Add both as LP on Pharaoh → ③ Stake LP tokens in hCASH Moat</div>
+        <div style="font-family:'DM Mono',monospace;font-size:.55rem;color:var(--mut);line-height:1.5">① Buy ${f2(hcashSplit.hcashTokens)} hCASH ($${hcashSplit.hcashUsd.toFixed(0)}) + ${hcashSplit.wavaxAvax > 0 ? hcashSplit.wavaxAvax.toFixed(4) : '?'} WAVAX ($${hcashSplit.wavaxUsdActual.toFixed(0)}) → ② Add both as LP on Pharaoh → ③ Stake LP tokens in hCASH Moat${hcashSplit.estLpTokens > 0 ? ' (~' + f2(hcashSplit.estLpTokens) + ' LP tokens est.)' : ''}</div>
       </div>` : ''}
       <div class="res-grid">
         <div class="res-cell">
-          <div class="res-val">${r.price>0?(isHcash?f2(hcashSplit?.hcashTokens||0):f2(r.tokens)):'—'}</div>
-          <div class="res-lbl">${isHcash?'hCASH tokens':'Tokens to buy'}</div>
-          <div class="res-sub">${r.price>0?'@ $'+fmtPrice(r.price):'price unavail.'}</div>
+          <div class="res-val">${r.price>0?(isHcash?(hcashSplit?.estLpTokens>0?f2(hcashSplit.estLpTokens)+' LP':(f2(hcashSplit?.hcashTokens||0))):f2(r.tokens)):'—'}</div>
+          <div class="res-lbl">${isHcash?(hcashSplit?.estLpTokens>0?'Est. LP tokens':'hCASH tokens'):'Tokens to buy'}</div>
+          <div class="res-sub">${r.price>0?(isHcash?(hcashSplit?.estLpTokens>0?'stake in moat':'@ $'+fmtPrice(r.price)):'@ $'+fmtPrice(r.price)):'price unavail.'}</div>
         </div>
         <div class="res-cell">
-          <div class="res-val" style="color:var(--acc)">${r.price>0?fmtP(r.pts):'—'}</div>
-          <div class="res-lbl">Est. Points${r.ptsCalibrated?'':'<span style=\"color:var(--gld)\"> ⚠</span>'}</div>
+          <div class="res-val" style="color:var(--acc)">${r.price>0?(isHcash?(hcashLpPts!==null?fmtP(hcashLpPts):(r.pts>0?fmtP(r.pts):'—')):fmtP(r.pts)):'—'}</div>
+          <div class="res-lbl">Est. Points${(!isHcash&&!r.ptsCalibrated)?'<span style=\\"color:var(--gld)\\"> ⚠</span>':''}</div>
           <div class="res-sub" style="font-size:.44rem">${r.price>0?hcashPtsNote:r.mult+'×'}</div>
         </div>
         <div class="res-cell">
@@ -5012,17 +5089,33 @@ async function runAllocatorCalc() {
         <summary style="font-family:'DM Mono',monospace;font-size:.54rem;color:var(--mut);cursor:pointer;list-style:none;display:flex;align-items:center;gap:5px;padding:3px 0"><span style="font-size:.65rem">📐</span> Advanced Points Breakdown</summary>
         <div style="background:var(--bg);border:1px solid var(--bor);border-radius:8px;padding:.6rem;margin-top:.4rem">
           ${(()=>{
-            const knownSup = r.meta.knownSupply || r.meta.totalSupply || (getSupply(r.addr)?.totalSupply) || 0;
+            const _isHcashAdv = r.addr.toLowerCase() === '0x501f6e7bec3db63d8dacbc9fa0ce42d5d2329d53';
+            const _lpSupAdv   = window._hcashLpTotalSupply || 0;
+            const knownSup = _isHcashAdv
+              ? (_lpSupAdv || r.meta.knownSupply || 0)
+              : (r.meta.knownSupply || r.meta.totalSupply || (getSupply(r.addr)?.totalSupply) || 0);
             const ppt2 = knownSup > 0 ? 1000000/knownSup : null;
+            const _dispToks = _isHcashAdv
+              ? (hcashSplit?.estLpTokens > 0 ? hcashSplit.estLpTokens : (hcashSplit?.hcashTokens || 0))
+              : (r.price > 0 ? r.tokens : 0);
+            const _finalPts = _isHcashAdv && hcashLpPts !== null ? hcashLpPts : r.pts;
             const rows = [];
-            rows.push(['Tokens to buy', (r.price>0?f2(isHcash?hcashSplit?.hcashTokens||0:r.tokens):'—') + ' ' + r.meta.ticker]);
-            if(r.price>0) rows.push(['Token price', '$'+fmtPrice(r.price)]);
-            if(knownSup>0) rows.push(['Total supply', fmtP(knownSup)+' '+r.meta.ticker]);
-            if(r.price>0&&knownSup>0) rows.push(['% of supply', ((isHcash?hcashSplit?.hcashTokens||0:r.tokens)/knownSup*100).toFixed(5)+'%']);
-            if(ppt2) rows.push(['Base pts/token (1×)', fmtPrice(ppt2)]);
-            if(ppt2&&r.price>0) rows.push(['Points at 1× (stake)', fmtP((isHcash?hcashSplit?.hcashTokens||0:r.tokens)*ppt2)]);
+            if (_isHcashAdv && hcashSplit) {
+              rows.push(['hCASH to buy', f2(hcashSplit.hcashTokens) + ' ' + r.meta.ticker + ' ($' + hcashSplit.hcashUsd.toFixed(0) + ')']);
+              rows.push(['WAVAX to pair', (hcashSplit.wavaxAvax > 0 ? hcashSplit.wavaxAvax.toFixed(4) : '—') + ' WAVAX ($' + hcashSplit.wavaxUsdActual.toFixed(0) + ')']);
+              rows.push(['Est. LP tokens', hcashSplit.estLpTokens > 0 ? f2(hcashSplit.estLpTokens) + ' LP' : '— (need pool TVL)']);
+              if (_lpSupAdv > 0) rows.push(['LP token supply', fmtP(_lpSupAdv) + ' LP tokens']);
+              if (hcashSplit.estLpTokens > 0 && _lpSupAdv > 0) rows.push(['% of LP supply', (hcashSplit.estLpTokens/_lpSupAdv*100).toFixed(5)+'%']);
+            } else {
+              rows.push(['Tokens to buy', (r.price>0?f2(r.tokens):'—') + ' ' + r.meta.ticker]);
+              if(r.price>0) rows.push(['Token price', '$'+fmtPrice(r.price)]);
+              if(knownSup>0) rows.push(['Total supply', fmtP(knownSup)+' '+r.meta.ticker]);
+              if(r.price>0&&knownSup>0) rows.push(['% of supply', (r.tokens/knownSup*100).toFixed(5)+'%']);
+            }
+            if(ppt2) rows.push(['Base pts/' + (_isHcashAdv?'LP token':'token') + ' (1×)', fmtPrice(ppt2)]);
+            if(ppt2&&r.price>0) rows.push(['Points at 1× (stake)', fmtP(_dispToks * ppt2)]);
             rows.push(['Multiplier ('+r.methodLabel+')', r.mult+'×']);
-            rows.push(['= Final est. points', fmtP(r.pts)]);
+            rows.push(['= Final est. points', fmtP(_finalPts)]);
             rows.push(['Est. rank in moat', '#'+r.estRank+' · '+r.estShare+'% share']);
             rows.push(['Fort score share', r.fortShare+'%']);
             return rows.map((row,i)=>`<div style="display:flex;justify-content:space-between;padding:2px 0;font-family:'DM Mono',monospace;font-size:.54rem;${i===rows.length-3?'border-top:1px solid var(--bor);padding-top:4px;margin-top:2px;font-weight:700':'border-bottom:1px solid rgba(51,46,40,.25)'}"><span style="color:var(--mut)">${row[0]}</span><span style="color:${i>=rows.length-3?'var(--acc)':'var(--txt)'}">${row[1]}</span></div>`).join('');
@@ -5464,10 +5557,25 @@ function onMoatSelChange(){
   if (ctx) ctx.style.display = 'block';
 
   // Use knownSupply as primary source — NEVER await anything, UI stays instant
-  const knownSup = meta.knownSupply || 0;
+  const _isHcashCtx  = addr.toLowerCase() === '0x501f6e7bec3db63d8dacbc9fa0ce42d5d2329d53';
+  const _lpSupCtx    = _isHcashCtx ? (window._hcashLpTotalSupply || 0) : 0;
+  const knownSup     = _isHcashCtx ? (_lpSupCtx || meta.knownSupply || 0) : (meta.knownSupply || 0);
   // Try supplyCache first (may have been enriched), fall back to knownSupply
   const cached = getSupply(addr);
-  const sup    = (cached && cached.totalSupply > 0) ? cached : (knownSup ? {totalSupply:knownSup, symbol:meta.ticker, decimals:18} : null);
+  const sup    = _isHcashCtx
+    ? (_lpSupCtx ? {totalSupply:_lpSupCtx, symbol:'LP tokens', decimals:18} : (cached?.totalSupply>0 ? cached : null))
+    : ((cached && cached.totalSupply > 0) ? cached : (knownSup ? {totalSupply:knownSup, symbol:meta.ticker, decimals:18} : null));
+
+  // Update Token Amount input label + placeholder for hCASH LP moat
+  const tokLabel = document.querySelector('label[for="cTok"], #cTok')?.closest('.ig')?.querySelector('.il');
+  const tokInput = document.getElementById('cTok');
+  if (_isHcashCtx) {
+    if (tokLabel) tokLabel.textContent = 'LP Token Amount';
+    if (tokInput) tokInput.placeholder = 'e.g. 0.5 LP tokens';
+  } else {
+    if (tokLabel) tokLabel.textContent = 'Token Amount';
+    if (tokInput) tokInput.placeholder = 'e.g. 100000';
+  }
 
   // Estimated pts-per-token for rank preview
   const ppt = (knownSup > 0) ? (1000000 / knownSup) : (estPtsPerToken(addr) || null);
@@ -5476,11 +5584,16 @@ function onMoatSelChange(){
     ? '<span style="color:var(--gld)">⚡ Dynamic</span>'
     : '<span style="color:var(--grn)">🔒 Fixed</span>';
 
-  const supplyLine = sup && sup.totalSupply > 0
+  const _supplyDisplay = sup?.totalSupply > 0
+    ? fmtP(sup.totalSupply) + ' ' + (sup.symbol || (_isHcashCtx ? 'LP tokens' : meta.ticker) || '')
+    : null;
+  const _pptLabel = _isHcashCtx ? 'pts/LP (stake)' : 'pts/token (stake)';
+
+  const supplyLine = _supplyDisplay
     ? '<div style="grid-column:1/-1;margin-top:5px;font-family:monospace;font-size:.56rem;color:var(--dim);display:flex;align-items:center;gap:8px">'
-      + '<span>Supply: <b style="color:var(--txt)">'+fmtP(sup.totalSupply)+' '+(sup.symbol||meta.ticker||'')+'</b></span>'
+      + '<span>Supply: <b style="color:var(--txt)">'+_supplyDisplay+'</b></span>'
       + dynTag
-      + (ppt ? '<span style="color:var(--acc)">~'+fmtPrice(ppt)+' pts/token (stake)</span>' : '')
+      + (ppt ? '<span style="color:var(--acc)">~'+fmtPrice(ppt)+' '+_pptLabel+'</span>' : '')
       + '</div>'
     : '';
 
@@ -5508,25 +5621,25 @@ function calcPts(){
   const days       = Number(document.getElementById('cDays').value) || 180;
   const multiplier = a === 'burn' ? 10 : a === 'lock' ? lockM(days) : 1;
 
-  // pts-per-token: knownSupply is the ground truth (hardcoded from moats.app docs)
-  // Formula: 1,000,000 base pts allocated per full token supply — standard Moats mechanic
-  const knownSup = meta.knownSupply || 0;
+  // pts-per-token: for hCASH LP moat use LP total supply; for others use knownSupply
+  const isHcashMoat = addr && addr.toLowerCase() === '0x501f6e7bec3db63d8dacbc9fa0ce42d5d2329d53';
+  const _lpSup  = isHcashMoat ? (window._hcashLpTotalSupply || 0) : 0;
+  const knownSup = isHcashMoat ? (_lpSup || meta.knownSupply || 0) : (meta.knownSupply || 0);
   const cached   = getSupply(addr);
-  const supply   = (cached && cached.totalSupply > 0) ? cached.totalSupply : knownSup;
+  const supply   = isHcashMoat
+    ? (_lpSup || (cached?.totalSupply > 0 ? cached.totalSupply : knownSup))
+    : ((cached && cached.totalSupply > 0) ? cached.totalSupply : knownSup);
   let ppt        = null;
   let pptSource  = '';
   if (supply > 0) {
     ppt       = 1000000 / supply;
-    pptSource = 'hardcoded supply';
+    pptSource = isHcashMoat ? 'LP token supply' : 'hardcoded supply';
   } else if (addr) {
     ppt       = estPtsPerToken(addr);
     pptSource = 'live estimate';
   }
 
   const pts = ppt !== null ? t * ppt * multiplier : t * multiplier;
-
-  // hCASH LP moat special note
-  const isHcashMoat = addr && addr.toLowerCase() === '0x501f6e7bec3db63d8dacbc9fa0ce42d5d2329d53';
 
   // Formula note
   let ptsNote = '';
@@ -5537,7 +5650,15 @@ function calcPts(){
   } else {
     ptsNote = fmtP(t) + ' × ' + multiplier + '× — no supply data yet';
   }
-  if (isHcashMoat) ptsNote += ' (LP token input — add AVAX+hCASH on Pharaoh first)';
+  if (isHcashMoat) {
+    // For hCASH: rewrite formula note to make clear it's LP token input
+    if (ppt !== null) {
+      ptsNote = fmtP(t) + ' LP tokens × ' + fmtPrice(ppt) + ' pts/LP (base) × ' + multiplier + '×';
+      if (a === 'lock') ptsNote += ' — ' + days + 'd lock';
+      if (a === 'burn') ptsNote += ' — permanent 🔥';
+    }
+    ptsNote += ' · input = LP tokens (add AVAX+hCASH on Pharaoh first)';
+  }
 
   document.getElementById('pRes').style.display = 'block';
   setTxt('rT',  fmtP(t));
@@ -5558,12 +5679,16 @@ function calcPts(){
     const px = addr ? (priceCache[addr]?.price||0) : 0;
     const tokenUsd = px > 0 ? t * px : null;
 
+    const _inputLabel = isHcashMoat ? 'LP Token Input' : 'Token Input';
+    const _supplyLabel = isHcashMoat ? 'LP Token Supply (WAVAX/hCASH)' : 'Total Supply';
+    const _supplyTicker = isHcashMoat ? 'LP tokens' : (meta.ticker||'');
+    const _pptUnitLabel = isHcashMoat ? 'LP Token' : 'Token';
     let bdRows = '';
-    bdRows += `<div class="rr" style="font-size:.55rem"><span class="rl" style="font-size:.52rem">Token Input</span><span style="font-family:'DM Mono',monospace;font-size:.55rem;color:var(--txt)">${fmtP(t)} ${meta.ticker||'tokens'}</span></div>`;
+    bdRows += `<div class="rr" style="font-size:.55rem"><span class="rl" style="font-size:.52rem">${_inputLabel}</span><span style="font-family:'DM Mono',monospace;font-size:.55rem;color:var(--txt)">${fmtP(t)} ${isHcashMoat ? 'LP tokens' : (meta.ticker||'tokens')}</span></div>`;
     if (tokenUsd) bdRows += `<div class="rr" style="font-size:.55rem"><span class="rl" style="font-size:.52rem">USD Value</span><span style="font-family:'DM Mono',monospace;font-size:.55rem;color:var(--grn)">≈ $${fmtK(tokenUsd)}</span></div>`;
-    if (totalSup > 0) bdRows += `<div class="rr" style="font-size:.55rem"><span class="rl" style="font-size:.52rem">Total Supply</span><span style="font-family:'DM Mono',monospace;font-size:.55rem;color:var(--mut)">${fmtP(totalSup)} ${meta.ticker||''}</span></div>`;
+    if (totalSup > 0) bdRows += `<div class="rr" style="font-size:.55rem"><span class="rl" style="font-size:.52rem">${_supplyLabel}</span><span style="font-family:'DM Mono',monospace;font-size:.55rem;color:var(--mut)">${fmtP(totalSup)} ${_supplyTicker}</span></div>`;
     if (supplyPct) bdRows += `<div class="rr" style="font-size:.55rem"><span class="rl" style="font-size:.52rem">% of Supply</span><span style="font-family:'DM Mono',monospace;font-size:.55rem;color:var(--dim)">${supplyPct}%</span></div>`;
-    if (pptBase) bdRows += `<div class="rr" style="font-size:.55rem"><span class="rl" style="font-size:.52rem">Base Pts/Token (1×)</span><span style="font-family:'DM Mono',monospace;font-size:.55rem;color:var(--acc)">${fmtPrice(pptBase)}</span></div>`;
+    if (pptBase) bdRows += `<div class="rr" style="font-size:.55rem"><span class="rl" style="font-size:.52rem">Base Pts/${_pptUnitLabel} (1×)</span><span style="font-family:'DM Mono',monospace;font-size:.55rem;color:var(--acc)">${fmtPrice(pptBase)}</span></div>`;
     bdRows += `<div class="rr" style="font-size:.55rem"><span class="rl" style="font-size:.52rem">Points at 1× (Stake)</span><span style="font-family:'DM Mono',monospace;font-size:.55rem;color:var(--acc)">${pptBase ? fmtP(t * pptBase) : fmtP(t)}</span></div>`;
     if (multiplier > 1) {
       bdRows += `<div class="rr" style="font-size:.55rem"><span class="rl" style="font-size:.52rem">Action Multiplier</span><span style="font-family:'DM Mono',monospace;font-size:.55rem;color:var(--gld)">× ${multiplier}${a==='lock'?' ('+days+'d lock)':a==='burn'?' 🔥':''}</span></div>`;
@@ -5577,14 +5702,16 @@ function calcPts(){
   }
 
   // Live rank projection using real leaderboard data
-  const rR = document.getElementById('rRankRow');
-  const rS = document.getElementById('rShareRow');
+  const rR   = document.getElementById('rRankRow');
+  const rS   = document.getElementById('rShareRow');
+  const rNR  = document.getElementById('rNextRankRow');
+  const rNRd = document.getElementById('rNextRank');
   if (addr && moatMap[addr]) {
     const md     = moatMap[addr];
     const sorted = (md.sorted || []).slice();
     // Find rank: count how many wallets have MORE pts than our projection
     let rank = sorted.filter(w => (w.points || w.totalPoints || 0) > pts).length + 1;
-    const totalWallets  = (md.walletCount || sorted.length) + 1; // +1 for this wallet
+    const totalWallets  = (md.walletCount || sorted.length) + 1;
     const newPool       = (md.totalPoints || 0) + pts;
     const share         = newPool > 0 ? (pts / newPool * 100).toFixed(3) : '100';
     const percentile    = totalWallets > 1 ? (100 - ((rank - 1) / totalWallets * 100)).toFixed(1) : '100';
@@ -5592,9 +5719,64 @@ function calcPts(){
     if (rS) rS.style.display = 'flex';
     setTxt('rRank',  '#' + rank + ' of ' + totalWallets + ' (top ' + percentile + '%)');
     setTxt('rShare', share + '% of pool');
+
+    // ── Next rank above: the person sitting one spot ahead ──
+    // sorted is descending by points; rank-2 index = the person just above you
+    const aboveIdx = rank - 2; // 0-based index of the person 1 rank ahead
+    if (rNR && rNRd && aboveIdx >= 0 && aboveIdx < sorted.length) {
+      const above      = sorted[aboveIdx];
+      const aboveW     = (above.address || above.walletAddress || above.wallet || getWallet(above) || '').toLowerCase();
+      const abovePts   = above.points || above.totalPoints || 0;
+      const aboveEp    = getKnownProfile(aboveW);
+      const aboveZn    = aboveW ? (zephyrNames[aboveW] || null) : null;
+      const aboveName  = aboveEp ? ('@' + aboveEp.twitter) : (aboveZn || (aboveW ? aboveW.slice(0,6)+'…'+aboveW.slice(-4) : '—'));
+      const ptsNeeded  = abovePts - pts;
+      const ptsNeededFmt = ptsNeeded > 0 ? fmtP(Math.ceil(ptsNeeded)) : '0';
+      // Determine their action from actionType or tier inference
+      const aboveAt = (above.actionType || '').toLowerCase();
+      const aboveTier = aboveAt === 'burn' || aboveAt === 'burned' ? 'burn'
+        : aboveAt === 'lock' || aboveAt === 'locked' ? 'lock'
+        : aboveAt === 'stake' || aboveAt === 'staked' ? 'stake'
+        : abovePts > (md.avgPoints||1)*5 ? 'burn'
+        : abovePts > (md.avgPoints||1)*1.5 ? 'lock' : 'stake';
+      const aboveIcon  = aboveTier==='burn'?'🔥':aboveTier==='lock'?'⏳':'🔒';
+      const aboveLabel = aboveTier==='burn'?'Burn':aboveTier==='lock'?'Lock':'Stake';
+      const aboveCol   = aboveTier==='burn'?'var(--red)':aboveTier==='lock'?'var(--gld)':'var(--acc)';
+      // Token amount they have
+      const aboveTokAmt = above.tokenAmount > 0 ? fmtP(above.tokenAmount) + ' ' + (meta.ticker||'tokens') : null;
+      // Avatar
+      const abovePic = aboveEp
+        ? `<img src="${aboveEp.pic}" style="width:20px;height:20px;border-radius:50%;object-fit:cover;border:1.5px solid ${aboveCol};flex-shrink:0" onerror="this.style.display='none'">`
+        : `<div style="width:20px;height:20px;border-radius:50%;background:${aboveCol}22;border:1.5px solid ${aboveCol}44;display:flex;align-items:center;justify-content:center;font-family:'DM Mono',monospace;font-size:.52rem;font-weight:700;color:${aboveCol};flex-shrink:0">${(aboveW[2]||'?').toUpperCase()}</div>`;
+      rNRd.innerHTML = `
+        <div style="background:rgba(212,168,67,.06);border:1px solid rgba(212,168,67,.18);border-radius:8px;padding:.55rem .7rem;display:flex;flex-direction:column;gap:.35rem">
+          <div style="display:flex;align-items:center;gap:7px">
+            ${abovePic}
+            <span onclick="gotoW('${aboveW}')" style="font-family:'DM Mono',monospace;font-size:.62rem;color:var(--txt);cursor:pointer;background:var(--sur);border:1px solid var(--bor);border-radius:5px;padding:2px 7px">${aboveName}</span>
+            ${aboveEp?`<a href="https://x.com/${aboveEp.twitter}" target="_blank" style="font-family:'DM Mono',monospace;font-size:.52rem;color:var(--acc);text-decoration:none">@${aboveEp.twitter}</a>`:''}
+            <span style="font-family:'DM Mono',monospace;font-size:.56rem;color:${aboveCol};font-weight:700">${aboveIcon} ${aboveLabel}</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+            <span style="font-family:'DM Mono',monospace;font-size:.6rem;color:var(--gld);font-weight:700">${fmtP(abovePts)} pts</span>
+            ${aboveTokAmt?`<span style="font-family:'DM Mono',monospace;font-size:.56rem;color:var(--mut)">${aboveTokAmt}</span>`:''}
+            <span style="font-family:'DM Mono',monospace;font-size:.52rem;color:var(--dim)">Rank #${aboveIdx+1}</span>
+          </div>
+          ${ptsNeeded > 0 ? `<div style="font-family:'DM Mono',monospace;font-size:.54rem;color:var(--cyn)">⬆ Need <b style="color:var(--txt)">${ptsNeededFmt}</b> more pts to beat them</div>` : `<div style="font-family:'DM Mono',monospace;font-size:.54rem;color:var(--grn)">✅ You already beat this wallet at this input!</div>`}
+        </div>`;
+      rNR.style.display = 'flex';
+    } else if (rNR) {
+      // Rank 1 — already top, or no data
+      if (rank === 1 && rNRd) {
+        rNRd.innerHTML = `<div style="font-family:'DM Mono',monospace;font-size:.58rem;color:var(--grn)">🏆 You'd be #1 in this moat at this amount!</div>`;
+        rNR.style.display = 'flex';
+      } else {
+        rNR.style.display = 'none';
+      }
+    }
   } else {
-    if (rR) rR.style.display = 'none';
-    if (rS) rS.style.display = 'none';
+    if (rR)  rR.style.display = 'none';
+    if (rS)  rS.style.display = 'none';
+    if (rNR) rNR.style.display = 'none';
   }
 }
 function calcEEL(){
