@@ -1967,8 +1967,14 @@ function normEvs(d){
       tokenSymbol,
       lockDays: Number(e.lockDays||e.lockDuration||e.duration||e.days||evtData.lockDays||0),
       rewardAmount,
-      rewardToken: e.rewardToken||e.rewardCurrency||e.currency||e.rewardSymbol||null,
-      rewardTokenAddr: e.rewardTokenAddress||e.rewardContract||null,
+      rewardToken: (()=>{
+        const raw = e.rewardToken||e.rewardCurrency||e.currency||e.rewardSymbol||null;
+        if (!raw) return null;
+        // If it's a readable symbol (not an address), uppercase it
+        if (!/^0x[0-9a-f]{40}$/i.test(raw) && raw.length < 20) return raw.toUpperCase();
+        return raw;
+      })(),
+      rewardTokenAddr: e.rewardTokenAddress||e.rewardContract||(e.rewardToken&&/^0x[0-9a-f]{40}$/i.test(e.rewardToken)?e.rewardToken:null)||null,
       blockNumber: e.blockNumber||null,
       network: e.network||'avalanche',
     };
@@ -3239,8 +3245,12 @@ function renderEvItemsInline(evs, tokenMap, cgCache){
     const w=_w
       ?`<span class="wa" onclick="gotoW('${_w}')" style="display:inline-flex;align-items:center;gap:3px;background:var(--sur);border:1px solid var(--bor);border-radius:5px;padding:1px 5px;cursor:pointer">${_pic}<span style="font-family:'DM Mono',monospace;font-size:.6rem;color:var(--txt)">${_dispName}</span>${_bensiTag}${_twitterTag}</span>${(_ep||_zn)?' '+_addrTag:_addrTag}`:'';
     const rkRaw=(e.rewardTokenAddr||e.rewardToken||'').toLowerCase();
-    let rkLabel=REWARD_TOKENS[rkRaw]||(cg[rkRaw]?.symbol)||null;
+    // Check if rewardToken is already a readable symbol
+    const _rIsSymbol = e.rewardToken && !/^0x[0-9a-f]{40}$/i.test(e.rewardToken) && e.rewardToken.length < 20;
+    let rkLabel = _rIsSymbol ? e.rewardToken.toUpperCase() : (REWARD_TOKENS[rkRaw]||(cg[rkRaw]?.symbol)||null);
     if(!rkLabel&&rkRaw){Object.values(MOATS).forEach(mm=>{if(mm.tokenAddr&&mm.tokenAddr.toLowerCase()===rkRaw)rkLabel=mm.ticker;});}
+    // Arena token
+    if(!rkLabel&&rkRaw==='0xb8d7710f7d8349a506b75dd184f05777c82dad0c') rkLabel='ARENA';
     rkLabel=rkLabel||(rkRaw&&rkRaw.startsWith('0x')?shortA(rkRaw):'');
     const amt=e.rewardAmount>0&&rkLabel?`<span style="font-family:'DM Mono',monospace;font-size:.6rem;color:var(--grn);background:rgba(109,184,122,.1);border-radius:4px;padding:1px 5px">💰 ${e.rewardAmount>=1?fmtP(e.rewardAmount):e.rewardAmount.toFixed(4)} ${rkLabel}</span>`:'';
     const txLink=e.txHash?`<a href="https://snowtrace.io/tx/${e.txHash}" target="_blank" style="font-family:'DM Mono',monospace;font-size:.54rem;color:var(--mut)">${shortA(e.txHash)} ↗</a>`:'';
@@ -4015,10 +4025,11 @@ function renderWhaleFeed(force=false) {
     else if (t.includes('stake')||t.includes('deposit'))                 { evLabel='Stake'; evIcon='🔒'; evColor='var(--acc)'; }
     else                                                                 { evLabel=e.eventType||'Move'; evIcon='📋'; evColor='var(--mut)'; }
 
-    const _w = (e.wallet||'').toLowerCase();
+    const _w = (e.wallet||e.user||e.from||e.walletAddress||e.address||e.owner||e.account||'').toLowerCase();
     const _ep = getKnownProfile(_w);
     const _zn = _w ? (zephyrNames[_w]||null) : null;
-    const _dispName = _ep ? ('@'+_ep.twitter) : (_zn || (_w ? _w.slice(0,6)+'…'+_w.slice(-4) : '—'));
+    const _uname = _w ? (wMap[_w]?.username||null) : null;
+    const _dispName = _ep ? ('@'+_ep.twitter) : (_zn || _uname || (_w ? _w.slice(0,6)+'…'+_w.slice(-4) : '?'));
 
     const whaleSizeClass = usd >= 10000 ? { emoji:'🐋', label:'Mega Whale', bg:'rgba(167,139,250,.1)', border:'rgba(167,139,250,.3)', textCol:'var(--pur)' }
       : usd >= 2500 ? { emoji:'🐳', label:'Whale', bg:'rgba(34,211,238,.08)', border:'rgba(34,211,238,.25)', textCol:'var(--cyn)' }
@@ -4049,8 +4060,11 @@ function renderWhaleFeed(force=false) {
         </div>
         <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:2px">
           <span onclick="gotoW('${_w}')" style="font-family:'DM Mono',monospace;font-size:.6rem;color:var(--txt);cursor:pointer;background:var(--sur);border:1px solid var(--bor);border-radius:5px;padding:1px 6px">${_dispName}</span>
-          <span style="font-family:'DM Mono',monospace;font-size:.62rem;color:${evColor};font-weight:700">${fmtP(e.tokenAmount)} ${e.tokenSymbol||meta.ticker||''}</span>
+          ${_w&&_w!==_dispName?`<span onclick="event.stopPropagation();navigator.clipboard&&navigator.clipboard.writeText('${_w}').then(()=>showAppNotif('Copied','success',1200))" title="${_w}" style="font-family:'DM Mono',monospace;font-size:.5rem;color:var(--mut);background:var(--sur);border:1px solid var(--bor);border-radius:3px;padding:1px 5px;cursor:copy">${_w.slice(0,6)}…${_w.slice(-4)}</span>`:''}
+          <span style="font-family:'DM Mono',monospace;font-size:.62rem;color:${evColor};font-weight:700">${e.tokenAmount>0?fmtP(e.tokenAmount)+' '+(e.tokenSymbol||meta.ticker||''):''}</span>
+          ${e.rewardAmount>0?`<span style="font-family:'DM Mono',monospace;font-size:.6rem;color:var(--grn);background:rgba(109,184,122,.1);border:1px solid rgba(109,184,122,.25);border-radius:4px;padding:1px 5px">💰 ${fmtP(e.rewardAmount)} ${(()=>{const r=(e.rewardToken||'');if(r&&!/^0x/.test(r)&&r.length<20)return r.toUpperCase();const m=MOATS[e.contractAddress];if(m)return m.ticker;return r?shortA(r):'tokens';})()}</span>`:'' }
           ${usd>0?`<span style="font-family:'DM Mono',monospace;font-size:.6rem;color:${whaleSizeClass.textCol};background:${whaleSizeClass.bg};border:1px solid ${whaleSizeClass.border};border-radius:4px;padding:1px 5px;font-weight:700">$${fmtK(usd)}</span>`:''}
+          ${px>0?`<span style="font-family:'DM Mono',monospace;font-size:.52rem;color:var(--mut)">@ $${fmtPrice(px)}</span>`:''}
         </div>
         <div style="display:flex;align-items:center;gap:6px;font-family:'DM Mono',monospace;font-size:.54rem;color:var(--mut)">
           <span>${ts}</span>
@@ -4362,11 +4376,26 @@ function renderEvItems(evs,id,freshIds=[]){
     let rewardChip='';
     if(e.rewardAmount>0||isReward){
       const rkRaw=(e.rewardTokenAddr||e.rewardToken||'').toLowerCase();
-      // Build full resolution map: known addrs + moat token addrs
-      const fullMap = Object.assign({}, REWARD_ADDR_MAP, REWARD_TOKENS);
-      // Add all moat tokens to the map
-      Object.values(MOATS).forEach(m=>{ if(m.tokenAddr) fullMap[m.tokenAddr.toLowerCase()]=m.ticker; });
-      const rkLabel = fullMap[rkRaw] || e.rewardToken || (e.rewardTokenAddr?shortA(e.rewardTokenAddr):'tokens');
+      // Comprehensive token address map including Arena and all moat tokens
+      const FULL_TOKEN_MAP = Object.assign({
+        'usdc':'USDC','wavax':'WAVAX','avax':'AVAX','arena':'ARENA',
+        '0xb97ef9ef8734c71904d8002f8b6bc66dd9c48a6e':'USDC',
+        '0xb31f66aa3c1e785363f0875a1b74e27b85fd66c7':'WAVAX',
+        '0x49d5c2bdffac6ce2bfdb6640f4f80f226bc10bab':'WETH.e',
+        '0x9702230a8ea53601f5cd2dc00fdbc13d4df4a8c7':'USDT',
+        '0x152b9d0fdc40c096757f570a51e494bd4b943e50':'BTC.b',
+        '0xb8d7710f7d8349a506b75dd184f05777c82dad0c':'ARENA',  // Arena token
+        '0x0000000000000000000000000000000000000000':'AVAX',
+      }, REWARD_ADDR_MAP||{}, REWARD_TOKENS||{});
+      // Add all moat token addresses
+      Object.values(MOATS).forEach(m=>{ if(m.tokenAddr) FULL_TOKEN_MAP[m.tokenAddr.toLowerCase()]=m.ticker; });
+      // If rewardToken is already a readable symbol (not an address), use it directly
+      const _rewardIsSymbol = e.rewardToken && !/^0x[0-9a-f]{40}$/i.test(e.rewardToken) && e.rewardToken.length < 20;
+      const rkLabel = (_rewardIsSymbol ? e.rewardToken.toUpperCase() : null)
+        || FULL_TOKEN_MAP[rkRaw]
+        || (e.rewardToken && !/^0x/.test(e.rewardToken) ? e.rewardToken : null)
+        || (e.rewardTokenAddr ? shortA(e.rewardTokenAddr) : null)
+        || 'tokens';
       const rAmt = e.rewardAmount>0 ? (e.rewardAmount>=1 ? fmtP(e.rewardAmount) : e.rewardAmount.toFixed(6)) : '';
       if(rAmt) {
         rewardChip=`<span style="font-family:'DM Mono',monospace;font-size:.6rem;color:var(--grn);background:rgba(109,184,122,.12);border:1px solid rgba(109,184,122,.25);border-radius:4px;padding:1px 5px">💰 ${rAmt} ${rkLabel}</span>`;
@@ -4907,7 +4936,10 @@ async function runAllocatorCalc() {
     return;
   }
 
-  // Fetch all prices fresh
+  // Fetch all prices fresh — also always fetch WAVAX price for hCASH LP split
+  const WAVAX_PRICE_ADDR = '0xb31f66aa3c1e785363f0875a1b74e27b85fd66c7';
+  const WAVAX_PAIR_ADDR  = 'b31f66aa3c1e785363f0875a1b74e27b85fd66c7'; // used for DexScreener
+  const needsWavax = sel.some(a=>a.toLowerCase()==='0x501f6e7bec3db63d8dacbc9fa0ce42d5d2329d53');
   const priceJobs = sel.map(addr => {
     const meta = MOATS[addr];
     if (priceCache[addr] && priceCache[addr].price > 0) return Promise.resolve(priceCache[addr]);
@@ -4919,6 +4951,20 @@ async function runAllocatorCalc() {
       return obj;
     }).catch(()=>null);
   });
+  // Fetch WAVAX price if needed for hCASH LP calc
+  if (needsWavax && !(priceCache[WAVAX_PRICE_ADDR]?.price > 0)) {
+    priceJobs.push(
+      fetch('https://api.dexscreener.com/latest/dex/pairs/avalanche/b31f66aa3c1e785363f0875a1b74e27b85fd66c7')
+        .then(r=>r.json()).then(d=>{
+          const p=d.pairs?.[0];
+          if(p&&Number(p.priceUsd||0)>0){
+            const obj={price:Number(p.priceUsd),ch24:Number(p.priceChange?.h24||0),liq:Number(p.liquidity?.usd||0)};
+            priceCache[WAVAX_PRICE_ADDR]=obj;
+          }
+          return null;
+        }).catch(()=>null)
+    );
+  }
   const freshPrices = await Promise.all(priceJobs);
   sel.forEach((addr,i)=>{ if(freshPrices[i]) priceCache[addr]=freshPrices[i]; });
 
@@ -4960,6 +5006,17 @@ async function runAllocatorCalc() {
     const ch24 = px?.ch24||0;
     const liq = px?.liq||0;
 
+    // For hCASH: override pts with LP-based pts if available
+    const _isHcashMR = addr.toLowerCase() === '0x501f6e7bec3db63d8dacbc9fa0ce42d5d2329d53';
+    if (_isHcashMR) {
+      const _lpS = window._hcashLpTotalSupply || 0;
+      const _ppt = _lpS > 0 ? 1000000 / _lpS : null;
+      const _liq = px?.liq || 0;
+      if (_ppt && _liq > 0 && _lpS > 0) {
+        pts = (usd / _liq) * _lpS * _ppt * mult;
+        ptsCalibrated = true;
+      }
+    }
     grandPts += pts; grandTokens += tokens; grandUsd += usd;
 
     // Compute EEL worst case for non-stake methods
