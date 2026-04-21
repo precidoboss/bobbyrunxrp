@@ -328,6 +328,18 @@ main {
 @media(min-width: 1200px) { main { padding: 1.25rem 1.5rem 3rem; } }
 
 .view { display: none; }
+@media(max-width:480px){
+  #bd-slotGrid > div { min-width: 0 !important; }
+  #bd-slotTableWrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  #view-build .card { overflow: hidden; max-width: 100%; box-sizing: border-box; }
+}
+@media(max-width:480px){
+  /* Footer mobile */
+  footer, [data-footer], .site-footer { font-size: 10px !important; }
+  /* Prevent any child from busting out */
+  body > * { max-width: 100vw; overflow-x: hidden; }
+  main { overflow-x: hidden; }
+}
 .view.on { display: block; }
 
 /* ── GRIDS ── */
@@ -625,7 +637,29 @@ html.light .liq-token-row { background: rgba(0,0,0,.02); }
 .liq-max-btn:hover { background: rgba(232,53,53,.16); border-color: rgba(232,53,53,.4); }
 
 .liq-plus-divider { text-align: center; color: var(--mut); font-size: 1.3rem; margin: .1rem 0; line-height: 1; }
-.liq-preview { font-family: 'DM Mono', monospace; font-size: var(--t-xs); color: var(--gld); min-height: 1.3em; padding: .25rem 0; }
+.liq-preview {
+  font-family: 'DM Mono', monospace;
+  font-size: var(--t-xs);
+  min-height: 1.3em;
+  margin: .5rem 0 .25rem;
+}
+.liq-preview:not(:empty) {
+  background: rgba(212,168,67,.06);
+  border: 1px solid rgba(212,168,67,.22);
+  border-radius: 8px;
+  padding: .6rem .75rem;
+  color: var(--txt);
+}
+.liq-preview .q-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 2px 0; border-bottom: 1px solid rgba(255,255,255,.05);
+}
+.liq-preview .q-row:last-child { border-bottom: none; }
+.liq-preview .q-lbl { color: var(--mut); font-size: 10px; text-transform: uppercase; letter-spacing: .06em; }
+.liq-preview .q-val { color: var(--txt); font-weight: 600; font-size: var(--t-xs); }
+.liq-preview .q-val.green { color: var(--grn); }
+.liq-preview .q-val.gold  { color: var(--gold); }
+.liq-preview .q-val.red   { color: var(--red); }
 .liq-slip-row { display: flex; align-items: center; gap: 4px; margin: .55rem 0; flex-wrap: wrap; }
 .slip-btn {
   padding: 3px 9px; background: transparent; border: 1px solid var(--bor);
@@ -635,7 +669,33 @@ html.light .liq-token-row { background: rgba(0,0,0,.02); }
 .slip-btn:hover { border-color: var(--bor2); color: var(--txt); }
 .slip-btn.active { background: rgba(232,53,53,.1); border-color: rgba(232,53,53,.3); color: var(--acc); }
 .liq-action-btn { width: 100%; padding: .75rem; margin-top: .55rem; font-size: var(--t-base); border-radius: var(--r-md); }
-.liq-status { font-family: 'DM Mono', monospace; font-size: var(--t-xs); color: var(--mut); text-align: center; margin-top: .4rem; min-height: 1.2em; line-height: 1.5; }
+.liq-status {
+  font-family: 'DM Mono', monospace;
+  font-size: var(--t-xs);
+  color: var(--mut);
+  margin-top: .5rem;
+  min-height: 1.2em;
+  line-height: 1.6;
+}
+.liq-status:not(:empty) {
+  background: var(--sur);
+  border: 1px solid var(--bor);
+  border-radius: 8px;
+  padding: .6rem .75rem;
+}
+.tx-step {
+  display: flex; align-items: flex-start; gap: 8px;
+  padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,.04);
+}
+.tx-step:last-child { border-bottom: none; }
+.tx-step-icon { font-size: .9rem; flex-shrink: 0; margin-top: 1px; }
+.tx-step-body { flex: 1; }
+.tx-step-title { font-weight: 700; color: var(--txt); font-size: var(--t-xs); font-family: 'Rajdhani',sans-serif; }
+.tx-step-sub { color: var(--mut); font-size: 10px; margin-top: 1px; }
+.tx-step-sub a { color: var(--red); }
+.tx-step.active .tx-step-title { color: var(--gold); }
+.tx-step.done   .tx-step-title { color: var(--grn); }
+.tx-step.error  .tx-step-title { color: var(--red); }
 .liq-note { font-family: 'DM Mono', monospace; font-size: var(--t-xs); color: var(--mut); line-height: 1.6; margin-top: .6rem; padding-top: .55rem; border-top: 1px solid var(--bor); }
 .liq-info-strip { display: flex; gap: .85rem; flex-wrap: wrap; background: var(--sur); border: 1px solid var(--bor); border-radius: 6px; padding: .5rem .8rem; }
 .liq-swap-dir-row { display: flex; gap: 6px; margin-bottom: .55rem; }
@@ -1166,9 +1226,7 @@ html.light .tab.on  { color: var(--acc); background: rgba(232,53,53,.08); }
     <button class="liq-tab" id="liqTab_remove" onclick="lpTab('remove',this)">
       <span>➖</span> Remove
     </button>
-    <button class="liq-tab" id="liqTab_swap" onclick="lpTab('swap',this)">
-      <span>🔄</span> Swap
-    </button>
+
     <button class="liq-tab liq-tab-gold" id="liqTab_stake" onclick="lpTab('stake',this)">
       <span>🔒</span> Stake
     </button>
@@ -1259,61 +1317,7 @@ html.light .tab.on  { color: var(--acc); background: rgba(232,53,53,.08); }
       </div>
     </div>
 
-    <!-- ── SWAP ── -->
-    <div id="lp_pane_swap" class="liq-pane">
-      <div class="liq-pane-inner">
-        <div class="liq-step-label">Swap between AVAX and hCASH via Pharaoh</div>
-        <!-- Direction toggle -->
-        <div class="liq-swap-dir-row">
-          <button id="swapDirBtn0" class="liq-dir-btn active" onclick="setSwapDir(0)">
-            <img src="https://raw.githubusercontent.com/precidoboss/my-game-sprites/main/image-removebg-preview%20(8).png" style="width:18px;height:18px;border-radius:50%;object-fit:cover">
-            <span>AVAX</span>
-            <span class="liq-dir-arrow">→</span>
-            <img src="https://raw.githubusercontent.com/precidoboss/my-game-sprites/main/hashcashclub.png" style="width:18px;height:18px;border-radius:50%;object-fit:cover">
-            <span>hCASH</span>
-          </button>
-          <button id="swapDirBtn1" class="liq-dir-btn" onclick="setSwapDir(1)">
-            <img src="https://raw.githubusercontent.com/precidoboss/my-game-sprites/main/hashcashclub.png" style="width:18px;height:18px;border-radius:50%;object-fit:cover">
-            <span>hCASH</span>
-            <span class="liq-dir-arrow">→</span>
-            <img src="https://raw.githubusercontent.com/precidoboss/my-game-sprites/main/image-removebg-preview%20(8).png" style="width:18px;height:18px;border-radius:50%;object-fit:cover">
-            <span>AVAX</span>
-          </button>
-        </div>
-        <!-- From input -->
-        <div class="liq-token-row" style="margin-top:.5rem">
-          <div class="liq-token-icon" id="swapFromIconWrap">
-            <img src="https://raw.githubusercontent.com/precidoboss/my-game-sprites/main/image-removebg-preview%20(8).png" id="swapFromImg" style="width:32px;height:32px;border-radius:50%;object-fit:cover">
-          </div>
-          <div class="liq-token-info">
-            <div class="liq-token-name" id="swapFromToken">AVAX</div>
-            <div class="liq-token-bal" id="swapFromBal">—</div>
-          </div>
-          <div class="liq-token-input-wrap">
-            <input id="swapFromAmt" type="number" inputmode="decimal" class="liq-input" placeholder="0.0" oninput="quoteSwap()">
-            <button class="liq-max-btn" onclick="fillMaxSwap()">MAX</button>
-          </div>
-        </div>
-        <div id="swapQuoteRow" class="liq-preview"></div>
-        <div class="liq-slip-row">
-          <span class="mono" style="font-size:.76rem;color:var(--mut)">Slip:</span>
-          <button class="slip-btn active" onclick="setSlip(0.5,this)">0.5%</button>
-          <button class="slip-btn" onclick="setSlip(1.0,this)">1%</button>
-          <button class="slip-btn" onclick="setSlip(2.0,this)">2%</button>
-        </div>
-        <button class="btn liq-action-btn" id="swapExecBtn" onclick="execSwap()">🔄 Execute Swap</button>
-        <div id="swapStatus" class="liq-status"></div>
-        <div class="liq-note" style="margin-top:.5rem">
-          Tries <b>Pharaoh → KyberSwap → Odos</b> automatically. If all fail, swap directly on:
-          <a href="https://phar.gg" target="_blank" style="color:var(--gold)">Pharaoh ↗</a> ·
-          <a href="https://kyberswap.com/swap/avalanche" target="_blank" style="color:#1ed760">KyberSwap ↗</a> ·
-          <a href="https://app.odos.xyz/" target="_blank" style="color:var(--pur)">Odos ↗</a> ·
-          <a href="https://lfj.gg/avalanche/trade" target="_blank" style="color:var(--pur)">LFJ ↗</a>
-        </div>
-      </div>
-    </div>
-
-    <!-- ── STAKE LP ── -->
+        <!-- ── STAKE LP ── -->
     <div id="lp_pane_stake" class="liq-pane">
       <div class="liq-pane-inner">
         <div class="liq-step-label">Stake LP in hCASH Moat for <b style="color:var(--red)">1× points</b> — flexible, unstake anytime</div>
@@ -1904,7 +1908,7 @@ html.light .tab.on  { color: var(--acc); background: rgba(232,53,53,.08); }
       <div class="ch">
         <div class="ctitle" style="color:var(--gold)">💧 Path B — Stake the Same $ into LP</div>
       </div>
-      <div class="cbody" style="display:flex;flex-direction:column;gap:.75rem">
+      <div class="cbody" style="display:flex;flex-direction:column;gap:.75rem;overflow:hidden;max-width:100%">
 
         <div style="background:rgba(212,168,67,.06);border:1px solid rgba(212,168,67,.18);border-radius:8px;padding:.75rem;font-size:var(--fs-sm);color:var(--dim);line-height:1.65">
           We take the <strong style="color:var(--gold)">same total USD value</strong> you're spending on the miner and split it 50% AVAX + 50% hCASH, 
@@ -2101,48 +2105,12 @@ html.light .tab.on  { color: var(--acc); background: rgba(232,53,53,.08); }
       </div>
       <div class="cbody" style="display:flex;flex-direction:column;gap:.75rem">
 
-        <!-- Miner selector with search -->
-        <div style="position:relative">
-          <div style="font-family:'Share Tech Mono',monospace;font-size:var(--fs-xs);color:var(--mut);margin-bottom:5px;text-transform:uppercase;letter-spacing:.08em">Select Miner (from HashCash API)</div>
-          <div style="display:flex;gap:6px;margin-bottom:4px">
-            <div style="position:relative;flex:1">
-              <input id="bd-minerSearch" type="text" class="inp"
-                placeholder="🔍  Search miners…"
-                oninput="bdFilterMiners(this.value)"
-                onfocus="document.getElementById('bd-minerDropdown').style.display='block'"
-                onkeydown="bdSearchKeydown(event)"
-                autocomplete="off"
-                style="width:100%;padding-right:2rem">
-              <button onclick="bdClearSearch()" title="Clear" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--mut);cursor:pointer;font-size:.85rem;padding:0;line-height:1;z-index:1">✕</button>
-            </div>
-            <button class="btn btn-g btn-sm" onclick="bdRefreshMiners()" title="Reload miners from API">↺</button>
-          </div>
-          <div id="bd-minerDropdown" style="display:none;position:absolute;z-index:400;left:0;right:40px;max-height:220px;overflow-y:auto;background:var(--card);border:1px solid var(--bor2);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.5);top:100%">
-            <div id="bd-minerDropdownList"></div>
-          </div>
-          <div id="bd-selectedChip" style="display:none;margin-top:4px;background:rgba(229,62,62,.07);border:1px solid rgba(229,62,62,.22);border-radius:6px;padding:5px 10px;align-items:center;gap:8px">
-            <span id="bd-selectedChipName" style="font-family:'Rajdhani',sans-serif;font-weight:700;font-size:var(--fs-sm);color:var(--red2);flex:1"></span>
-            <button onclick="bdClearMinerSelection()" style="background:none;border:none;color:var(--mut);cursor:pointer;font-size:.75rem" title="Clear">✕</button>
-          </div>
-          <div id="bd-minerImg" style="margin-top:.5rem;display:none">
-            <img id="bd-minerImgEl" src="" alt="" style="width:64px;height:64px;border-radius:8px;object-fit:cover;border:1px solid var(--bor)">
-          </div>
-        </div>
-
-        <!-- Miner stats -->
-        <div id="bd-minerStats" style="display:none;background:var(--sur);border:1px solid var(--bor);border-radius:8px;padding:.65rem">
-          <div style="font-family:'Share Tech Mono',monospace;font-size:var(--fs-xs);color:var(--mut);margin-bottom:6px;text-transform:uppercase;letter-spacing:.08em">Miner Specs</div>
-          <div class="calc-row"><span class="calc-lbl">Hashrate</span><span class="calc-val cr" id="bd-mhsDisplay">—</span></div>
-          <div class="calc-row"><span class="calc-lbl">Power draw</span><span class="calc-val" id="bd-wattsDisplay">—</span></div>
-          <div class="calc-row"><span class="calc-lbl">Efficiency</span><span class="calc-val cg" id="bd-effDisplay">—</span></div>
-        </div>
-
         <!-- Price input -->
         <div>
           <div style="font-family:'Share Tech Mono',monospace;font-size:var(--fs-xs);color:var(--mut);margin-bottom:5px;text-transform:uppercase;letter-spacing:.08em">Marketplace Price</div>
-          <div style="display:flex;gap:6px;align-items:center">
-            <input id="bd-price" type="number" class="inp" placeholder="e.g. 2500" style="flex:1" oninput="bdPriceChanged()" min="1">
-            <select id="bd-priceCurrency" class="inp" style="width:100px" onchange="bdCalc()">
+          <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+            <input id="bd-price" type="number" class="inp" placeholder="e.g. 2500" style="flex:1;min-width:120px" oninput="bdPriceChanged()" min="1">
+            <select id="bd-priceCurrency" class="inp" style="width:90px;flex-shrink:0" onchange="bdCalc()">
               <option value="hcash">hCASH</option>
               <option value="avax">AVAX</option>
             </select>
@@ -2169,8 +2137,8 @@ html.light .tab.on  { color: var(--acc); background: rgba(232,53,53,.08); }
         <!-- Add miner to slot -->
         <div style="background:rgba(229,62,62,.04);border:1px dashed rgba(229,62,62,.2);border-radius:7px;padding:.6rem">
           <div style="font-family:'Share Tech Mono',monospace;font-size:var(--fs-xs);color:var(--mut);margin-bottom:5px">ADD MINER TO SLOT</div>
-          <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
-            <div style="position:relative;flex:1;min-width:140px">
+          <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;width:100%;box-sizing:border-box">
+            <div style="position:relative;flex:1;min-width:120px;max-width:100%">
               <input id="bd-slotMinerSearch" type="text" class="inp" placeholder="🔍 Search…"
                 oninput="bdSlotFilterMiners(this.value)"
                 onfocus="document.getElementById('bd-slotDropdown').style.display='block'"
@@ -2196,14 +2164,19 @@ html.light .tab.on  { color: var(--acc); background: rgba(232,53,53,.08); }
 
         <!-- Slot table -->
         <div id="bd-slotTableWrap" style="margin-top:.65rem;display:none">
-          <div style="font-family:'Share Tech Mono',monospace;font-size:var(--fs-xs);color:var(--mut);margin-bottom:5px;display:flex;justify-content:space-between;align-items:center">
+          <div style="font-family:'Share Tech Mono',monospace;font-size:var(--fs-xs);color:var(--mut);margin-bottom:5px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:4px">
             <span>FACILITY SLOTS</span>
-            <span id="bd-slotSummary" style="color:var(--grn)"></span>
+            <div style="display:flex;align-items:center;gap:6px">
+              <span id="bd-slotSummary" style="color:var(--grn)"></span>
+              <button onclick="bdClearAll()" style="font-family:'Share Tech Mono',monospace;font-size:9px;padding:2px 7px;background:rgba(229,62,62,.1);border:1px solid rgba(229,62,62,.3);border-radius:4px;color:var(--red);cursor:pointer;white-space:nowrap">✕ Clear All</button>
+            </div>
           </div>
           <div style="background:var(--bor);border-radius:4px;height:5px;overflow:hidden;margin-bottom:6px">
             <div id="bd-slotPowerBar" style="height:100%;background:linear-gradient(90deg,var(--grn),var(--gold));border-radius:4px;width:0%;transition:width .4s"></div>
           </div>
-          <div id="bd-slotGrid" style="display:grid;gap:5px"></div>
+          <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;max-width:100%">
+            <div id="bd-slotGrid" style="display:grid;gap:5px;min-width:0"></div>
+          </div>
         </div>
 
         <button class="btn btn-sm" style="align-self:flex-start" onclick="bdCalc()">⚡ Run Comparison →</button>
@@ -2372,7 +2345,7 @@ html.light .tab.on  { color: var(--acc); background: rgba(232,53,53,.08); }
 </main>
 
 <!-- FOOTER -->
-<div style="position:relative;z-index:1;text-align:center;padding:2rem .85rem 3rem;margin-top:.5rem;border-top:1px solid var(--bor);width:100%;max-width:100%;box-sizing:border-box;overflow:hidden">
+<div style="position:relative;z-index:1;text-align:center;padding:1rem .85rem 2rem;margin-top:.5rem;border-top:1px solid var(--bor);width:100%;max-width:100%;box-sizing:border-box;overflow:hidden;font-size:clamp(10px,2.5vw,var(--fs-xs))">
   <div style="display:inline-flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--bor);border-radius:99px;padding:.55rem 1.3rem;box-shadow:0 0 24px rgba(229,62,62,.06)">
     <img src="https://raw.githubusercontent.com/precidoboss/my-game-sprites/main/laifumoatsintel.jpg" style="width:24px;height:24px;border-radius:50%;object-fit:cover;border:1px solid rgba(229,62,62,.25)" onerror="this.style.display='none'">
     <span class="mono" style="font-size:.85rem;color:var(--mut)">Built by</span>
@@ -2677,7 +2650,6 @@ function setSlip(v, el) {
   document.querySelectorAll('.slip-btn').forEach(b=>b.classList.remove('active'));
   if(el)el.classList.add('active');
   // Re-quote swap if swap pane is active
-  const swapPaneActive = document.getElementById('lp_pane_swap')?.classList.contains('active');
   if(swapPaneActive) quoteSwap();
 }
 
@@ -3755,7 +3727,11 @@ async function quoteLPFromAVAX() {
       const lpExpected=parseFloat(ethers.formatEther(q[2]));
       if(hcashInp&&!hcashInp._userEdited)hcashInp.value=hcashNeeded.toFixed(6);
       const ratio=(hcashNeeded/avaxAmt).toFixed(2);
-      if(preview)preview.innerHTML=`<span style="color:var(--grn)">✓</span> ${fmtLP(lpExpected)} LP · ${hcashNeeded.toFixed(4)} hCASH · 1 AVAX = ${ratio} hCASH`;
+      if(preview)preview.innerHTML=`
+        <div class="q-row"><span class="q-lbl">You deposit</span><span class="q-val">${avaxAmt} AVAX + ${hcashNeeded.toFixed(4)} hCASH</span></div>
+        <div class="q-row"><span class="q-lbl">LP tokens you receive</span><span class="q-val green">${fmtLP(lpExpected)} LP</span></div>
+        <div class="q-row"><span class="q-lbl">Pool rate</span><span class="q-val gold">1 AVAX = ${ratio} hCASH</span></div>
+        <div class="q-row"><span class="q-lbl">Status</span><span class="q-val green">✓ Live quote</span></div>`;
     } catch(e){
       // Fallback reserve math
       try{
@@ -3768,7 +3744,10 @@ async function quoteLPFromAVAX() {
         const hNeeded=parseFloat(ethers.formatEther(hWei));
         const lps=Number(avWei)*Number(ts)/Number(wRes)/1e18;
         if(hcashInp)hcashInp.value=hNeeded.toFixed(6);
-        if(preview)preview.innerHTML=`<span style="color:var(--gold)">~</span> ${lps.toFixed(8)} LP · ${hNeeded.toFixed(4)} hCASH (reserve estimate)`;
+        if(preview)preview.innerHTML=`
+          <div class="q-row"><span class="q-lbl">You deposit</span><span class="q-val">${avaxAmt} AVAX + ${hNeeded.toFixed(4)} hCASH</span></div>
+          <div class="q-row"><span class="q-lbl">LP tokens (est.)</span><span class="q-val gold">~${lps.toFixed(8)} LP</span></div>
+          <div class="q-row"><span class="q-lbl">Status</span><span class="q-val gold">~ Reserve estimate (router unavailable)</span></div>`;
       }catch(e2){if(preview)preview.innerHTML=`<span style="color:var(--red)">⚠ Quote failed</span>`;}
     }
   },350);
@@ -3799,7 +3778,11 @@ async function quoteLPFromToken() {
       const lpExp=lpShare*Number(ts)/1e18;
       if(avaxInp&&!avaxInp._userEdited)avaxInp.value=avaxNeeded.toFixed(6);
       const ratio=(hcashAmt/avaxNeeded).toFixed(2);
-      if(preview)preview.innerHTML=`<span style="color:var(--grn)">✓</span> ~${lpExp.toFixed(8)} LP · needs ${avaxNeeded.toFixed(4)} AVAX · 1 AVAX = ${ratio} hCASH`;
+      if(preview)preview.innerHTML=`
+        <div class="q-row"><span class="q-lbl">You deposit</span><span class="q-val">${avaxNeeded.toFixed(4)} AVAX + ${hcashAmt} hCASH</span></div>
+        <div class="q-row"><span class="q-lbl">LP tokens (est.)</span><span class="q-val green">~${lpExp.toFixed(8)} LP</span></div>
+        <div class="q-row"><span class="q-lbl">Pool rate</span><span class="q-val gold">1 AVAX = ${ratio} hCASH</span></div>
+        <div class="q-row"><span class="q-lbl">Status</span><span class="q-val green">✓ Reserve estimate</span></div>`;
     }catch(e){if(preview)preview.innerHTML=`<span style="color:var(--red)">⚠ ${e.message?.slice(0,50)||'RPC error'}</span>`;}
   },400);
 }
@@ -3815,13 +3798,36 @@ async function quoteRemoveLP() {
     const q=await router.quoteRemoveLiquidity(WAVAX_ADDR,hcashAddr,false,lpWei);
     const avax=parseFloat(ethers.formatEther(q[0]));
     const hcash=parseFloat(ethers.formatEther(q[1]));
-    if(preview)preview.innerHTML=`<span style="color:var(--grn)">✓</span> You'll receive ~${avax.toFixed(4)} AVAX + ${fmtP(hcash)} hCASH`;
+    if(preview)preview.innerHTML=`
+      <div class="q-row"><span class="q-lbl">You burn</span><span class="q-val red">${lpAmt} LP tokens</span></div>
+      <div class="q-row"><span class="q-lbl">You receive</span><span class="q-val green">~${avax.toFixed(4)} AVAX</span></div>
+      <div class="q-row"><span class="q-lbl">You receive</span><span class="q-val green">~${fmtP(hcash)} hCASH</span></div>
+      <div class="q-row"><span class="q-lbl">Status</span><span class="q-val green">✓ Live quote</span></div>`;
   }catch(e){if(preview)preview.innerHTML=`<span style="color:var(--red)">⚠ Could not quote</span>`;}
 }
 
 // ══════════════════════════════════════════════════════
 //  ADD LIQUIDITY
 // ══════════════════════════════════════════════════════
+// ── Rich transaction step renderer ──
+function txSteps(statusEl, steps, activeIdx, opts={}) {
+  if (!statusEl) return;
+  const icons = { pending:'⏳', active:'<span class="spin" style="display:inline-block;width:14px;height:14px;border:2px solid var(--gold);border-top-color:transparent;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle"></span>', done:'✅', error:'❌', skip:'⬜' };
+  statusEl.innerHTML = steps.map((s, i) => {
+    const state = i < activeIdx ? 'done' : i === activeIdx ? 'active' : 'pending';
+    const errored = opts.errorIdx === i;
+    const finalState = errored ? 'error' : state;
+    const icon = errored ? icons.error : (state === 'done' ? icons.done : state === 'active' ? icons.active : icons.pending);
+    return `<div class="tx-step ${finalState}">
+      <div class="tx-step-icon">${icon}</div>
+      <div class="tx-step-body">
+        <div class="tx-step-title">${s.title}</div>
+        ${s.sub ? `<div class="tx-step-sub">${s.sub}</div>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
 async function hcashAddLiquidity() {
   if(!walletSigner){notif('Connect wallet first','warn');return;}
   const amtRaw=parseFloat(document.getElementById('hcashAvaxAmt')?.value)||0;
@@ -3840,8 +3846,14 @@ async function hcashAddLiquidity() {
     const hcash=new ethers.Contract(hcashAddr,ERC20_ABI,walletSigner);
     const wavax=new ethers.Contract(WAVAX,WAVAX_ABI,walletSigner);
 
+    const ADD_STEPS = [
+      { title: 'Detect Pharaoh pool' },
+      { title: 'Get pool ratio + calculate amounts' },
+      { title: 'Approve tokens (WAVAX + hCASH)' },
+      { title: 'Add liquidity — confirm in wallet' },
+    ];
+    txSteps(statusEl, ADD_STEPS, 0);
     // 1. Detect stable flag
-    upd('<span class="spin"></span>1/4 — Detecting Pharaoh pool…');
     const [pairFalse,pairTrue]=await Promise.all([
       factory.getPair(WAVAX,hcashAddr,false),factory.getPair(WAVAX,hcashAddr,true)
     ]);
@@ -3854,7 +3866,7 @@ async function hcashAddLiquidity() {
     const avaxWei=ethers.parseEther(safeNum(amtRaw));
     const hcashDec=Number(await hcash.decimals().catch(()=>18));
     let hcashWei;
-    upd('<span class="spin"></span>2/4 — Getting pool ratio…');
+    txSteps(statusEl, ADD_STEPS, 1);
     try{
       const big=ethers.parseUnits('999999999',hcashDec);
       const q=await router.quoteAddLiquidity(WAVAX,hcashAddr,stable,avaxWei,big);
@@ -3869,8 +3881,9 @@ async function hcashAddLiquidity() {
     // 3. Balance check
     const hcashBal=await hcash.balanceOf(walletAddress);
     if(hcashBal<hcashWei){
-      notif(`Need ${parseFloat(ethers.formatUnits(hcashWei,hcashDec)).toFixed(4)} hCASH — swap first`,'warn');
-      upd(`<span style="color:var(--gold)">⚠ Need ${parseFloat(ethers.formatUnits(hcashWei,hcashDec)).toFixed(4)} hCASH. Use the Swap tab first.</span>`);
+      const needAmt = parseFloat(ethers.formatUnits(hcashWei,hcashDec)).toFixed(4);
+      notif(`Need ${needAmt} hCASH — get some first`,'warn');
+      txSteps(statusEl, [{title:'Insufficient hCASH balance', sub:`You need ${needAmt} hCASH. Buy on <a href="https://phar.gg" target="_blank">Pharaoh ↗</a>`}], 0, {errorIdx:0});
       return;
     }
 
@@ -3878,40 +3891,40 @@ async function hcashAddLiquidity() {
     const wavaxBal=await wavax.balanceOf(walletAddress);
     if(wavaxBal<avaxWei){
       const needed=avaxWei-wavaxBal;
-      upd('<span class="spin"></span>2/4 — Wrapping AVAX → WAVAX… confirm');
+      txSteps(statusEl, [{title:'Wrap AVAX → WAVAX', sub:'Confirm in wallet — one-time step'},...ADD_STEPS.slice(2)], 0);
       await(await wavax.deposit({value:needed,gasLimit:60000n})).wait();
     }
 
     // 5. Approve WAVAX
     const wavaxAllow=await wavax.allowance(walletAddress,ROUTER);
     if(wavaxAllow<avaxWei){
-      upd('<span class="spin"></span>3/4 — Approving WAVAX… confirm');
+      txSteps(statusEl, ADD_STEPS, 2, {});
       await(await wavax.approve(ROUTER,ethers.MaxUint256)).wait();
     }
 
     // 6. Approve hCASH
     const hcashAllow=await hcash.allowance(walletAddress,ROUTER);
     if(hcashAllow<hcashWei){
-      upd('<span class="spin"></span>3/4 — Approving hCASH… confirm');
+      txSteps(statusEl, ADD_STEPS, 2, {});
       await(await hcash.approve(ROUTER,ethers.MaxUint256)).wait();
     }
 
     // 7. addLiquidity
-    upd('<span class="spin"></span>4/4 — Adding WAVAX+hCASH liquidity… confirm in wallet');
+    txSteps(statusEl, ADD_STEPS, 3);
     const minW=avaxWei*99n/100n;
     const minH=hcashWei*99n/100n;
     const tx=await router.addLiquidity(WAVAX,hcashAddr,stable,avaxWei,hcashWei,minW,minH,walletAddress,Math.floor(Date.now()/1000)+1800);
-    upd(`<span class="spin"></span>Confirming… <a href="https://snowtrace.io/tx/${tx.hash}" target="_blank" style="color:var(--red)">${tx.hash.slice(0,10)}… ↗</a>`);
+    txSteps(statusEl, [...ADD_STEPS.slice(0,3), {title:'Adding liquidity — confirming…', sub:`<a href="https://snowtrace.io/tx/${tx.hash}" target="_blank">View tx ↗</a>`}], 3);
     await tx.wait();
-    upd(`<span style="color:var(--grn)">✅ Liquidity added! LP tokens in wallet. <a href="https://snowtrace.io/tx/${tx.hash}" target="_blank" style="color:var(--red)">↗</a></span>`);
+    statusEl.innerHTML = `<div class="tx-step done"><div class="tx-step-icon">✅</div><div class="tx-step-body"><div class="tx-step-title" style="color:var(--grn)">Liquidity added! LP tokens in wallet.</div><div class="tx-step-sub"><a href="https://snowtrace.io/tx/${tx.hash}" target="_blank">View on Snowtrace ↗</a></div></div></div>`;
     notif('💧 Liquidity added! Stake LP to earn Moat Points.','success',6000);
     document.getElementById('hcashAvaxAmt').value='';
     document.getElementById('hcashTokenAmt').value='';
     updateLpBalances();
   }catch(e){
     const isReject=e.message?.includes('user rejected')||e.code===4001;
-    const msg=isReject?'Rejected in wallet':(e.reason||e.shortMessage||e.message?.slice(0,150));
-    upd(`<span style="color:${isReject?'var(--gold)':'var(--red)'}">✗ ${msg}</span>`);
+    const msg=isReject?'Rejected in wallet':(e.reason||e.shortMessage||e.message?.slice(0,150)||'Unknown error');
+    statusEl.innerHTML=`<div class="tx-step error"><div class="tx-step-icon">❌</div><div class="tx-step-body"><div class="tx-step-title">${msg}</div></div></div>`;
     if(!isReject) notif(String(msg),'error');
   }
 }
@@ -3937,7 +3950,13 @@ async function hcashRemoveLiquidity() {
     const lpWei=ethers.parseUnits(amt.toFixed(8),18);
 
     // Detect stable flag — check both, prefer whichever pair address matches our LP
-    upd('<span class="spin"></span>1/3 — Detecting pool type…');
+    const RM_STEPS = [
+      { title: 'Detect pool type' },
+      { title: 'Approve LP tokens — confirm in wallet' },
+      { title: 'Remove liquidity — confirm in wallet' },
+      { title: 'Unwrap WAVAX → AVAX' },
+    ];
+    txSteps(statusEl, RM_STEPS, 0);
     const [pairFalse,pairTrue]=await Promise.all([
       factory.getPair(WAVAX,hcashTokAddr,false).catch(()=>ethers.ZeroAddress),
       factory.getPair(WAVAX,hcashTokAddr,true).catch(()=>ethers.ZeroAddress),
@@ -3951,12 +3970,12 @@ async function hcashRemoveLiquidity() {
     // Approve LP
     const allowed=await lpC.allowance(walletAddress,ROUTER);
     if(allowed<lpWei){
-      upd('<span class="spin"></span>2/3 — Approving LP tokens… confirm in wallet');
+      txSteps(statusEl, RM_STEPS, 1);
       await(await lpC.approve(ROUTER,ethers.MaxUint256)).wait();
     }
 
     const deadline=BigInt(Math.floor(Date.now()/1000)+1800);
-    upd('<span class="spin"></span>3/3 — Removing liquidity… confirm in wallet');
+    txSteps(statusEl, RM_STEPS, 2);
 
     // Use removeLiquidity(WAVAX, hCASH) — returns WAVAX + hCASH to wallet
     // Then unwrap WAVAX → native AVAX
@@ -3967,17 +3986,17 @@ async function hcashRemoveLiquidity() {
       console.warn('[removeLiq stable='+stable+' failed, flipping]',e1.message?.slice(0,80));
       tx=await router.removeLiquidity(WAVAX,hcashTokAddr,!stable,lpWei,0n,0n,walletAddress,deadline,{gasLimit:600000n});
     }
-    upd(`<span class="spin"></span>Confirming… <a href="https://snowtrace.io/tx/${tx.hash}" target="_blank" style="color:var(--red)">${tx.hash.slice(0,10)}… ↗</a>`);
+    txSteps(statusEl, [...RM_STEPS.slice(0,2), {title:'Removing liquidity — confirming…', sub:`<a href="https://snowtrace.io/tx/${tx.hash}" target="_blank">View tx ↗</a>`}, RM_STEPS[3]], 2);
     await tx.wait();
     // Unwrap WAVAX → native AVAX
     try{
       const wBal=await wavaxC.balanceOf(walletAddress);
       if(wBal>0n){
-        upd('<span class="spin"></span>Unwrapping WAVAX → AVAX… confirm');
+        txSteps(statusEl, RM_STEPS, 3);
         await(await wavaxC.withdraw(wBal,{gasLimit:60000n})).wait();
       }
     }catch(ue){console.warn('unwrap after remove:',ue.message);}
-    upd(`<span style="color:var(--grn)">✅ Liquidity removed! AVAX + hCASH in wallet. <a href="https://snowtrace.io/tx/${tx.hash}" target="_blank" style="color:var(--red)">↗</a></span>`);
+    statusEl.innerHTML=`<div class="tx-step done"><div class="tx-step-icon">✅</div><div class="tx-step-body"><div class="tx-step-title" style="color:var(--grn)">Liquidity removed! AVAX + hCASH in wallet.</div><div class="tx-step-sub"><a href="https://snowtrace.io/tx/${tx.hash}" target="_blank">View on Snowtrace ↗</a></div></div></div>`;
     notif('↩ Liquidity removed! AVAX and hCASH in your wallet.','success');
     document.getElementById('hcashRemoveAmt').value='';
     updateLpBalances();
@@ -4005,20 +4024,24 @@ async function hcashStakeLp() {
     const lpC=new ethers.Contract(LP,ERC20_ABI,walletSigner);
     const moatC=new ethers.Contract(MOAT,MOAT_ABI,walletSigner);
     const amtWei=ethers.parseUnits(amt.toFixed(6),18);
-    upd('<span class="spin"></span>1/2 — Approving LP for Moat…');
+    const STAKE_STEPS = [
+      { title: 'Approve LP tokens for Moat' },
+      { title: 'Stake LP in hCASH Moat — confirm in wallet', sub: 'Earn 1× Moat Points. Unstake anytime (0.5% fee).' },
+    ];
+    txSteps(statusEl, STAKE_STEPS, 0);
     const allow=await lpC.allowance(walletAddress,MOAT);
     if(allow<amtWei){ await(await lpC.approve(MOAT,ethers.MaxUint256)).wait(); }
-    upd('<span class="spin"></span>2/2 — Staking in hCASH Moat… confirm in wallet');
+    txSteps(statusEl, STAKE_STEPS, 1);
     const tx=await moatC.stake(amtWei);
-    upd(`<span class="spin"></span>Waiting… <a href="https://snowtrace.io/tx/${tx.hash}" target="_blank" style="color:var(--red)">View ↗</a>`);
+    txSteps(statusEl, [{title:'Stake LP', sub:`<a href="https://snowtrace.io/tx/${tx.hash}" target="_blank">View tx ↗</a> — confirming…`}, STAKE_STEPS[1]], 0);
     await tx.wait();
     notif('🔒 LP staked in hCASH Moat! You\'re earning Moat Points.','success',6000);
-    upd(`<span style="color:var(--grn)">✓ Staked! Points accumulating.</span>`);
+    statusEl.innerHTML=`<div class="tx-step done"><div class="tx-step-icon">✅</div><div class="tx-step-body"><div class="tx-step-title" style="color:var(--grn)">LP staked! Moat Points accumulating.</div><div class="tx-step-sub"><a href="https://snowtrace.io/tx/${tx.hash}" target="_blank">View on Snowtrace ↗</a></div></div></div>`;
     document.getElementById('hcashStakeAmt').value='';
     updateLpBalances();updatePositionSummary();
   }catch(e){
     let msg=e.reason||e.shortMessage||(e.message?.includes('user rejected')||e.code===4001?'Rejected in wallet':e.message?.slice(0,120));
-    upd(`<span style="color:var(--red)">✗ ${msg}</span>`);
+    statusEl.innerHTML=`<div class="tx-step error"><div class="tx-step-icon">❌</div><div class="tx-step-body"><div class="tx-step-title">${msg}</div></div></div>`;
     notif(String(msg),'error');
   }
 }
@@ -4039,21 +4062,25 @@ async function hcashDoLock() {
     const moatC=new ethers.Contract(MOAT,MOAT_ABI,walletSigner);
     const amtWei=ethers.parseUnits(amt.toFixed(6),18);
     const durationSec=BigInt(days*86400);
-    upd('<span class="spin"></span>1/2 — Approving LP for Moat…');
+    const mult=lockMultiplier(days);
+    const LOCK_STEPS = [
+      { title: 'Approve LP tokens for Moat' },
+      { title: `Lock ${amt} LP for ${days} days at ${mult}× points — confirm in wallet`, sub: `${mult}× Moat Points multiplier active for ${days} days` },
+    ];
+    txSteps(statusEl, LOCK_STEPS, 0);
     const allow=await lpC.allowance(walletAddress,MOAT);
     if(allow<amtWei){ await(await lpC.approve(MOAT,ethers.MaxUint256)).wait(); }
-    const mult=lockMultiplier(days);
-    upd(`<span class="spin"></span>2/2 — Locking ${amt} LP for ${days}d (${mult}×)… confirm in wallet`);
+    txSteps(statusEl, LOCK_STEPS, 1);
     const tx=await moatC.lock(amtWei,durationSec);
-    upd(`<span class="spin"></span>Waiting… <a href="https://snowtrace.io/tx/${tx.hash}" target="_blank" style="color:var(--red)">View ↗</a>`);
+    txSteps(statusEl, [{...LOCK_STEPS[0]}, {title:`Locking — confirming…`, sub:`<a href="https://snowtrace.io/tx/${tx.hash}" target="_blank">View tx ↗</a>`}], 1);
     await tx.wait();
     notif(`⏳ ${amt} LP locked for ${days} days at ${mult}× points!`,'success',7000);
-    upd(`<span style="color:var(--gold)">✓ Locked! ${mult}× points active.</span>`);
+    statusEl.innerHTML=`<div class="tx-step done"><div class="tx-step-icon">✅</div><div class="tx-step-body"><div class="tx-step-title" style="color:var(--gold)">Locked! ${mult}× Moat Points active for ${days} days.</div><div class="tx-step-sub"><a href="https://snowtrace.io/tx/${tx.hash}" target="_blank">View on Snowtrace ↗</a></div></div></div>`;
     document.getElementById('hcashLockAmt').value='';
     updateLpBalances();renderActiveLocks();updatePositionSummary();
   }catch(e){
     let msg=e.reason||e.shortMessage||(e.message?.includes('user rejected')||e.code===4001?'Rejected in wallet':e.message?.slice(0,120));
-    upd(`<span style="color:var(--red)">✗ ${msg}</span>`);
+    statusEl.innerHTML=`<div class="tx-step error"><div class="tx-step-icon">❌</div><div class="tx-step-body"><div class="tx-step-title">${msg}</div></div></div>`;
     notif(String(msg),'error');
   }
 }
@@ -4163,12 +4190,16 @@ async function hcashDoUnstake() {
       amtWei=ethers.parseUnits(inputAmt.toFixed(6),18);
     } else {
       // Read staked amount from contract
-      upd('<span class="spin"></span>Reading staked balance…');
+      const UNSTAKE_STEPS = [
+      { title: 'Reading staked balance' },
+      { title: 'Unstake from hCASH Moat — confirm in wallet', sub: '0.5% unstake fee applies' },
+    ];
+    txSteps(statusEl, UNSTAKE_STEPS, 0);
       const ui=await moatC.userInfo(walletAddress);
       amtWei=ui[0]; // stakedAmount
       if(amtWei===0n){notif('No staked LP to unstake','warn');upd('');return;}
     }
-    upd('<span class="spin"></span>Unstaking from hCASH Moat… confirm in wallet');
+    txSteps(statusEl, UNSTAKE_STEPS, 1);
     const tx=await moatC.unstake(amtWei);
     upd(`<span class="spin"></span>Waiting… <a href="https://snowtrace.io/tx/${tx.hash}" target="_blank" style="color:var(--red)">View ↗</a>`);
     await tx.wait();
@@ -4177,7 +4208,7 @@ async function hcashDoUnstake() {
     updateLpBalances();updatePositionSummary();
   }catch(e){
     let msg=e.reason||e.shortMessage||(e.message?.includes('user rejected')||e.code===4001?'Rejected in wallet':e.message?.slice(0,120));
-    upd(`<span style="color:var(--red)">✗ ${msg}</span>`);
+    statusEl.innerHTML=`<div class="tx-step error"><div class="tx-step-icon">❌</div><div class="tx-step-body"><div class="tx-step-title">${msg}</div></div></div>`;
     notif(String(msg),'error');
   }
 }
@@ -6927,8 +6958,11 @@ function wiRenderSlotTable() {
 
   // Determine grid columns from facility dimensions
   const dimY = fac.dims ? parseInt(fac.dims.split('×')[1]) : Math.ceil(Math.sqrt(totalSlots));
-  grid.style.gridTemplateColumns = `repeat(${dimY}, 1fr)`;
-  grid.style.gap = '6px';
+  // On mobile, cap at 3 columns to prevent overflow
+  const isMobile = window.innerWidth < 500;
+  const cols = isMobile ? Math.min(dimY, 3) : dimY;
+  grid.style.gridTemplateColumns = `repeat(${cols}, minmax(0,1fr))`;
+  grid.style.gap = '5px';
 
   let html = '';
   for (let i = 0; i < totalSlots; i++) {
@@ -8439,7 +8473,7 @@ function bdRenderSlotTable() {
       const badgeStyle = isOwned ? 'background:rgba(74,222,128,.12);color:var(--grn);border:1px solid rgba(74,222,128,.3)' : 'background:rgba(229,62,62,.1);color:var(--red2);border:1px solid rgba(229,62,62,.25)';
       html += `<div style="background:var(--card);border:1px solid rgba(229,62,62,.25);border-radius:8px;padding:6px 7px;position:relative">
         <button onclick="bdRemoveSlot(${i})" style="position:absolute;top:4px;right:5px;background:rgba(229,62,62,.1);border:1px solid rgba(229,62,62,.25);border-radius:4px;color:var(--red);cursor:pointer;font-size:9px;padding:1px 5px">✕</button>
-        <div style="display:flex;align-items:center;gap:5px;margin-bottom:5px;padding-right:18px">${imgTag}<span style="font-family:'Rajdhani',sans-serif;font-weight:700;font-size:var(--fs-xs);color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1">${m.name}</span></div>
+        <div style="display:flex;align-items:center;gap:5px;margin-bottom:5px;padding-right:18px">${imgTag}<span style="font-family:'Rajdhani',sans-serif;font-weight:700;font-size:9px;color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0">${m.name}</span></div>
         <div style="display:flex;justify-content:space-between"><span style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--grn)">${mhsStr}</span><span style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--gold)">${sl.watts||0}W</span></div>
         <div style="margin-top:4px"><span style="font-size:8px;border-radius:3px;padding:1px 5px;${badgeStyle}">${priceLbl}</span></div>
       </div>`;
@@ -8493,7 +8527,15 @@ function bdCalc() {
   const hasInputs = (priceRaw > 0 && _bdSelectedMiner && mhs > 0) || hasSlotMiners;
   document.getElementById('bd-resultsSection').style.display = hasInputs ? '' : 'none';
   document.getElementById('bd-emptyState').style.display = hasInputs ? 'none' : '';
-  if (!hasInputs) return;
+  if (!hasInputs) {
+    // Reset all budget display fields to placeholder
+    const dash = '—';
+    ['bd-lpTotalUsd','bd-lpAvaxAmt','bd-lpHcashAmt','bd-lpTokens','bd-lpPoolShare',
+     'bd-lpMult','bd-lpPoints','bd-lpFees','bd-lpValue','bd-priceUsdDisplay'].forEach(id => {
+      const el = document.getElementById(id); if (el) el.textContent = dash;
+    });
+    return;
+  }
 
   if (!priceData?.price || !priceData?.avaxPrice) { wiEnsureLiveData(); return; }
 
@@ -8657,6 +8699,44 @@ function bdDrawChart(netUsdDay, lpFeeUsdDay, cost, breakevenDays) {
 }
 
 // ── Init Build page when tab activated ──
+function bdClearAll() {
+  // Reset all slot state
+  _bdSlots = [];
+  _bdSlotSelectedMiner = null;
+  // Reset slot add inputs
+  const slotSearch = document.getElementById('bd-slotMinerSearch');
+  const slotPrice  = document.getElementById('bd-slotMinerPrice');
+  const slotSource = document.getElementById('bd-slotSource');
+  if (slotSearch) slotSearch.value = '';
+  if (slotPrice)  slotPrice.value  = '';
+  if (slotSource) slotSource.value = 'buy';
+  const slotDd = document.getElementById('bd-slotDropdown');
+  if (slotDd) slotDd.style.display = 'none';
+  // Reset price input
+  const priceEl = document.getElementById('bd-price');
+  if (priceEl) priceEl.value = '';
+  const priceUsd = document.getElementById('bd-priceUsdDisplay');
+  if (priceUsd) priceUsd.textContent = '≈ $— USD';
+  // Reset override hashrate
+  const mhsEl = document.getElementById('bd-customMhs');
+  if (mhsEl) mhsEl.value = '';
+  // Hide results + empty state
+  const results = document.getElementById('bd-resultsSection');
+  const empty   = document.getElementById('bd-emptyState');
+  if (results) results.style.display = 'none';
+  if (empty)   empty.style.display   = '';
+  // Reset LP path B display
+  const lpFields = ['bd-lpTotalUsd','bd-lpAvaxAmt','bd-lpHcashAmt','bd-lpTokens','bd-lpPoolShare',
+    'bd-lpMult','bd-lpPoints','bd-lpFees','bd-priceUsdDisplay'];
+  lpFields.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = '—';
+  });
+  // Re-render empty slot grid
+  bdRenderSlotTable();
+  notif('Facility cleared', 'info', 2000);
+}
+
 function initBuildPage() {
   bdBuildLockGrid();
   bdRenderDropdown(); // populate from shared _wiMiners
